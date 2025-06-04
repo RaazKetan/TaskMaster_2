@@ -1,8 +1,9 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import './index.css'
 
 function App() {
-  console.log('App component rendering...');
+  console.log('TaskMaster App rendering...');
   
   return (
     <div style={{
@@ -40,28 +41,36 @@ function App() {
         </p>
         
         <div style={{ marginBottom: '16px' }}>
-          <button style={{
-            width: '100%',
-            backgroundColor: '#2563eb',
-            color: 'white',
-            padding: '8px 16px',
-            borderRadius: '4px',
-            border: 'none',
-            cursor: 'pointer',
-            marginBottom: '8px'
-          }}>
+          <button 
+            onClick={() => alert('Login clicked!')}
+            style={{
+              width: '100%',
+              backgroundColor: '#2563eb',
+              color: 'white',
+              padding: '12px 16px',
+              borderRadius: '4px',
+              border: 'none',
+              cursor: 'pointer',
+              marginBottom: '8px',
+              fontSize: '16px'
+            }}
+          >
             Login
           </button>
           
-          <button style={{
-            width: '100%',
-            backgroundColor: '#16a34a',
-            color: 'white',
-            padding: '8px 16px',
-            borderRadius: '4px',
-            border: 'none',
-            cursor: 'pointer'
-          }}>
+          <button 
+            onClick={() => alert('Register clicked!')}
+            style={{
+              width: '100%',
+              backgroundColor: '#16a34a',
+              color: 'white',
+              padding: '12px 16px',
+              borderRadius: '4px',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '16px'
+            }}
+          >
             Register
           </button>
         </div>
@@ -79,7 +88,7 @@ function App() {
   );
 }
 
-console.log('Main.jsx loading...')
+console.log('TaskMaster main.jsx loading...')
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
