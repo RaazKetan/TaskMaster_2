@@ -68,7 +68,7 @@ export function AuthProvider({ children }) {
         
         // Clear any existing storage first
         localStorage.removeItem('sessionToken');
-        localStorage.removeItem('user');
+        localStorage.removeItem('userData');
         
         // Store the exact session token from MongoDB
         localStorage.setItem('sessionToken', response.data.sessionToken);
