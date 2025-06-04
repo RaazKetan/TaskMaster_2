@@ -6,11 +6,14 @@ This project has been cleaned and optimized for Vercel deployment:
 
 ### ✅ Removed Unnecessary Files
 - Firebase dependencies and configuration
-- Test and demo files
+- Test and demo files  
 - Development documentation
-- Unused authentication components
+- Unused authentication components (Mongo*, Auth/, contexts/)
+- Duplicate Dashboard/Layout/Projects/Teams components
 - Console logs for production
 - Build artifacts and cache
+- Root package.json and node_modules
+- Demo and test files
 
 ### ✅ Frontend Structure (Vercel Ready)
 ```

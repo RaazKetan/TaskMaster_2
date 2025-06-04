@@ -11,16 +11,13 @@ export default defineConfig({
     port: 5000,
     host: '0.0.0.0',
     allowedHosts: ['all'],
-    // Proxy configuration for local development only
-    ...(process.env.NODE_ENV === 'development' && {
-      proxy: {
-        '/api': {
-          target: 'http://localhost:8000',
-          changeOrigin: true,
-          secure: false,
-        }
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        secure: false,
       }
-    })
+    }
   },
   resolve: {
     alias: {
