@@ -1,7 +1,7 @@
 package com.taskmaster.controller;
 
 import com.taskmaster.model.User;
-import com.taskmaster.service.UserService;
+import com.taskmaster.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,7 +14,7 @@ import java.util.*;
 public class ProjectController {
 
     @Autowired
-    private UserService userService;
+    private UserRepository userRepository;
 
     @GetMapping("/projects")
     public ResponseEntity<?> getProjects(@RequestParam(required = false) String userId) {
@@ -47,7 +47,7 @@ public class ProjectController {
                 return ResponseEntity.badRequest().body(Map.of("error", "User ID is required"));
             }
 
-            User user = userService.findByUserId(userId);
+            User user = userRepository.findByUserId(userId);
             if (user == null) {
                 return ResponseEntity.notFound().build();
             }
@@ -76,7 +76,7 @@ public class ProjectController {
                 return ResponseEntity.badRequest().body(Map.of("error", "User ID is required"));
             }
 
-            User user = userService.findByUserId(userId);
+            User user = userRepository.findByUserId(userId);
             if (user == null) {
                 return ResponseEntity.notFound().build();
             }
@@ -103,7 +103,7 @@ public class ProjectController {
             projects.add(newProject);
             user.setProjects(projects);
 
-            userService.save(user);
+            userRepository.save(user);
 
             return ResponseEntity.ok(newProject);
         } catch (Exception e) {

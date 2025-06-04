@@ -1,7 +1,7 @@
 package com.taskmaster.controller;
 
 import com.taskmaster.model.User;
-import com.taskmaster.service.UserService;
+import com.taskmaster.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,7 +14,7 @@ import java.util.*;
 public class TeamController {
 
     @Autowired
-    private UserService userService;
+    private UserRepository userRepository;
 
     @GetMapping("/teams")
     public ResponseEntity<?> getTeams(@RequestParam(required = false) String userId) {
@@ -23,7 +23,7 @@ public class TeamController {
                 return ResponseEntity.badRequest().body(Map.of("error", "User ID is required"));
             }
 
-            User user = userService.findByUserId(userId);
+            User user = userRepository.findByUserId(userId);
             if (user == null) {
                 return ResponseEntity.notFound().build();
             }
@@ -48,7 +48,7 @@ public class TeamController {
                 return ResponseEntity.badRequest().body(Map.of("error", "User ID is required"));
             }
 
-            User user = userService.findByUserId(userId);
+            User user = userRepository.findByUserId(userId);
             if (user == null) {
                 return ResponseEntity.notFound().build();
             }
@@ -74,7 +74,7 @@ public class TeamController {
             teams.add(newTeam);
             user.setTeams(teams);
 
-            userService.save(user);
+            userRepository.save(user);
 
             return ResponseEntity.ok(newTeam);
         } catch (Exception e) {
