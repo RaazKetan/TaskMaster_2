@@ -1,24 +1,77 @@
 import React from 'react';
-import './App.css';
 
 function App() {
+  console.log('App component rendering...');
+  
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-md p-6">
-        <h1 className="text-2xl font-bold text-center mb-6">TaskMaster</h1>
-        <p className="text-center text-gray-600 mb-4">Project Management Tool</p>
+    <div style={{
+      minHeight: '100vh',
+      backgroundColor: '#f3f4f6',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontFamily: 'system-ui, -apple-system, sans-serif'
+    }}>
+      <div style={{
+        maxWidth: '400px',
+        width: '100%',
+        backgroundColor: 'white',
+        borderRadius: '8px',
+        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+        padding: '24px'
+      }}>
+        <h1 style={{
+          fontSize: '24px',
+          fontWeight: 'bold',
+          textAlign: 'center',
+          marginBottom: '24px',
+          color: '#1f2937'
+        }}>
+          TaskMaster
+        </h1>
         
-        <div className="space-y-4">
-          <button className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">
+        <p style={{
+          textAlign: 'center',
+          color: '#6b7280',
+          marginBottom: '16px'
+        }}>
+          Project Management Tool
+        </p>
+        
+        <div style={{ marginBottom: '16px' }}>
+          <button style={{
+            width: '100%',
+            backgroundColor: '#2563eb',
+            color: 'white',
+            padding: '8px 16px',
+            borderRadius: '4px',
+            border: 'none',
+            cursor: 'pointer',
+            marginBottom: '8px'
+          }}>
             Login
           </button>
-          <button className="w-full bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
+          
+          <button style={{
+            width: '100%',
+            backgroundColor: '#16a34a',
+            color: 'white',
+            padding: '8px 16px',
+            borderRadius: '4px',
+            border: 'none',
+            cursor: 'pointer'
+          }}>
             Register
           </button>
         </div>
         
-        <div className="mt-6 text-center">
-          <p className="text-sm text-gray-500">API Status: Connected</p>
+        <div style={{ textAlign: 'center' }}>
+          <p style={{
+            fontSize: '14px',
+            color: '#9ca3af'
+          }}>
+            API Status: Connected ✓
+          </p>
         </div>
       </div>
     </div>
