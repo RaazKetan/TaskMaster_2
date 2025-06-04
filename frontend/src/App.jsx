@@ -1,37 +1,69 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext.jsx';
+import Login from './components/auth/Login.jsx';
+import Register from './components/auth/Register.jsx';
+import PrivateRoute from './components/auth/PrivateRoute.jsx';
 import LandingPage from './components/LandingPage.jsx';
+import AnimatedTeamDashboard from './components/dashboard/AnimatedTeamDashboard.jsx';
+import ShadcnTeamManagement from './components/teams/ShadcnTeamManagement.jsx';
+import ShadcnProjectManagement from './components/projects/ShadcnProjectManagement.jsx';
+import TeamDetail from './components/teams/TeamDetail.jsx';
+import './App.css';
 
-// Simple login/register components for now
-const Login = () => (
-  <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-    <div style={{ padding: '24px', backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)' }}>
-      <h2>Login Page</h2>
-      <p>Login functionality will be implemented here</p>
-    </div>
-  </div>
-);
+function AppContent() {
+  const { user, loading } = useAuth();
 
-const Register = () => (
-  <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-    <div style={{ padding: '24px', backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)' }}>
-      <h2>Register Page</h2>
-      <p>Registration functionality will be implemented here</p>
-    </div>
-  </div>
-);
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
-function App() {
   return (
     <Router>
       <div className="min-h-screen bg-gray-50">
         <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          <Route path="/" element={!user ? <LandingPage /> : <Navigate to="/dashboard" />} />
+          <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
+          <Route path="/register" element={!user ? <Register /> : <Navigate to="/dashboard" />} />
+          
+          <Route path="/dashboard" element={
+            <PrivateRoute>
+              <AnimatedTeamDashboard />
+            </PrivateRoute>
+          } />
+          
+          <Route path="/teams" element={
+            <PrivateRoute>
+              <ShadcnTeamManagement />
+            </PrivateRoute>
+          } />
+          
+          <Route path="/teams/:id" element={
+            <PrivateRoute>
+              <TeamDetail />
+            </PrivateRoute>
+          } />
+          
+          <Route path="/projects" element={
+            <PrivateRoute>
+              <ShadcnProjectManagement />
+            </PrivateRoute>
+          } />
         </Routes>
       </div>
     </Router>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 
