@@ -75,18 +75,23 @@ const fetchTeams = async () => {
       const currentUserId = 'user_123';
       const currentUserEmail = 'user@taskmaster.com';
       
+      // Get current user data from localStorage
+      const userData = localStorage.getItem('userData');
+      const currentUser = userData ? JSON.parse(userData) : null;
+      
+      if (!currentUser || !currentUser.userId) {
+        setError('User not authenticated');
+        return;
+      }
+
       const teamData = {
         ...createTeamForm,
+        userId: currentUser.userId,
         members: [],
         projectIds: []
       };
 
-      const response = await api.post('/teams', teamData, {
-        params: { 
-          userId: currentUserId,
-          userEmail: currentUserEmail
-        }
-      });
+      const response = await api.post('/teams', teamData);
       console.log('Team created:', response.data);
       
       setTeams(prev => [...prev, response.data]);
