@@ -5,6 +5,22 @@ import './index.css'
 function App() {
   console.log('TaskMaster App rendering...');
   
+  // Test API connection
+  React.useEffect(() => {
+    fetch('/api/public/test')
+      .then(response => response.json())
+      .then(data => {
+        console.log('API response:', data);
+        document.getElementById('api-status').textContent = 'Connected ✓';
+        document.getElementById('api-status').style.color = '#16a34a';
+      })
+      .catch(error => {
+        console.error('API error:', error);
+        document.getElementById('api-status').textContent = 'Disconnected ✗';
+        document.getElementById('api-status').style.color = '#dc2626';
+      });
+  }, []);
+  
   return (
     <div style={{
       minHeight: '100vh',
@@ -80,7 +96,7 @@ function App() {
             fontSize: '14px',
             color: '#9ca3af'
           }}>
-            API Status: Connected ✓
+            API Status: <span id="api-status">Checking...</span>
           </p>
         </div>
       </div>

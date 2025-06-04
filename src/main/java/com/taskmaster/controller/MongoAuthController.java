@@ -17,6 +17,11 @@ public class MongoAuthController {
     @Autowired
     private UserRepository userRepository;
 
+    @GetMapping("/test")
+    public ResponseEntity<?> test() {
+        return ResponseEntity.ok(Map.of("message", "TaskMaster API is running", "timestamp", System.currentTimeMillis()));
+    }
+
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody Map<String, String> data) {
         try {
