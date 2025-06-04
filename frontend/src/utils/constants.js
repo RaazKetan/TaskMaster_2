@@ -25,3 +25,25 @@ export const TASK_PRIORITIES = [
   { value: 'high', label: 'High' },
   { value: 'urgent', label: 'Urgent' }
 ];
+
+export const PRIORITY_LEVELS = [
+  { value: 'low', label: 'Low', color: 'text-green-600' },
+  { value: 'medium', label: 'Medium', color: 'text-yellow-600' },
+  { value: 'high', label: 'High', color: 'text-orange-600' },
+  { value: 'urgent', label: 'Urgent', color: 'text-red-600' }
+];
+
+export const PROJECT_STATUS = [
+  { value: 'planning', label: 'Planning', color: 'bg-gray-100 text-gray-800' },
+  { value: 'active', label: 'Active', color: 'bg-blue-100 text-blue-800' },
+  { value: 'on_hold', label: 'On Hold', color: 'bg-yellow-100 text-yellow-800' },
+  { value: 'completed', label: 'Completed', color: 'bg-green-100 text-green-800' },
+  { value: 'cancelled', label: 'Cancelled', color: 'bg-red-100 text-red-800' }
+];
+
+export const TEAM_ROLES = [
+  { value: 'owner', label: 'Owner', description: 'Full access to team settings and members' },
+  { value: 'admin', label: 'Admin', description: 'Can manage projects and invite members' },
+  { value: 'member', label: 'Member', description: 'Can view and contribute to projects' },
+  { value: 'viewer', label: 'Viewer', description: 'Can only view projects and tasks' }
+];
