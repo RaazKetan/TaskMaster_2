@@ -16,11 +16,7 @@ export function AuthProvider({ children }) {
     const sessionToken = localStorage.getItem('sessionToken');
     const userDataString = localStorage.getItem('userData');
     
-    console.log('AuthProvider useEffect - checking stored session:', {
-      hasSessionToken: !!sessionToken,
-      hasUserData: !!userDataString,
-      sessionToken: sessionToken
-    });
+    // Check stored session
     
     if (sessionToken && userDataString) {
       try {
