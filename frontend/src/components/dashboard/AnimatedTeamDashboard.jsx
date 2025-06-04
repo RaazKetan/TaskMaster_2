@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Progress } from '../ui/progress';
+import RealTimeIndicator from '../ui/RealTimeIndicator';
 import LoadingMascot from '../common/LoadingMascot';
 import TaskLoadingCard from '../common/TaskLoadingCard';
 // Removed collaboration components - not needed for core functionality
