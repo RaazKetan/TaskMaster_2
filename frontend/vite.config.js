@@ -10,10 +10,15 @@ export default defineConfig({
   server: {
     port: 5000,
     host: '0.0.0.0',
-    allowedHosts: ['all'],
+    allowedHosts: [
+      'all',
+      'a0aa5d3f-70ff-436a-bcc8-25645a48fed4-00-1kt65dlszcfqs.sisko.replit.dev',
+      '.replit.dev',
+      'localhost'
+    ],
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: 'http://0.0.0.0:8000',
         changeOrigin: true,
         secure: false,
       }
