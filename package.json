@@ -1,6 +1,7 @@
 {
   "name": "workspace",
   "version": "1.0.0",
+  "description": "A modern project management platform with React frontend and Spring Boot backend.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -8,24 +9,17 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
   "dependencies": {
     "@heroicons/react": "^2.2.0",
-    "@tailwindcss/postcss": "^4.1.8",
-    "@tailwindcss/vite": "^4.1.8",
-    "@vitejs/plugin-react": "^4.5.0",
+    "@vitejs/plugin-react": "^4.5.1",
     "autoprefixer": "^10.4.21",
     "axios": "^1.9.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
-    "eslint": "^9.28.0",
-    "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "^5.2.0",
-    "eslint-plugin-react-refresh": "^0.4.20",
     "framer-motion": "^12.16.0",
     "jwt-decode": "^4.0.0",
-    "lucide-react": "^0.511.0",
+    "lucide-react": "^0.513.0",
     "postcss": "^8.5.4",
     "react": "^19.1.0",
     "react-countup": "^6.5.3",
@@ -33,8 +27,10 @@
     "react-dnd-html5-backend": "^16.0.1",
     "react-dom": "^19.1.0",
     "react-hot-toast": "^2.5.2",
-    "react-router-dom": "^7.6.1",
+    "react-router-dom": "^7.6.2",
     "recharts": "^2.15.3",
+    "tailwind-merge": "^3.3.0",
+    "tailwindcss": "^4.1.8",
     "vite": "^6.3.5"
   }
 }

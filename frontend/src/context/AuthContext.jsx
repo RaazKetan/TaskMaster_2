@@ -16,11 +16,7 @@ export function AuthProvider({ children }) {
     const sessionToken = localStorage.getItem('sessionToken');
     const userDataString = localStorage.getItem('userData');
     
-    console.log('AuthProvider useEffect - checking stored session:', {
-      hasSessionToken: !!sessionToken,
-      hasUserData: !!userDataString,
-      sessionToken: sessionToken
-    });
+    // Check stored session
     
     if (sessionToken && userDataString) {
       try {
@@ -72,7 +68,7 @@ export function AuthProvider({ children }) {
         
         // Clear any existing storage first
         localStorage.removeItem('sessionToken');
-        localStorage.removeItem('user');
+        localStorage.removeItem('userData');
         
         // Store the exact session token from MongoDB
         localStorage.setItem('sessionToken', response.data.sessionToken);

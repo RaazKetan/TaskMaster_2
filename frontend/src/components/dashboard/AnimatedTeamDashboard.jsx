@@ -30,8 +30,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Progress } from '../ui/progress';
 import LoadingMascot from '../common/LoadingMascot';
 import TaskLoadingCard from '../common/TaskLoadingCard';
-import CollaborationTooltip from '../collaboration/CollaborationTooltip';
-import RealTimeIndicator from '../collaboration/RealTimeIndicator';
+// Removed collaboration components - not needed for core functionality
 import api from '../../services/api';
 
 const AnimatedTeamDashboard = () => {

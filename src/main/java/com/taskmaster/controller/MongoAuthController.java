@@ -14,11 +14,6 @@ import java.util.*;
 @CrossOrigin(origins = "*")
 public class MongoAuthController {
 
-    @GetMapping("/test")
-    public ResponseEntity<?> test() {
-        return ResponseEntity.ok(Map.of("message", "API is working", "timestamp", new Date()));
-    }
-
     @Autowired
     private UserRepository userRepository;
 

@@ -1,11 +1,11 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import './index.css';
-import App from './App_Simple.jsx';
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App_Simple.jsx'
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(
+console.log('Main.jsx loading...')
+
+ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <App />
-  </React.StrictMode>
-);
+  </React.StrictMode>,
+)

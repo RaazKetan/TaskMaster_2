@@ -3,19 +3,13 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './context/AuthContext.jsx';
 import Login from './components/auth/Login.jsx';
 import Register from './components/auth/Register.jsx';
-import TaskMasterDashboard from './components/Dashboard/TaskMasterDashboard.jsx';
 import ShadcnNavbar from './components/layout/ShadcnNavbar.jsx';
 import TeamList from './components/teams/TeamList.jsx';
 import TeamDetail from './components/teams/TeamDetail.jsx';
 import ProjectList from './components/projects/ProjectList.jsx';
-import ProjectManagement from './components/projects/ProjectManagement.jsx';
 import ShadcnProjectManagement from './components/projects/ShadcnProjectManagement.jsx';
 import ShadcnTeamManagement from './components/teams/ShadcnTeamManagement.jsx';
 import AnimatedTeamDashboard from './components/dashboard/AnimatedTeamDashboard.jsx';
-import LoadingDemo from './components/common/LoadingDemo.jsx';
-import ProjectDetail from './components/projects/ProjectDetail.jsx';
-import KanbanBoard from './components/kanban/KanbanBoard.jsx';
-import TaskPriorityVisualizer from './components/tasks/TaskPriorityVisualizer.jsx';
 import PrivateRoute from './components/auth/PrivateRoute.jsx';
 import LandingPage from './components/LandingPage.jsx';
 import './App.css'
