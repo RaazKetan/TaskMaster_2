@@ -46,17 +46,21 @@ const ShadcnTeamManagement = () => {
 const fetchTeams = async () => {
     try {
         setLoading(true);
-        const userId = getCurrentUserId();
         
-        if (!userId) {
-            setTeams([]);
-            setLoading(false);
+        // Get current user ID from localStorage
+        const userData = localStorage.getItem('userData');
+        const currentUser = userData ? JSON.parse(userData) : null;
+        
+        if (!currentUser || !currentUser.userId) {
+            setError('User not authenticated');
             return;
         }
-
-        // Update the endpoint as per new structure
-        const response = await api.get(`/api/teams/${userId}`);
-        setTeams(response.data);
+        
+        const response = await api.get('/teams', {
+            params: { userId: currentUser.userId }
+        });
+        const teams = response.data || [];
+        setTeams(teams);
         setError('');
     } catch (err) {
         setError('Failed to fetch teams: ' + err.message);

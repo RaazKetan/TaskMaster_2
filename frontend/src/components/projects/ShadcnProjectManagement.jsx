@@ -69,29 +69,36 @@ const ShadcnProjectManagement = () => {
         setLoading(true);
         setError(null);
         
-        // Fetch teams and projects for current user
-        const userId = getCurrentUserId();
-        
-        if (!userId) {
-          setTeams([]);
-          setProjects([]);
-          setLoading(false);
+        // Get current user data from localStorage
+        const userData = localStorage.getItem('userData');
+        if (!userData) {
+          setError('No user data found. Please log in again.');
           return;
         }
-        // Fetch user data which contains both teams and projects
-        const userResponse = await api.get(`/user/${userId}`);
         
-        console.log('User data fetched:', userResponse.data);
+        const parsedUserData = JSON.parse(userData);
+        const userId = parsedUserData.userId;
         
-        // Get teams and projects from user document
-        const userTeams = userResponse.data.teams || [];
-        const userProjects = userResponse.data.projects || [];
-        
-        setTeams(userTeams);
+        if (!userId) {
+          setError('Invalid user data. Please log in again.');
+          return;
+        }
+
+        // Fetch teams and projects data with userId parameter
+        const teamsResponse = await api.get('/teams', {
+          params: { userId: userId }
+        });
+        const teams = teamsResponse.data || [];
+        setTeams(teams);
+
+        const projectsResponse = await api.get('/projects', {
+          params: { userId: userId }
+        });
+        const projects = projectsResponse.data || [];
         
         // Add team names to projects
-        const projectsWithTeamNames = userProjects.map(project => {
-          const team = userTeams.find(t => t.id === project.teamId);
+        const projectsWithTeamNames = projects.map(project => {
+          const team = teams.find(t => (t._id || t.id) === project.teamId);
           return {
             ...project,
             teamName: team ? team.name : 'Unknown Team'

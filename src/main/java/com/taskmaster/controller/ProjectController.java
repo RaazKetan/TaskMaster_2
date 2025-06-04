@@ -23,7 +23,7 @@ public class ProjectController {
                 return ResponseEntity.badRequest().body(Map.of("error", "User ID is required"));
             }
 
-            User user = userService.findByUserId(userId);
+            User user = userRepository.findByUserId(userId);
             if (user == null) {
                 return ResponseEntity.notFound().build();
             }
@@ -115,7 +115,7 @@ public class ProjectController {
     @GetMapping("/projects/{projectId}")
     public ResponseEntity<?> getProject(@PathVariable String projectId, @RequestParam String userId) {
         try {
-            User user = userService.findByUserId(userId);
+            User user = userRepository.findByUserId(userId);
             if (user == null) {
                 return ResponseEntity.notFound().build();
             }
@@ -148,7 +148,7 @@ public class ProjectController {
                 return ResponseEntity.badRequest().body(Map.of("error", "User ID is required"));
             }
 
-            User user = userService.findByUserId(userId);
+            User user = userRepository.findByUserId(userId);
             if (user == null) {
                 return ResponseEntity.notFound().build();
             }
@@ -172,7 +172,7 @@ public class ProjectController {
                     }
                     
                     user.setProjects(projects);
-                    userService.save(user);
+                    userRepository.save(user);
                     
                     return ResponseEntity.ok(project);
                 }
@@ -188,7 +188,7 @@ public class ProjectController {
     @DeleteMapping("/projects/{projectId}")
     public ResponseEntity<?> deleteProject(@PathVariable String projectId, @RequestParam String userId) {
         try {
-            User user = userService.findByUserId(userId);
+            User user = userRepository.findByUserId(userId);
             if (user == null) {
                 return ResponseEntity.notFound().build();
             }
@@ -202,7 +202,7 @@ public class ProjectController {
             
             if (removed) {
                 user.setProjects(projects);
-                userService.save(user);
+                userRepository.save(user);
                 return ResponseEntity.ok(Map.of("message", "Project deleted successfully"));
             } else {
                 return ResponseEntity.notFound().build();

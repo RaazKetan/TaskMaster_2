@@ -86,7 +86,7 @@ public class TeamController {
     @GetMapping("/teams/{teamId}")
     public ResponseEntity<?> getTeam(@PathVariable String teamId, @RequestParam String userId) {
         try {
-            User user = userService.findByUserId(userId);
+            User user = userRepository.findByUserId(userId);
             if (user == null) {
                 return ResponseEntity.notFound().build();
             }
@@ -119,7 +119,7 @@ public class TeamController {
                 return ResponseEntity.badRequest().body(Map.of("error", "User ID is required"));
             }
 
-            User user = userService.findByUserId(userId);
+            User user = userRepository.findByUserId(userId);
             if (user == null) {
                 return ResponseEntity.notFound().build();
             }
@@ -136,7 +136,7 @@ public class TeamController {
                     team.put("updatedAt", new Date());
                     
                     user.setTeams(teams);
-                    userService.save(user);
+                    userRepository.save(user);
                     
                     return ResponseEntity.ok(team);
                 }
@@ -152,7 +152,7 @@ public class TeamController {
     @DeleteMapping("/teams/{teamId}")
     public ResponseEntity<?> deleteTeam(@PathVariable String teamId, @RequestParam String userId) {
         try {
-            User user = userService.findByUserId(userId);
+            User user = userRepository.findByUserId(userId);
             if (user == null) {
                 return ResponseEntity.notFound().build();
             }
@@ -166,7 +166,7 @@ public class TeamController {
             
             if (removed) {
                 user.setTeams(teams);
-                userService.save(user);
+                userRepository.save(user);
                 return ResponseEntity.ok(Map.of("message", "Team deleted successfully"));
             } else {
                 return ResponseEntity.notFound().build();
