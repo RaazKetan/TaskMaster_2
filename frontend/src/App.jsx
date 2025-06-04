@@ -18,6 +18,7 @@ import KanbanBoard from './components/kanban/KanbanBoard.jsx';
 import TaskPriorityVisualizer from './components/tasks/TaskPriorityVisualizer.jsx';
 import PrivateRoute from './components/auth/PrivateRoute.jsx';
 import LandingPage from './components/LandingPage.jsx';
+import UserProfile from './components/profile/UserProfile.jsx';
 import './App.css'
 
 function AppContent() {
@@ -78,6 +79,18 @@ function AppContent() {
           <Route path="/projects" element={
             <PrivateRoute>
               <ShadcnProjectManagement />
+            </PrivateRoute>
+          } />
+          
+          <Route path="/tasks" element={
+            <PrivateRoute>
+              <TaskPriorityVisualizer />
+            </PrivateRoute>
+          } />
+          
+          <Route path="/profile" element={
+            <PrivateRoute>
+              <UserProfile />
             </PrivateRoute>
           } />
 
