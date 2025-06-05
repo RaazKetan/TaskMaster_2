@@ -1,3 +1,4 @@
+
 export const PRIORITY_LEVELS = {
   LOW: 'LOW',
   MEDIUM: 'MEDIUM',
@@ -9,6 +10,12 @@ export const TASK_STATUS = {
   TODO: 'TODO',
   IN_PROGRESS: 'IN_PROGRESS',
   DONE: 'DONE'
+};
+
+export const TASK_STATUSES = {
+  TODO: 'TODO',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED'
 };
 
 export const PROJECT_STATUS = {
@@ -24,19 +31,19 @@ export const TEAM_ROLES = {
 };
 
 export const PRIORITY_COLORS = {
-  LOW: 'priority-low',
-  MEDIUM: 'priority-medium',
-  HIGH: 'priority-high',
-  URGENT: 'priority-urgent'
+  LOW: '#059669',
+  MEDIUM: '#D97706', 
+  HIGH: '#EA580C',
+  URGENT: '#DC2626'
 };
 
 export const STATUS_COLORS = {
-  TODO: 'status-todo',
-  IN_PROGRESS: 'status-in-progress',
-  DONE: 'status-done',
-  ACTIVE: 'status-in-progress',
-  COMPLETED: 'status-done',
-  ON_HOLD: 'status-todo'
+  TODO: '#6B7280',
+  IN_PROGRESS: '#2563EB',
+  DONE: '#059669',
+  ACTIVE: '#2563EB',
+  COMPLETED: '#059669',
+  ON_HOLD: '#6B7280'
 };
 
 export const KANBAN_COLUMNS = [

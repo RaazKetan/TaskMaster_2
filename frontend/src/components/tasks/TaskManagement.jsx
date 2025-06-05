@@ -1,30 +1,32 @@
+
 import React, { useState, useEffect } from 'react';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
-import { Plus, User, Calendar, Flag, Filter, Search, Clock, CheckCircle } from 'lucide-react';
+import { Plus, User, Calendar, Flag, Filter, Search, Clock, CheckCircle, AlertTriangle, AlertCircle, Zap } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { PRIORITY_COLORS, TASK_STATUSES } from '../../utils/constants';
-// import LoadingMascot, { TaskLoadingCard } from '../ui/LoadingMascot';
 import CreateTaskModal from './CreateTaskModal';
 import EditTaskModal from './EditTaskModal';
 import api from '../../services/api';
 import { getCurrentUserId } from '../../utils/auth';
+import { motion } from 'framer-motion';
 
 const TaskManagement = () => {
   const [loading, setLoading] = useState(true);
   const [tasks, setTasks] = useState([]);
   const [projects, setProjects] = useState([]);
   const [selectedProject, setSelectedProject] = useState('all');
-  const [selectedPriority, setSelectedPriority] = useState('all');
+  const [selectedStatus, setSelectedStatus] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [editingTask, setEditingTask] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [error, setError] = useState('');
   const [showCreateTask, setShowCreateTask] = useState(false);
+  const [draggedTask, setDraggedTask] = useState(null);
 
   const fetchTasksAndProjects = async () => {
     try {
@@ -36,7 +38,6 @@ const TaskManagement = () => {
         return;
       }
 
-      // Fetch projects and tasks
       const [projectsResponse, tasksResponse] = await Promise.all([
         api.get('/projects', { params: { userId } }),
         api.get('/tasks', { params: { userId } })
@@ -51,7 +52,6 @@ const TaskManagement = () => {
       
       console.log('Projects loaded:', projectsData.length);
       console.log('Tasks loaded:', tasksData.length);
-      console.log('Sample tasks:', tasksData.slice(0, 2));
     } catch (error) {
       console.error('Error fetching tasks and projects:', error);
       setError('Failed to load tasks and projects');
@@ -63,11 +63,34 @@ const TaskManagement = () => {
   useEffect(() => {
     fetchTasksAndProjects();
     
-    // Real-time updates every 10 seconds
-    const interval = setInterval(fetchTasksAndProjects, 10000);
-    
+    const interval = setInterval(fetchTasksAndProjects, 15000);
     return () => clearInterval(interval);
   }, []);
+
+  const handleTaskPriorityUpdate = async (taskId, newPriority) => {
+    try {
+      const userId = getCurrentUserId();
+      
+      await api.put(`/tasks/${taskId}`, {
+        priority: newPriority,
+        userId: userId
+      });
+      
+      setTasks(prevTasks => 
+        prevTasks.map(task => 
+          (task._id || task.id) === taskId 
+            ? { ...task, priority: newPriority } 
+            : task
+        )
+      );
+
+      console.log(`Task ${taskId} priority updated to ${newPriority}`);
+    } catch (error) {
+      console.error('Error updating task priority:', error);
+      setError('Failed to update task priority');
+      fetchTasksAndProjects();
+    }
+  };
 
   const handleTaskStatusUpdate = async (taskId, newStatus) => {
     try {
@@ -78,7 +101,6 @@ const TaskManagement = () => {
         userId: userId
       });
       
-      // Update local state immediately
       setTasks(prevTasks => 
         prevTasks.map(task => 
           (task._id || task.id) === taskId 
@@ -87,10 +109,9 @@ const TaskManagement = () => {
         )
       );
 
-      // Update project status based on task completion
       updateProjectStatus(taskId, newStatus);
     } catch (error) {
-      console.error('Error updating task:', error);
+      console.error('Error updating task status:', error);
       setError('Failed to update task status');
       fetchTasksAndProjects();
     }
@@ -120,7 +141,6 @@ const TaskManagement = () => {
         projectStatus = 'IN_PROGRESS';
       }
 
-      // Update project status and progress
       await api.put(`/projects/${task.projectId}`, {
         status: projectStatus,
         progress: progress,
@@ -132,32 +152,78 @@ const TaskManagement = () => {
     }
   };
 
+  const handleEditTask = (task) => {
+    setEditingTask(task);
+    setShowEditModal(true);
+  };
+
+  const handleDeleteTask = async (taskId) => {
+    if (!window.confirm('Are you sure you want to delete this task?')) return;
+
+    try {
+      const userId = getCurrentUserId();
+      await api.delete(`/tasks/${taskId}`, { params: { userId } });
+      setTasks(prev => prev.filter(task => (task._id || task.id) !== taskId));
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      setError('Failed to delete task');
+    }
+  };
+
+  const updateTask = async (updatedTask) => {
+    try {
+      setTasks(prev => prev.map(task => 
+        (task._id || task.id) === (updatedTask._id || updatedTask.id) ? updatedTask : task
+      ));
+      fetchTasksAndProjects();
+    } catch (error) {
+      console.error('Error updating task:', error);
+    }
+  };
+
   const filteredTasks = tasks.filter(task => {
     const matchesProject = selectedProject === 'all' || task.projectId === selectedProject;
-    const matchesPriority = selectedPriority === 'all' || task.priority === selectedPriority;
+    const matchesStatus = selectedStatus === 'all' || task.status === selectedStatus;
     const matchesSearch = (task.title || task.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (task.description || '').toLowerCase().includes(searchTerm.toLowerCase());
     
-    return matchesProject && matchesPriority && matchesSearch;
+    return matchesProject && matchesStatus && matchesSearch;
   });
 
   const TaskCard = ({ task }) => {
     const [{ isDragging }, drag] = useDrag({
       type: 'task',
-      item: { id: task._id || task.id, status: task.status },
+      item: { 
+        id: task._id || task.id, 
+        priority: task.priority,
+        status: task.status 
+      },
       collect: (monitor) => ({
         isDragging: monitor.isDragging(),
       }),
+      begin: () => {
+        setDraggedTask(task);
+      },
+      end: () => {
+        setDraggedTask(null);
+      }
     });
 
     const project = projects.find(p => (p._id || p.id) === task.projectId);
-    const priorityColor = PRIORITY_COLORS[task.priority] || PRIORITY_COLORS.MEDIUM;
+    const priorityColor = PRIORITY_COLORS[task.priority] || '#6B7280';
 
     return (
-      <div ref={drag}>
+      <motion.div 
+        ref={drag}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+      >
         <Card
-          className={`cursor-move transition-all duration-200 hover:shadow-md mb-3 ${
-            isDragging ? 'opacity-50 rotate-2 scale-105' : ''
+          className={`cursor-move transition-all duration-200 hover:shadow-lg mb-3 ${
+            isDragging ? 'opacity-50 rotate-2 scale-105 shadow-2xl' : ''
           }`}
           style={{ borderLeft: `4px solid ${priorityColor}` }}
         >
@@ -168,7 +234,7 @@ const TaskManagement = () => {
               </h3>
               <Badge 
                 variant="outline" 
-                className="ml-2 text-xs"
+                className="ml-2 text-xs font-medium"
                 style={{ 
                   backgroundColor: `${priorityColor}20`,
                   borderColor: priorityColor,
@@ -205,33 +271,40 @@ const TaskManagement = () => {
               )}
             </div>
             
-            {/* Task Actions */}
-            <div className="flex justify-end space-x-1 mt-2">
-              <button
-                onClick={() => handleEditTask(task)}
-                className="text-blue-500 hover:text-blue-700 text-xs px-2 py-1 rounded bg-blue-50 hover:bg-blue-100 transition-colors"
+            <div className="flex items-center justify-between">
+              <Badge 
+                variant="secondary" 
+                className="text-xs"
               >
-                Edit
-              </button>
-              <button
-                onClick={() => deleteTask(task._id || task.id)}
-                className="text-red-500 hover:text-red-700 text-xs px-2 py-1 rounded bg-red-50 hover:bg-red-100 transition-colors"
-              >
-                Delete
-              </button>
+                {task.status}
+              </Badge>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => handleEditTask(task)}
+                  className="text-blue-500 hover:text-blue-700 text-xs px-2 py-1 rounded bg-blue-50 hover:bg-blue-100 transition-colors"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDeleteTask(task._id || task.id)}
+                  className="text-red-500 hover:text-red-700 text-xs px-2 py-1 rounded bg-red-50 hover:bg-red-100 transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
           </CardContent>
         </Card>
-      </div>
+      </motion.div>
     );
   };
 
-  const StatusColumn = ({ status, title, tasks, icon: Icon }) => {
+  const PriorityColumn = ({ priority, title, tasks, icon: Icon, color }) => {
     const [{ isOver }, drop] = useDrop({
       accept: 'task',
       drop: (item) => {
-        if (item.status !== status) {
-          handleTaskStatusUpdate(item.id, status);
+        if (item.priority !== priority) {
+          handleTaskPriorityUpdate(item.id, priority);
         }
       },
       collect: (monitor) => ({
@@ -242,12 +315,12 @@ const TaskManagement = () => {
     return (
       <div 
         ref={drop}
-        className={`flex-1 min-h-[600px] transition-colors duration-200 ${
-          isOver ? 'bg-blue-50 border-2 border-blue-300 border-dashed' : 'bg-slate-50'
-        } rounded-lg p-4`}
+        className={`flex-1 min-h-[600px] transition-all duration-300 ${
+          isOver ? 'bg-gradient-to-b from-blue-50 to-blue-100 border-2 border-blue-300 border-dashed scale-[1.02]' : 'bg-slate-50'
+        } rounded-lg p-4 shadow-sm`}
       >
         <div className="flex items-center gap-2 mb-4">
-          <Icon className="w-5 h-5 text-slate-600" />
+          <Icon className="w-5 h-5" style={{ color }} />
           <h3 className="font-semibold text-slate-800">{title}</h3>
           <Badge variant="secondary" className="ml-auto">
             {tasks.length}
@@ -261,10 +334,15 @@ const TaskManagement = () => {
         </div>
         
         {tasks.length === 0 && (
-          <div className="text-center py-8 text-slate-400">
-            <Icon className="w-12 h-12 mx-auto mb-2 opacity-50" />
+          <motion.div 
+            className="text-center py-8 text-slate-400"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+          >
+            <Icon className="w-12 h-12 mx-auto mb-2 opacity-50" style={{ color }} />
             <p>No {title.toLowerCase()} tasks</p>
-          </div>
+          </motion.div>
         )}
       </div>
     );
@@ -276,24 +354,13 @@ const TaskManagement = () => {
         <div className="p-8">
           <div className="max-w-7xl mx-auto">
             <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <motion.div 
+                className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              />
               <h2 className="text-xl font-semibold text-slate-700 mb-2">Loading your task board...</h2>
               <p className="text-slate-500">Fetching projects and tasks from database</p>
-            </div>
-            
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="p-6 animate-pulse">
-                <div className="h-4 bg-slate-200 rounded mb-2"></div>
-                <div className="h-8 bg-slate-200 rounded"></div>
-              </Card>
-              <Card className="p-6 animate-pulse">
-                <div className="h-4 bg-slate-200 rounded mb-2"></div>
-                <div className="h-8 bg-slate-200 rounded"></div>
-              </Card>
-              <Card className="p-6 animate-pulse">
-                <div className="h-4 bg-slate-200 rounded mb-2"></div>
-                <div className="h-8 bg-slate-200 rounded"></div>
-              </Card>
             </div>
           </div>
         </div>
@@ -319,22 +386,11 @@ const TaskManagement = () => {
     );
   }
 
-  const todoTasks = filteredTasks.filter(task => 
-    task.status === 'TODO' || task.status === 'Planning' || task.status === 'PLANNING'
-  );
-  const inProgressTasks = filteredTasks.filter(task => 
-    task.status === 'IN_PROGRESS' || task.status === 'In Progress' || task.status === 'ACTIVE'
-  );
-  const completedTasks = filteredTasks.filter(task => 
-    task.status === 'COMPLETED' || task.status === 'Done'
-  );
-
-  console.log('Filtered tasks breakdown:', {
-    total: filteredTasks.length,
-    todo: todoTasks.length,
-    inProgress: inProgressTasks.length,
-    completed: completedTasks.length
-  });
+  // Group tasks by priority
+  const urgentTasks = filteredTasks.filter(task => task.priority === 'URGENT');
+  const highTasks = filteredTasks.filter(task => task.priority === 'HIGH');
+  const mediumTasks = filteredTasks.filter(task => task.priority === 'MEDIUM');
+  const lowTasks = filteredTasks.filter(task => task.priority === 'LOW');
 
   return (
     <DndProvider backend={HTML5Backend}>
@@ -342,106 +398,147 @@ const TaskManagement = () => {
         <div className="p-8">
           <div className="max-w-7xl mx-auto">
             {/* Header */}
-            <div className="mb-8">
+            <motion.div 
+              className="mb-8"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
               <h1 className="text-3xl font-bold text-slate-900 mb-2">Task Management</h1>
-              <p className="text-slate-600">Organize and track your project tasks</p>
-            </div>
+              <p className="text-slate-600">Organize tasks by priority and drag to update</p>
+            </motion.div>
 
             {/* Filters */}
-            <Card className="mb-6">
-              <CardContent className="p-6">
-                <div className="flex flex-wrap items-center gap-4">
-                  <div className="relative flex-1 max-w-sm">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
-                    <Input
-                      type="text"
-                      placeholder="Search tasks..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
+              <Card className="mb-6">
+                <CardContent className="p-6">
+                  <div className="flex flex-wrap items-center gap-4">
+                    <div className="relative flex-1 max-w-sm">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+                      <Input
+                        type="text"
+                        placeholder="Search tasks..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                    
+                    <Select value={selectedProject} onValueChange={setSelectedProject}>
+                      <SelectTrigger className="w-[200px]">
+                        <SelectValue placeholder="All Projects" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Projects</SelectItem>
+                        {projects.map(project => (
+                          <SelectItem key={project._id || project.id} value={project._id || project.id}>
+                            {project.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="All Statuses" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Statuses</SelectItem>
+                        <SelectItem value="TODO">To Do</SelectItem>
+                        <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                        <SelectItem value="COMPLETED">Completed</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Button 
+                      onClick={() => setShowCreateTask(true)}
+                      className="ml-auto"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Task
+                    </Button>
                   </div>
-                  
-                  <Select value={selectedProject} onValueChange={setSelectedProject}>
-                    <SelectTrigger className="w-[200px]">
-                      <SelectValue placeholder="All Projects" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Projects</SelectItem>
-                      {projects.map(project => (
-                        <SelectItem key={project._id || project.id} value={project._id || project.id}>
-                          {project.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={selectedPriority} onValueChange={setSelectedPriority}>
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="All Priorities" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Priorities</SelectItem>
-                      <SelectItem value="HIGH">High Priority</SelectItem>
-                      <SelectItem value="MEDIUM">Medium Priority</SelectItem>
-                      <SelectItem value="LOW">Low Priority</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  <Button 
-                    onClick={() => setShowCreateTask(true)}
-                    className="ml-auto"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Task
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Task Board */}
-            {tasks.length === 0 ? (
-              <Card className="text-center py-12">
-                <CardContent>
-                  <Clock className="w-16 h-16 mx-auto mb-4 text-slate-300" />
-                  <h3 className="text-lg font-semibold text-slate-600 mb-2">No Tasks Yet</h3>
-                  <p className="text-slate-500 mb-4">Create your first task to get started with project management</p>
-                  <Button onClick={() => setShowCreateTask(true)}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Create First Task
-                  </Button>
                 </CardContent>
               </Card>
+            </motion.div>
+
+            {/* Task Priority Board */}
+            {tasks.length === 0 ? (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5 }}
+              >
+                <Card className="text-center py-12">
+                  <CardContent>
+                    <Clock className="w-16 h-16 mx-auto mb-4 text-slate-300" />
+                    <h3 className="text-lg font-semibold text-slate-600 mb-2">No Tasks Yet</h3>
+                    <p className="text-slate-500 mb-4">Create your first task to get started with priority management</p>
+                    <Button onClick={() => setShowCreateTask(true)}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create First Task
+                    </Button>
+                  </CardContent>
+                </Card>
+              </motion.div>
             ) : (
-              <div className="flex gap-6 overflow-x-auto">
-                <StatusColumn
-                  status="TODO"
-                  title="To Do"
-                  tasks={todoTasks}
+              <motion.div 
+                className="flex gap-6 overflow-x-auto pb-6"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
+                <PriorityColumn
+                  priority="URGENT"
+                  title="Urgent"
+                  tasks={urgentTasks}
+                  icon={Zap}
+                  color="#DC2626"
+                />
+                <PriorityColumn
+                  priority="HIGH"
+                  title="High Priority"
+                  tasks={highTasks}
+                  icon={AlertTriangle}
+                  color="#EA580C"
+                />
+                <PriorityColumn
+                  priority="MEDIUM"
+                  title="Medium Priority"
+                  tasks={mediumTasks}
+                  icon={AlertCircle}
+                  color="#D97706"
+                />
+                <PriorityColumn
+                  priority="LOW"
+                  title="Low Priority"
+                  tasks={lowTasks}
                   icon={Clock}
+                  color="#059669"
                 />
-                <StatusColumn
-                  status="IN_PROGRESS"
-                  title="In Progress"
-                  tasks={inProgressTasks}
-                  icon={Flag}
-                />
-                <StatusColumn
-                  status="COMPLETED"
-                  title="Completed"
-                  tasks={completedTasks}
-                  icon={CheckCircle}
-                />
-              </div>
+              </motion.div>
             )}
 
             {/* Real-time indicator */}
-            <div className="fixed bottom-4 right-4">
-              <div className="flex items-center space-x-2 bg-green-100 text-green-700 px-3 py-2 rounded-full text-sm">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <motion.div 
+              className="fixed bottom-4 right-4"
+              initial={{ opacity: 0, x: 100 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.5 }}
+            >
+              <div className="flex items-center space-x-2 bg-green-100 text-green-700 px-3 py-2 rounded-full text-sm shadow-lg">
+                <motion.div 
+                  className="w-2 h-2 bg-green-500 rounded-full"
+                  animate={{ scale: [1, 1.5, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                />
                 <span>Live sync</span>
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
 
@@ -451,7 +548,7 @@ const TaskManagement = () => {
           onClose={() => setShowCreateTask(false)}
           onTaskCreated={(newTask) => {
             setTasks(prev => [...prev, newTask]);
-            fetchTasksAndProjects(); // Refresh data
+            fetchTasksAndProjects();
           }}
           projects={projects}
         />
