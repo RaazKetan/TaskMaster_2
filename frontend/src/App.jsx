@@ -84,7 +84,7 @@ function AppContent() {
           
           <Route path="/tasks" element={
             <PrivateRoute>
-              <TaskPriorityVisualizer />
+              <TaskManagement />
             </PrivateRoute>
           } />
           
