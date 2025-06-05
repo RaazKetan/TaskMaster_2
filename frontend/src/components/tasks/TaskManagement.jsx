@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { PRIORITY_COLORS, TASK_STATUSES } from '../../utils/constants';
 // import LoadingMascot, { TaskLoadingCard } from '../ui/LoadingMascot';
 import CreateTaskModal from './CreateTaskModal';
+import EditTaskModal from './EditTaskModal';
 import api from '../../services/api';
 import { getCurrentUserId } from '../../utils/auth';
 
@@ -20,6 +21,8 @@ const TaskManagement = () => {
   const [selectedProject, setSelectedProject] = useState('all');
   const [selectedPriority, setSelectedPriority] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [editingTask, setEditingTask] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [error, setError] = useState('');
   const [showCreateTask, setShowCreateTask] = useState(false);
 
@@ -434,6 +437,18 @@ const TaskManagement = () => {
             setTasks(prev => [...prev, newTask]);
             fetchTasksAndProjects(); // Refresh data
           }}
+          projects={projects}
+        />
+
+        {/* Edit Task Modal */}
+        <EditTaskModal
+          isOpen={showEditModal}
+          onClose={() => {
+            setShowEditModal(false);
+            setEditingTask(null);
+          }}
+          task={editingTask}
+          onTaskUpdated={updateTask}
           projects={projects}
         />
       </div>
