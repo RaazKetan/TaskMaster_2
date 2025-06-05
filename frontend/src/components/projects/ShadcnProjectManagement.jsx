@@ -216,12 +216,12 @@ const ShadcnProjectManagement = () => {
       if (editingProject) {
         // Update existing project in list
         setProjects(prev => prev.map(p => 
-          p.id === editingProject.id ? projectWithTeam : p
+          (p._id === editingProject._id || p.id === editingProject.id) ? projectWithTeam : p
         ));
         toast.success('Project updated successfully!');
       } else {
         // Animate new project creation
-        setAnimatingItems(prev => new Set([...prev, projectWithTeam.id]));
+        setAnimatingItems(prev => new Set([...prev, projectWithTeam._id || projectWithTeam.id]));
         setProjects(prev => [...prev, projectWithTeam]);
         
         // Trigger success pulse and remove animation after delay
@@ -230,7 +230,7 @@ const ShadcnProjectManagement = () => {
           setSuccessPulse(false);
           setAnimatingItems(prev => {
             const newSet = new Set(prev);
-            newSet.delete(projectWithTeam.id);
+            newSet.delete(projectWithTeam._id || projectWithTeam.id);
             return newSet;
           });
         }, 1000);
