@@ -198,7 +198,8 @@ public class ProjectController {
                 return ResponseEntity.notFound().build();
             }
 
-            boolean removed = projects.removeIf(project -> projectId.equals(project.get("_id")));
+            boolean removed = projects.removeIf(project -> 
+                projectId.equals(project.get("_id")) || projectId.equals(project.get("id")));
             
             if (removed) {
                 user.setProjects(projects);
