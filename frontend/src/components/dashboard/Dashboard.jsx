@@ -39,8 +39,7 @@ const Dashboard = () => {
         // Calculate task completion stats
         const completedTasks = tasks.filter(task => 
           task.status === 'COMPLETED' || 
-          task.status === 'Done' || 
-          task.status === 'COMPLETED'
+          task.status === 'Done'
         ).length;
 
         // Calculate stats
@@ -62,8 +61,8 @@ const Dashboard = () => {
 
     fetchDashboardData();
     
-    // Set up real-time updates every 30 seconds
-    const interval = setInterval(fetchDashboardData, 30000);
+    // Set up real-time updates every 15 seconds for more responsive data
+    const interval = setInterval(fetchDashboardData, 15000);
     
     return () => clearInterval(interval);
   }, [user]);
