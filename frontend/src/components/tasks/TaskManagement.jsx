@@ -8,7 +8,7 @@ import { Plus, User, Calendar, Flag, Filter, Search, Clock, CheckCircle } from '
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { PRIORITY_COLORS, TASK_STATUSES } from '../../utils/constants';
-import LoadingMascot, { TaskLoadingCard } from '../ui/LoadingMascot';
+// import LoadingMascot, { TaskLoadingCard } from '../ui/LoadingMascot';
 import CreateTaskModal from './CreateTaskModal';
 import api from '../../services/api';
 import { getCurrentUserId } from '../../utils/auth';
@@ -99,16 +99,16 @@ const TaskManagement = () => {
       if (!task || !task.projectId) return;
 
       const projectTasks = tasks.filter(t => t.projectId === task.projectId);
-      const completedTasks = projectTasks.filter(t => 
+      let completedTasksCount = projectTasks.filter(t => 
         t.status === 'COMPLETED' || t.status === 'Done'
       ).length;
       
       if (newTaskStatus === 'COMPLETED' || newTaskStatus === 'Done') {
-        completedTasks += 1;
+        completedTasksCount += 1;
       }
 
       const totalTasks = projectTasks.length;
-      const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+      const progress = totalTasks > 0 ? Math.round((completedTasksCount / totalTasks) * 100) : 0;
       
       let projectStatus = 'Planning';
       if (progress === 100) {
@@ -256,15 +256,25 @@ const TaskManagement = () => {
       <div className="min-h-screen bg-slate-50">
         <div className="p-8">
           <div className="max-w-7xl mx-auto">
-            <LoadingMascot 
-              message="Loading your task board..." 
-              size="large"
-            />
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <h2 className="text-xl font-semibold text-slate-700 mb-2">Loading your task board...</h2>
+              <p className="text-slate-500">Fetching projects and tasks from database</p>
+            </div>
             
             <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-              <TaskLoadingCard title="Loading pending tasks..." />
-              <TaskLoadingCard title="Organizing in progress..." />
-              <TaskLoadingCard title="Counting completed..." />
+              <Card className="p-6 animate-pulse">
+                <div className="h-4 bg-slate-200 rounded mb-2"></div>
+                <div className="h-8 bg-slate-200 rounded"></div>
+              </Card>
+              <Card className="p-6 animate-pulse">
+                <div className="h-4 bg-slate-200 rounded mb-2"></div>
+                <div className="h-8 bg-slate-200 rounded"></div>
+              </Card>
+              <Card className="p-6 animate-pulse">
+                <div className="h-4 bg-slate-200 rounded mb-2"></div>
+                <div className="h-8 bg-slate-200 rounded"></div>
+              </Card>
             </div>
           </div>
         </div>

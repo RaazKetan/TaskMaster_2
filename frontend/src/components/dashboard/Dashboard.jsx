@@ -26,11 +26,18 @@ const Dashboard = () => {
         }
 
         // Fetch teams, projects, and tasks with proper user filtering
+        console.log('Fetching dashboard data for userId:', userId);
         const [teamsResponse, projectsResponse, tasksResponse] = await Promise.all([
           api.get('/teams', { params: { userId } }),
           api.get('/projects', { params: { userId } }),
           api.get('/tasks', { params: { userId } })
         ]);
+        
+        console.log('Dashboard API responses:', {
+          teams: teamsResponse.data?.length || 0,
+          projects: projectsResponse.data?.length || 0,
+          tasks: tasksResponse.data?.length || 0
+        });
 
         const teams = teamsResponse.data || [];
         const projects = projectsResponse.data || [];

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { Textarea } from '../ui/textarea';
+// import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { X, Calendar, User, Flag } from 'lucide-react';
 import api from '../../services/api';
@@ -119,7 +119,8 @@ const CreateTaskModal = ({ isOpen, onClose, onTaskCreated, projects = [] }) => {
 
             <div>
               <label className="block text-sm font-medium mb-1">Description</label>
-              <Textarea
+              <textarea
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 value={formData.description}
                 onChange={(e) => handleInputChange('description', e.target.value)}
                 placeholder="Task description..."
