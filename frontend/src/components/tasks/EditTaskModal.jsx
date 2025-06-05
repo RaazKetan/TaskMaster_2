@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+
 import { X, Calendar, User, Flag, Save } from 'lucide-react';
 
 const EditTaskModal = ({ isOpen, onClose, task, onTaskUpdated, projects = [] }) => {
@@ -116,56 +116,46 @@ const EditTaskModal = ({ isOpen, onClose, task, onTaskUpdated, projects = [] }) 
 
             <div>
               <label className="block text-sm font-medium mb-1">Project</label>
-              <Select
+              <select
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 value={formData.projectId}
-                onValueChange={(value) => handleInputChange('projectId', value)}
+                onChange={(e) => handleInputChange('projectId', e.target.value)}
+                required
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a project" />
-                </SelectTrigger>
-                <SelectContent>
-                  {projects.map(project => (
-                    <SelectItem key={project._id || project.id} value={project._id || project.id}>
-                      {project.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <option value="">Select a project</option>
+                {projects.map(project => (
+                  <option key={project._id || project.id} value={project._id || project.id}>
+                    {project.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Priority</label>
-                <Select
+                <select
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   value={formData.priority}
-                  onValueChange={(value) => handleInputChange('priority', value)}
+                  onChange={(e) => handleInputChange('priority', e.target.value)}
                 >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="HIGH">High Priority</SelectItem>
-                    <SelectItem value="MEDIUM">Medium Priority</SelectItem>
-                    <SelectItem value="LOW">Low Priority</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <option value="HIGH">High Priority</option>
+                  <option value="MEDIUM">Medium Priority</option>
+                  <option value="LOW">Low Priority</option>
+                </select>
               </div>
 
               <div>
                 <label className="block text-sm font-medium mb-1">Status</label>
-                <Select
+                <select
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   value={formData.status}
-                  onValueChange={(value) => handleInputChange('status', value)}
+                  onChange={(e) => handleInputChange('status', e.target.value)}
                 >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="TODO">To Do</SelectItem>
-                    <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                    <SelectItem value="COMPLETED">Completed</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <option value="TODO">To Do</option>
+                  <option value="IN_PROGRESS">In Progress</option>
+                  <option value="COMPLETED">Completed</option>
+                </select>
               </div>
             </div>
 
