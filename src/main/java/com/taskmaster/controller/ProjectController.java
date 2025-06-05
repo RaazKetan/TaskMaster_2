@@ -159,7 +159,7 @@ public class ProjectController {
             }
 
             for (Map<String, Object> project : projects) {
-                if (projectId.equals(project.get("_id"))) {
+                if (projectId.equals(project.get("_id")) || projectId.equals(project.get("id"))) {
                     project.put("name", projectData.get("name"));
                     project.put("description", projectData.get("description"));
                     project.put("status", projectData.get("status"));
