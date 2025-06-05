@@ -174,8 +174,18 @@ const ShadcnProjectManagement = () => {
     setCreateLoading(true);
     
     try {
+      // Get current user data from localStorage
+      const userData = localStorage.getItem('userData');
+      const currentUser = userData ? JSON.parse(userData) : null;
+
+      if (!currentUser || !currentUser.userId) {
+        setError('User not authenticated');
+        return;
+      }
+
       const projectData = {
         ...createProjectForm,
+        userId: currentUser.userId,
         teamId: createProjectForm.teamId,
         progress: 0,
         createdAt: new Date().toISOString(),
@@ -185,7 +195,7 @@ const ShadcnProjectManagement = () => {
       let response;
       if (editingProject) {
         // Update existing project
-        response = await api.put(`/projects/${editingProject.id}`, projectData);
+        response = await api.put(`/projects/${editingProject._id || editingProject.id}`, projectData);
       } else {
         // Create new project
         response = await api.post('/projects', projectData);
@@ -248,11 +258,11 @@ const ShadcnProjectManagement = () => {
   const handleEditProject = (project) => {
     setEditingProject(project);
     setCreateProjectForm({
-      name: project.name,
-      description: project.description,
-      teamId: project.teamId,
-      priority: project.priority,
-      status: project.status,
+      name: project.name || '',
+      description: project.description || '',
+      teamId: project.teamId || '',
+      priority: project.priority || 'medium',
+      status: project.status || 'planning',
       deadline: project.deadline ? project.deadline.split('T')[0] : ''
     });
     setShowCreateModal(true); // Use the same modal for editing
