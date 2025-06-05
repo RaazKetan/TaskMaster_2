@@ -206,10 +206,11 @@ const ShadcnProjectManagement = () => {
       console.log('Project response:', response.data);
       
       // Add the new project to the list with team name
-      const selectedTeam = teams.find(team => team.id === createProjectForm.teamId);
+      const selectedTeam = teams.find(team => 
+        team._id === createProjectForm.teamId || team.id === createProjectForm.teamId || team.name === createProjectForm.teamId);
       const projectWithTeam = {
         ...response.data,
-        teamName: selectedTeam ? selectedTeam.name : 'Unknown Team'
+        teamName: selectedTeam ? selectedTeam.name : response.data.teamId || 'Unknown Team'
       };
       
       if (editingProject) {
