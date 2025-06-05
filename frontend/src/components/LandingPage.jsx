@@ -19,7 +19,7 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center">
-              <div className="w-8 h-8 bg-blue-600 rounded mr-2"></div>
+              <i className="ri-parent-line text-2xl text-blue-600 mr-2"></i>
               <span className="text-xl font-semibold text-gray-900">TaskMaster</span>
             </div>
             <div className="flex items-center space-x-4">
