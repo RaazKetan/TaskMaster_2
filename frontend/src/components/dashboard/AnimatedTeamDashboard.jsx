@@ -71,6 +71,7 @@ const AnimatedTeamDashboard = () => {
         // Get current user from localStorage
         const userData = localStorage.getItem('userData');
         const currentUser = userData ? JSON.parse(userData) : null;
+        console.log('::::::Current user:', currentUser)
         if (!currentUser) {
           setLoading(false);
           return;
