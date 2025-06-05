@@ -501,7 +501,7 @@ const ShadcnProjectManagement = () => {
                   </thead>
                   <tbody className="bg-white divide-y divide-slate-200">
                     {currentProjects.map((project, index) => (
-                      <tr key={project.id} className="hover:bg-slate-50 transition-colors">
+                      <tr key={project._id || project.id || index} className="hover:bg-slate-50 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-slate-900">
                             {project.name}
@@ -540,7 +540,7 @@ const ShadcnProjectManagement = () => {
                               <Edit className="w-4 h-4" />
                             </ScaleButton>
                             <ScaleButton
-                              onClick={() => handleDeleteProject(project.id)}
+                              onClick={() => handleDeleteProject(project._id || project.id)}
                               className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
                               title="Delete project"
                             >
