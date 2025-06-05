@@ -317,7 +317,7 @@ const fetchTeams = async () => {
                                 size="sm"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  deleteTeam(team._id);
+                                  handleDeleteTeam(team._id || team.id);
                                 }}
                                 className="text-red-600 hover:bg-red-50 h-6 w-6 p-0"
                                 title="Delete team"
@@ -507,7 +507,7 @@ const fetchTeams = async () => {
                     <Input
                       id="editTeamName"
                       required
-                      value={editingTeam.name}
+                      value={editingTeam.name || ''}
                       onChange={(e) => setEditingTeam(prev => ({ ...prev, name: e.target.value }))}
                       placeholder="Enter team name"
                     />
@@ -517,7 +517,7 @@ const fetchTeams = async () => {
                     <Label htmlFor="editTeamDescription">Description</Label>
                     <Textarea
                       id="editTeamDescription"
-                      value={editingTeam.description}
+                      value={editingTeam.description || ''}
                       onChange={(e) => setEditingTeam(prev => ({ ...prev, description: e.target.value }))}
                       placeholder="What does this team work on?"
                       rows={3}
@@ -544,10 +544,6 @@ const fetchTeams = async () => {
               </div>
             </div>
           )}
-
-          {/* Edit Team Modal */}
-          {showEditModal && editingTeam && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
               <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-semibold">Edit Team</h3>
