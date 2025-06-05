@@ -161,11 +161,13 @@ const fetchTeams = async () => {
       }
 
       const teamData = {
-        ...editingTeam,
-        userId: currentUser.userId
+        name: editingTeam.name,
+        description: editingTeam.description
       };
 
-      const response = await api.put(`/teams/${editingTeam._id}`, teamData);
+      const response = await api.put(`/teams/${editingTeam._id}`, teamData, {
+        params: { userId: currentUser.userId }
+      });
       
       // Update local state
       setTeams(prev => prev.map(team => 
@@ -174,9 +176,10 @@ const fetchTeams = async () => {
       
       setShowEditModal(false);
       setEditingTeam(null);
+      setError('');
     } catch (error) {
       console.error('Error updating team:', error);
-      setError('Failed to update team');
+      setError('Failed to update team: ' + (error.response?.data?.error || error.message));
     } finally {
       setCreateLoading(false);
     }
@@ -190,34 +193,11 @@ const fetchTeams = async () => {
       fetchTeams(); // Refresh teams to show updated member list
     } catch (error) {
       console.error('Error removing team member:', error);
+      setError('Failed to remove team member');
     }
   };
 
-  const deleteTeam = async (teamId) => {
-    if (!window.confirm('Are you sure you want to delete this team? This action cannot be undone and will also delete all associated projects.')) {
-      return;
-    }
-
-    try {
-      const storedUser = localStorage.getItem('userData');
-      const currentUser = storedUser ? JSON.parse(storedUser) : { userId: 'user_123', email: 'user@taskmaster.com' };
-      
-      await api.delete(`/teams/${teamId}`, {
-        params: { userId: currentUser.userId }
-      });
-      
-      // Remove from local state
-      setTeams(prev => prev.filter(team => team.id !== teamId));
-      
-      // If this was the selected team, clear selection
-      if (selectedTeam && selectedTeam.id === teamId) {
-        setSelectedTeam(null);
-      }
-    } catch (error) {
-      console.error('Error deleting team:', error);
-      setError('Failed to delete team. Please try again.');
-    }
-  };
+  
 
   if (loading) {
     return (
@@ -397,7 +377,7 @@ const fetchTeams = async () => {
                                     <Button
                                       size="sm"
                                       variant="outline"
-                                      onClick={() => removeTeamMember(selectedTeam.id, memberId)}
+                                      onClick={() => removeTeamMember(selectedTeam._id, memberId)}
                                     >
                                       <UserMinus className="w-4 h-4" />
                                     </Button>
