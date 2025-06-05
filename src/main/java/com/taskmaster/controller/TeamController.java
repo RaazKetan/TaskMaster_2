@@ -130,7 +130,7 @@ public class TeamController {
             }
 
             for (Map<String, Object> team : teams) {
-                if (teamId.equals(team.get("_id"))) {
+                if (teamId.equals(team.get("_id")) || teamId.equals(team.get("id"))) {
                     team.put("name", teamData.get("name"));
                     team.put("description", teamData.get("description"));
                     team.put("updatedAt", new Date());
@@ -162,7 +162,8 @@ public class TeamController {
                 return ResponseEntity.notFound().build();
             }
 
-            boolean removed = teams.removeIf(team -> teamId.equals(team.get("_id")));
+            boolean removed = teams.removeIf(team -> 
+                teamId.equals(team.get("_id")) || teamId.equals(team.get("id")));
             
             if (removed) {
                 user.setTeams(teams);
