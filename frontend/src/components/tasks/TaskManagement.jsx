@@ -9,6 +9,7 @@ import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { PRIORITY_COLORS, TASK_STATUSES } from '../../utils/constants';
 import LoadingMascot, { TaskLoadingCard } from '../ui/LoadingMascot';
+import CreateTaskModal from './CreateTaskModal';
 import api from '../../services/api';
 import { getCurrentUserId } from '../../utils/auth';
 
@@ -44,6 +45,10 @@ const TaskManagement = () => {
       setProjects(projectsData);
       setTasks(tasksData);
       setError('');
+      
+      console.log('Projects loaded:', projectsData.length);
+      console.log('Tasks loaded:', tasksData.length);
+      console.log('Sample tasks:', tasksData.slice(0, 2));
     } catch (error) {
       console.error('Error fetching tasks and projects:', error);
       setError('Failed to load tasks and projects');
@@ -292,8 +297,15 @@ const TaskManagement = () => {
     task.status === 'IN_PROGRESS' || task.status === 'In Progress' || task.status === 'ACTIVE'
   );
   const completedTasks = filteredTasks.filter(task => 
-    task.status === 'COMPLETED' || task.status === 'Done' || task.status === 'COMPLETED'
+    task.status === 'COMPLETED' || task.status === 'Done'
   );
+
+  console.log('Filtered tasks breakdown:', {
+    total: filteredTasks.length,
+    todo: todoTasks.length,
+    inProgress: inProgressTasks.length,
+    completed: completedTasks.length
+  });
 
   return (
     <DndProvider backend={HTML5Backend}>
@@ -359,26 +371,40 @@ const TaskManagement = () => {
             </Card>
 
             {/* Task Board */}
-            <div className="flex gap-6 overflow-x-auto">
-              <StatusColumn
-                status="TODO"
-                title="To Do"
-                tasks={todoTasks}
-                icon={Clock}
-              />
-              <StatusColumn
-                status="IN_PROGRESS"
-                title="In Progress"
-                tasks={inProgressTasks}
-                icon={Flag}
-              />
-              <StatusColumn
-                status="COMPLETED"
-                title="Completed"
-                tasks={completedTasks}
-                icon={CheckCircle}
-              />
-            </div>
+            {tasks.length === 0 ? (
+              <Card className="text-center py-12">
+                <CardContent>
+                  <Clock className="w-16 h-16 mx-auto mb-4 text-slate-300" />
+                  <h3 className="text-lg font-semibold text-slate-600 mb-2">No Tasks Yet</h3>
+                  <p className="text-slate-500 mb-4">Create your first task to get started with project management</p>
+                  <Button onClick={() => setShowCreateTask(true)}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create First Task
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="flex gap-6 overflow-x-auto">
+                <StatusColumn
+                  status="TODO"
+                  title="To Do"
+                  tasks={todoTasks}
+                  icon={Clock}
+                />
+                <StatusColumn
+                  status="IN_PROGRESS"
+                  title="In Progress"
+                  tasks={inProgressTasks}
+                  icon={Flag}
+                />
+                <StatusColumn
+                  status="COMPLETED"
+                  title="Completed"
+                  tasks={completedTasks}
+                  icon={CheckCircle}
+                />
+              </div>
+            )}
 
             {/* Real-time indicator */}
             <div className="fixed bottom-4 right-4">
@@ -389,6 +415,17 @@ const TaskManagement = () => {
             </div>
           </div>
         </div>
+
+        {/* Create Task Modal */}
+        <CreateTaskModal
+          isOpen={showCreateTask}
+          onClose={() => setShowCreateTask(false)}
+          onTaskCreated={(newTask) => {
+            setTasks(prev => [...prev, newTask]);
+            fetchTasksAndProjects(); // Refresh data
+          }}
+          projects={projects}
+        />
       </div>
     </DndProvider>
   );

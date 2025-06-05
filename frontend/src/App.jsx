@@ -15,7 +15,7 @@ import AnimatedTeamDashboard from './components/dashboard/AnimatedTeamDashboard.
 import LoadingDemo from './components/common/LoadingDemo.jsx';
 import ProjectDetail from './components/projects/ProjectDetail.jsx';
 import KanbanBoard from './components/kanban/KanbanBoard.jsx';
-import TaskPriorityVisualizer from './components/tasks/TaskPriorityVisualizer.jsx';
+import TaskManagement from './components/tasks/TaskManagement.jsx';
 import PrivateRoute from './components/auth/PrivateRoute.jsx';
 import LandingPage from './components/LandingPage.jsx';
 import UserProfile from './components/profile/UserProfile.jsx';
