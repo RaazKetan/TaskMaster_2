@@ -109,6 +109,77 @@ const fetchTeams = async () => {
     }
   };
 
+  const handleEditTeam = async (teamId) => {
+    const team = teams.find(t => t._id === teamId);
+    if (team) {
+      setEditingTeam(team);
+      setShowEditModal(true);
+    }
+  };
+
+  const handleDeleteTeam = async (teamId) => {
+    if (!window.confirm('Are you sure you want to delete this team? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      // Get current user data from localStorage
+      const userData = localStorage.getItem('userData');
+      const currentUser = userData ? JSON.parse(userData) : null;
+      
+      if (!currentUser || !currentUser.userId) {
+        setError('User not authenticated');
+        return;
+      }
+
+      await api.delete(`/teams/${teamId}`, {
+        params: { userId: currentUser.userId }
+      });
+
+      // Remove from local state
+      setTeams(prev => prev.filter(team => team._id !== teamId));
+    } catch (error) {
+      console.error('Error deleting team:', error);
+      setError('Failed to delete team. Please try again.');
+    }
+  };
+
+  const updateTeam = async (e) => {
+    e.preventDefault();
+    setCreateLoading(true);
+
+    try {
+      // Get current user data from localStorage
+      const userData = localStorage.getItem('userData');
+      const currentUser = userData ? JSON.parse(userData) : null;
+      
+      if (!currentUser || !currentUser.userId) {
+        setError('User not authenticated');
+        return;
+      }
+
+      const teamData = {
+        ...editingTeam,
+        userId: currentUser.userId
+      };
+
+      const response = await api.put(`/teams/${editingTeam._id}`, teamData);
+      
+      // Update local state
+      setTeams(prev => prev.map(team => 
+        team._id === editingTeam._id ? response.data : team
+      ));
+      
+      setShowEditModal(false);
+      setEditingTeam(null);
+    } catch (error) {
+      console.error('Error updating team:', error);
+      setError('Failed to update team');
+    } finally {
+      setCreateLoading(false);
+    }
+  };
+
   const removeTeamMember = async (teamId, userId) => {
     try {
       await api.delete(`/team-invitations/team/${teamId}/member/${userId}`, {
