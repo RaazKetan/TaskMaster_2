@@ -183,7 +183,7 @@ const TaskManagement = () => {
               {task.description}
             </p>
             
-            <div className="flex items-center justify-between text-xs text-slate-500">
+            <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
               <div className="flex items-center gap-3">
                 {task.assignedTo && (
                   <div className="flex items-center gap-1">
@@ -203,6 +203,22 @@ const TaskManagement = () => {
                   {project.name}
                 </span>
               )}
+            </div>
+            
+            {/* Task Actions */}
+            <div className="flex justify-end space-x-1 mt-2">
+              <button
+                onClick={() => handleEditTask(task)}
+                className="text-blue-500 hover:text-blue-700 text-xs px-2 py-1 rounded bg-blue-50 hover:bg-blue-100 transition-colors"
+              >
+                Edit
+              </button>
+              <button
+                onClick={() => deleteTask(task._id || task.id)}
+                className="text-red-500 hover:text-red-700 text-xs px-2 py-1 rounded bg-red-50 hover:bg-red-100 transition-colors"
+              >
+                Delete
+              </button>
             </div>
           </CardContent>
         </Card>
