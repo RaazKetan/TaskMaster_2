@@ -110,8 +110,10 @@ const fetchTeams = async () => {
   };
 
   const handleEditTeam = async (team) => {
-    setEditingTeam(team);
-    setShowEditModal(true);
+    if (team) {
+      setEditingTeam({ ...team });
+      setShowEditModal(true);
+    }
   };
 
   const handleDeleteTeam = async (teamId) => {
@@ -518,63 +520,6 @@ const fetchTeams = async () => {
                     <Textarea
                       id="editTeamDescription"
                       value={editingTeam.description || ''}
-                      onChange={(e) => setEditingTeam(prev => ({ ...prev, description: e.target.value }))}
-                      placeholder="What does this team work on?"
-                      rows={3}
-                    />
-                  </div>
-
-                  <div className="flex justify-end gap-3">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setShowEditModal(false);
-                        setEditingTeam(null);
-                      }}
-                      disabled={createLoading}
-                    >
-                      Cancel
-                    </Button>
-                    <Button type="submit" disabled={createLoading}>
-                      {createLoading ? 'Updating...' : 'Update Team'}
-                    </Button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
-              <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold">Edit Team</h3>
-                  <button
-                    onClick={() => {
-                      setShowEditModal(false);
-                      setEditingTeam(null);
-                    }}
-                    className="text-slate-400 hover:text-slate-600"
-                  >
-                    ×
-                  </button>
-                </div>
-
-                <form onSubmit={updateTeam} className="space-y-4">
-                  <div>
-                    <Label htmlFor="editTeamName">Team Name *</Label>
-                    <Input
-                      id="editTeamName"
-                      required
-                      value={editingTeam.name}
-                      onChange={(e) => setEditingTeam(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="Enter team name"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="editTeamDescription">Description</Label>
-                    <Textarea
-                      id="editTeamDescription"
-                      value={editingTeam.description}
                       onChange={(e) => setEditingTeam(prev => ({ ...prev, description: e.target.value }))}
                       placeholder="What does this team work on?"
                       rows={3}
