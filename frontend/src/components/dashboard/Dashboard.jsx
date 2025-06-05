@@ -18,20 +18,37 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [teamsResponse, projectsResponse] = await Promise.all([
-          api.get('/teams'),
-          api.get('/projects')
+        const userId = user?.userId;
+        if (!userId) {
+          console.error('User ID not available');
+          setLoading(false);
+          return;
+        }
+
+        // Fetch teams, projects, and tasks with proper user filtering
+        const [teamsResponse, projectsResponse, tasksResponse] = await Promise.all([
+          api.get('/teams', { params: { userId } }),
+          api.get('/projects', { params: { userId } }),
+          api.get('/tasks', { params: { userId } })
         ]);
 
         const teams = teamsResponse.data || [];
         const projects = projectsResponse.data || [];
+        const tasks = tasksResponse.data || [];
+
+        // Calculate task completion stats
+        const completedTasks = tasks.filter(task => 
+          task.status === 'COMPLETED' || 
+          task.status === 'Done' || 
+          task.status === 'COMPLETED'
+        ).length;
 
         // Calculate stats
         setStats({
           teams: teams.length,
           projects: projects.length,
-          tasks: 0, // Will be calculated when we have tasks endpoint
-          completedTasks: 0
+          tasks: tasks.length,
+          completedTasks: completedTasks
         });
 
         setRecentTeams(teams.slice(0, 3));
@@ -44,7 +61,12 @@ const Dashboard = () => {
     };
 
     fetchDashboardData();
-  }, []);
+    
+    // Set up real-time updates every 30 seconds
+    const interval = setInterval(fetchDashboardData, 30000);
+    
+    return () => clearInterval(interval);
+  }, [user]);
 
   if (loading) {
     return (
@@ -145,7 +167,7 @@ const Dashboard = () => {
             ) : (
               <div className="space-y-4">
                 {recentTeams.map((team) => (
-                  <div key={team.id} className="flex items-center p-3 bg-muted rounded-lg">
+                  <div key={team._id || team.id} className="flex items-center p-3 bg-muted rounded-lg">
                     <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-medium">
                       {team.name.charAt(0).toUpperCase()}
                     </div>
@@ -156,7 +178,7 @@ const Dashboard = () => {
                       </p>
                     </div>
                     <Link 
-                      to={`/teams/${team.id}`}
+                      to={`/teams/${team._id || team.id}`}
                       className="text-primary hover:text-primary/80"
                     >
                       <i className="fas fa-arrow-right"></i>
@@ -190,7 +212,7 @@ const Dashboard = () => {
             ) : (
               <div className="space-y-4">
                 {recentProjects.map((project) => (
-                  <div key={project.id} className="p-3 bg-muted rounded-lg">
+                  <div key={project._id || project.id} className="p-3 bg-muted rounded-lg">
                     <div className="flex items-center justify-between mb-2">
                       <h4 className="text-sm font-medium text-foreground">{project.name}</h4>
                       <span className={`text-xs px-2 py-1 rounded-full border ${
