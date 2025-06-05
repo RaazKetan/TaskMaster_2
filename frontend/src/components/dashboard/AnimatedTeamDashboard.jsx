@@ -218,14 +218,14 @@ const AnimatedTeamDashboard = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="p-8">
           <div className="max-w-7xl mx-auto">
             <LoadingMascot 
               message="Analyzing team performance..." 
               size="large"
             />
-            
+
             <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
               <TaskLoadingCard title="Calculating team metrics..." />
               <TaskLoadingCard title="Processing project data..." />
@@ -453,8 +453,7 @@ const AnimatedTeamDashboard = () => {
                   </AreaChart>
                 </ResponsiveContainer>
               </CardContent>
-            </Card>
-          </motion.div>
+            </motion.div>
 
           {/* Priority Distribution & Team Efficiency */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

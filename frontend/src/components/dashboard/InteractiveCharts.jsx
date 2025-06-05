@@ -31,6 +31,7 @@ const InteractiveCharts = ({ data }) => {
   const chartTypes = [
     { id: 'performance', label: 'Performance', icon: TrendingUp },
     { id: 'distribution', label: 'Distribution', icon: PieChartIcon },
+    { id: 'sunburst', label: 'Project Sunburst', icon: PieChartIcon },
     { id: 'comparison', label: 'Comparison', icon: BarChart3 },
     { id: 'activity', label: 'Activity', icon: Activity }
   ];
@@ -75,6 +76,57 @@ const InteractiveCharts = ({ data }) => {
                 ))}
               </Pie>
               <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        );
+      
+      case 'sunburst':
+        return (
+          <ResponsiveContainer width="100%" height={400}>
+            <PieChart>
+              {/* Inner ring - Project Categories */}
+              <Pie
+                data={data.projectCategories || [
+                  { name: 'Development', value: 40, fill: '#3b82f6' },
+                  { name: 'Design', value: 25, fill: '#10b981' },
+                  { name: 'Testing', value: 20, fill: '#f59e0b' },
+                  { name: 'Deployment', value: 15, fill: '#ef4444' }
+                ]}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={100}
+                dataKey="value"
+                stroke="#fff"
+                strokeWidth={2}
+              >
+                {(data.projectCategories || []).map((entry, index) => (
+                  <Cell key={`inner-${index}`} fill={entry.fill} />
+                ))}
+              </Pie>
+              
+              {/* Outer ring - Project Status */}
+              <Pie
+                data={data.projectStatus}
+                cx="50%"
+                cy="50%"
+                innerRadius={110}
+                outerRadius={150}
+                dataKey="value"
+                stroke="#fff"
+                strokeWidth={2}
+                label={({ name, value }) => `${name}: ${value}`}
+                labelLine={false}
+              >
+                {data.projectStatus.map((entry, index) => (
+                  <Cell key={`outer-${index}`} fill={`hsl(${index * 72}, 65%, 55%)`} />
+                ))}
+              </Pie>
+              
+              <Tooltip 
+                formatter={(value, name) => [value, name]}
+                labelFormatter={() => 'Project Distribution'}
+              />
             </PieChart>
           </ResponsiveContainer>
         );
