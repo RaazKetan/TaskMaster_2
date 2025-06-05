@@ -35,13 +35,17 @@ const RealTimeDashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const userId = getCurrentUserId();
-      if (!userId) {
-        setError('User authentication required');
+      // Get current user data from localStorage (consistent with team management)
+      const userData = localStorage.getItem('userData');
+      const currentUser = userData ? JSON.parse(userData) : null;
+
+      if (!currentUser || !currentUser.userId) {
+        setError('User authentication required - please log in again');
         setLoading(false);
         return;
       }
 
+      const userId = currentUser.userId;
       console.log('Fetching real-time dashboard data for userId:', userId);
       
       const [teamsResponse, projectsResponse, tasksResponse] = await Promise.all([
@@ -54,7 +58,7 @@ const RealTimeDashboard = () => {
       const projects = projectsResponse.data || [];
       const tasks = tasksResponse.data || [];
 
-      console.log('Real-time dashboard data fetched:', {
+      console.log('Real-time dashboard data fetched from MongoDB:', {
         teams: teams.length,
         projects: projects.length,
         tasks: tasks.length

@@ -72,29 +72,40 @@ const AnimatedTeamDashboard = () => {
         const userData = localStorage.getItem('userData');
         const currentUser = userData ? JSON.parse(userData) : null;
         console.log('::::::Current user:', currentUser)
-        if (!currentUser) {
+        if (!currentUser || !currentUser.userId) {
           setLoading(false);
           return;
         }
 
-        // For now, use mock data since API endpoints may not be fully implemented
-        const teams = [
-          { _id: '1', name: 'Development Team', members: ['user1', 'user2'], createdAt: new Date() },
-          { _id: '2', name: 'Design Team', members: ['user3', 'user4'], createdAt: new Date() }
-        ];
-        
-        const allProjects = [
-          { _id: '1', name: 'Website Redesign', teamId: '1', status: 'active', priority: 'high', progress: 75 },
-          { _id: '2', name: 'Mobile App', teamId: '1', status: 'planning', priority: 'medium', progress: 25 },
-          { _id: '3', name: 'Brand Guidelines', teamId: '2', status: 'completed', priority: 'low', progress: 100 }
-        ];
+        const userId = currentUser.userId;
 
-        // Calculate dashboard statistics
+        // Fetch real data from MongoDB APIs
+        const [teamsResponse, projectsResponse, tasksResponse] = await Promise.all([
+          api.get('/teams', { params: { userId } }),
+          api.get('/projects', { params: { userId } }),
+          api.get('/tasks', { params: { userId } })
+        ]);
+
+        const teams = teamsResponse.data || [];
+        const allProjects = projectsResponse.data || [];
+        const allTasks = tasksResponse.data || [];
+
+        console.log('Animated dashboard MongoDB data:', {
+          teams: teams.length,
+          projects: allProjects.length,
+          tasks: allTasks.length
+        });
+
+        // Calculate dashboard statistics from real MongoDB data
+        const completedTasks = allTasks.filter(task => 
+          task.status === 'COMPLETED' || task.status === 'Done' || task.status === 'completed'
+        ).length;
+
         const stats = {
           totalTeams: teams.length,
           totalProjects: allProjects.length,
-          completedTasks: Math.floor(allProjects.length * 0.65), // Simulated based on project completion
-          activeUsers: teams.reduce((acc, team) => acc + (team.members ? team.members.length : 0), 0) + teams.length
+          completedTasks: completedTasks,
+          activeUsers: teams.reduce((acc, team) => acc + (Array.isArray(team.members) ? team.members.length : 0), 0)
         };
 
         // Generate team performance data
