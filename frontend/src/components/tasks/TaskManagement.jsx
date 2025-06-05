@@ -193,17 +193,17 @@ const TaskManagement = () => {
   const TaskCard = ({ task }) => {
     const [{ isDragging }, drag] = useDrag({
       type: 'task',
-      item: { 
-        id: task._id || task.id, 
-        priority: task.priority,
-        status: task.status 
+      item: () => {
+        setDraggedTask(task);
+        return { 
+          id: task._id || task.id, 
+          priority: task.priority,
+          status: task.status 
+        };
       },
       collect: (monitor) => ({
         isDragging: monitor.isDragging(),
       }),
-      begin: () => {
-        setDraggedTask(task);
-      },
       end: () => {
         setDraggedTask(null);
       }
