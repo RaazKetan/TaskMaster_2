@@ -453,8 +453,9 @@ const AnimatedTeamDashboard = () => {
                   </AreaChart>
                 </ResponsiveContainer>
               </CardContent>
+          </Card>
             </motion.div>
-
+          
           {/* Priority Distribution & Team Efficiency */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <motion.div {...fadeInUp}>
