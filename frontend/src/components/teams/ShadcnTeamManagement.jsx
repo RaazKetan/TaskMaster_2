@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Plus, Settings, Trash2, Edit, UserPlus, Send, X } from 'lucide-react';
+import { Users, Plus, Settings, Trash2, Edit, UserPlus, Send, X, UserMinus } from 'lucide-react';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../ui/button';
@@ -109,12 +109,9 @@ const fetchTeams = async () => {
     }
   };
 
-  const handleEditTeam = async (teamId) => {
-    const team = teams.find(t => t._id === teamId);
-    if (team) {
-      setEditingTeam(team);
-      setShowEditModal(true);
-    }
+  const handleEditTeam = async (team) => {
+    setEditingTeam(team);
+    setShowEditModal(true);
   };
 
   const handleDeleteTeam = async (teamId) => {
@@ -138,6 +135,11 @@ const fetchTeams = async () => {
 
       // Remove from local state
       setTeams(prev => prev.filter(team => team._id !== teamId));
+      
+      // If this was the selected team, clear selection
+      if (selectedTeam && selectedTeam._id === teamId) {
+        setSelectedTeam(null);
+      }
     } catch (error) {
       console.error('Error deleting team:', error);
       setError('Failed to delete team. Please try again.');
@@ -279,10 +281,10 @@ const fetchTeams = async () => {
                     <div className="space-y-3">
                       {teams.map((team) => (
                         <div
-                          key={team.id}
+                          key={team._id}
                           className={cn(
                             'p-4 border rounded-lg cursor-pointer transition-colors',
-                            selectedTeam?.id === team.id
+                            selectedTeam?._id === team._id
                               ? 'border-blue-500 bg-blue-50'
                               : 'border-slate-200 hover:border-slate-300'
                           )}
@@ -315,7 +317,7 @@ const fetchTeams = async () => {
                                 size="sm"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleDeleteTeam(team.id);
+                                  handleDeleteTeam(team._id);
                                 }}
                                 className="text-red-600 hover:bg-red-50 h-6 w-6 p-0"
                                 title="Delete team"
@@ -475,6 +477,67 @@ const fetchTeams = async () => {
                     </Button>
                     <Button type="submit" disabled={createLoading}>
                       {createLoading ? 'Creating...' : 'Create Team'}
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* Edit Team Modal */}
+          {showEditModal && editingTeam && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold">Edit Team</h3>
+                  <button
+                    onClick={() => {
+                      setShowEditModal(false);
+                      setEditingTeam(null);
+                    }}
+                    className="text-slate-400 hover:text-slate-600"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <form onSubmit={updateTeam} className="space-y-4">
+                  <div>
+                    <Label htmlFor="editTeamName">Team Name *</Label>
+                    <Input
+                      id="editTeamName"
+                      required
+                      value={editingTeam.name}
+                      onChange={(e) => setEditingTeam(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="Enter team name"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="editTeamDescription">Description</Label>
+                    <Textarea
+                      id="editTeamDescription"
+                      value={editingTeam.description}
+                      onChange={(e) => setEditingTeam(prev => ({ ...prev, description: e.target.value }))}
+                      placeholder="What does this team work on?"
+                      rows={3}
+                    />
+                  </div>
+
+                  <div className="flex justify-end gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setShowEditModal(false);
+                        setEditingTeam(null);
+                      }}
+                      disabled={createLoading}
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={createLoading}>
+                      {createLoading ? 'Updating...' : 'Update Team'}
                     </Button>
                   </div>
                 </form>
