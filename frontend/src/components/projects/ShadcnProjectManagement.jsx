@@ -194,7 +194,9 @@ const ShadcnProjectManagement = () => {
 
       let response;
       if (editingProject) {
-        // Update existing project
+        // Update existing project - log the project being edited
+        console.log('Editing project:', editingProject);
+        console.log('Using project ID:', editingProject._id || editingProject.id);
         response = await api.put(`/projects/${editingProject._id || editingProject.id}`, projectData);
       } else {
         // Create new project
