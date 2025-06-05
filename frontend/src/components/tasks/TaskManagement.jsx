@@ -138,7 +138,7 @@ const TaskManagement = () => {
       if (progress === 100) {
         projectStatus = 'COMPLETED';
       } else if (progress > 0) {
-        projectStatus = 'IN_PROGRESS';
+        projectStatus = 'ACTIVE';
       }
 
       await api.put(`/projects/${task.projectId}`, {
