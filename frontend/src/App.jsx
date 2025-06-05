@@ -55,6 +55,12 @@ function AppContent() {
 
           <Route path="/tasks" element={
             <PrivateRoute>
+              <TaskManagement />
+            </PrivateRoute>
+          } />
+
+          <Route path="/tasks-visualizer" element={
+            <PrivateRoute>
               <TaskPriorityVisualizer />
             </PrivateRoute>
           } />
@@ -80,12 +86,6 @@ function AppContent() {
           <Route path="/projects" element={
             <PrivateRoute>
               <ShadcnProjectManagement />
-            </PrivateRoute>
-          } />
-          
-          <Route path="/tasks" element={
-            <PrivateRoute>
-              <TaskManagement />
             </PrivateRoute>
           } />
           
