@@ -42,20 +42,20 @@ const ShadcnTeamManagement = () => {
       fetchTeams();
     }
   }, [userSpace]);
-  
+
 const fetchTeams = async () => {
     try {
         setLoading(true);
-        
+
         // Get current user ID from localStorage
         const userData = localStorage.getItem('userData');
         const currentUser = userData ? JSON.parse(userData) : null;
-        
+
         if (!currentUser || !currentUser.userId) {
             setError('User not authenticated');
             return;
         }
-        
+
         const response = await api.get('/teams', {
             params: { userId: currentUser.userId }
         });
@@ -78,11 +78,11 @@ const fetchTeams = async () => {
       // Use consistent user data
       const currentUserId = 'user_123';
       const currentUserEmail = 'user@taskmaster.com';
-      
+
       // Get current user data from localStorage
       const userData = localStorage.getItem('userData');
       const currentUser = userData ? JSON.parse(userData) : null;
-      
+
       if (!currentUser || !currentUser.userId) {
         setError('User not authenticated');
         return;
@@ -97,7 +97,7 @@ const fetchTeams = async () => {
 
       const response = await api.post('/teams', teamData);
       console.log('Team created:', response.data);
-      
+
       setTeams(prev => [...prev, response.data]);
       setCreateTeamForm({ name: '', description: '' });
       setShowCreateModal(false);
@@ -123,7 +123,7 @@ const fetchTeams = async () => {
       // Get current user data from localStorage
       const userData = localStorage.getItem('userData');
       const currentUser = userData ? JSON.parse(userData) : null;
-      
+
       if (!currentUser || !currentUser.userId) {
         setError('User not authenticated');
         return;
@@ -135,7 +135,7 @@ const fetchTeams = async () => {
 
       // Remove from local state
       setTeams(prev => prev.filter(team => team._id !== teamId));
-      
+
       // If this was the selected team, clear selection
       if (selectedTeam && selectedTeam._id === teamId) {
         setSelectedTeam(null);
@@ -154,32 +154,29 @@ const fetchTeams = async () => {
       // Get current user data from localStorage
       const userData = localStorage.getItem('userData');
       const currentUser = userData ? JSON.parse(userData) : null;
-      
+
       if (!currentUser || !currentUser.userId) {
         setError('User not authenticated');
         return;
       }
 
       const teamData = {
-        name: editingTeam.name,
-        description: editingTeam.description
+        ...editingTeam,
+        userId: currentUser.userId
       };
 
-      const response = await api.put(`/teams/${editingTeam._id}`, teamData, {
-        params: { userId: currentUser.userId }
-      });
-      
+      const response = await api.put(`/teams/${editingTeam._id}`, teamData);
+
       // Update local state
       setTeams(prev => prev.map(team => 
         team._id === editingTeam._id ? response.data : team
       ));
-      
+
       setShowEditModal(false);
       setEditingTeam(null);
-      setError('');
     } catch (error) {
       console.error('Error updating team:', error);
-      setError('Failed to update team: ' + (error.response?.data?.error || error.message));
+      setError('Failed to update team');
     } finally {
       setCreateLoading(false);
     }
@@ -193,11 +190,34 @@ const fetchTeams = async () => {
       fetchTeams(); // Refresh teams to show updated member list
     } catch (error) {
       console.error('Error removing team member:', error);
-      setError('Failed to remove team member');
     }
   };
 
-  
+  const deleteTeam = async (teamId) => {
+    if (!window.confirm('Are you sure you want to delete this team? This action cannot be undone and will also delete all associated projects.')) {
+      return;
+    }
+
+    try {
+      const storedUser = localStorage.getItem('userData');
+      const currentUser = storedUser ? JSON.parse(storedUser) : { userId: 'user_123', email: 'user@taskmaster.com' };
+
+      await api.delete(`/teams/${teamId}`, {
+        params: { userId: currentUser.userId }
+      });
+
+      // Remove from local state
+      setTeams(prev => prev.filter(team => team.id !== teamId));
+
+      // If this was the selected team, clear selection
+      if (selectedTeam && selectedTeam.id === teamId) {
+        setSelectedTeam(null);
+      }
+    } catch (error) {
+      console.error('Error deleting team:', error);
+      setError('Failed to delete team. Please try again.');
+    }
+  };
 
   if (loading) {
     return (
@@ -297,7 +317,7 @@ const fetchTeams = async () => {
                                 size="sm"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleDeleteTeam(team._id);
+                                  deleteTeam(team._id);
                                 }}
                                 className="text-red-600 hover:bg-red-50 h-6 w-6 p-0"
                                 title="Delete team"
@@ -377,7 +397,7 @@ const fetchTeams = async () => {
                                     <Button
                                       size="sm"
                                       variant="outline"
-                                      onClick={() => removeTeamMember(selectedTeam._id, memberId)}
+                                      onClick={() => removeTeamMember(selectedTeam.id, memberId)}
                                     >
                                       <UserMinus className="w-4 h-4" />
                                     </Button>
@@ -457,6 +477,67 @@ const fetchTeams = async () => {
                     </Button>
                     <Button type="submit" disabled={createLoading}>
                       {createLoading ? 'Creating...' : 'Create Team'}
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* Edit Team Modal */}
+          {showEditModal && editingTeam && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold">Edit Team</h3>
+                  <button
+                    onClick={() => {
+                      setShowEditModal(false);
+                      setEditingTeam(null);
+                    }}
+                    className="text-slate-400 hover:text-slate-600"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <form onSubmit={updateTeam} className="space-y-4">
+                  <div>
+                    <Label htmlFor="editTeamName">Team Name *</Label>
+                    <Input
+                      id="editTeamName"
+                      required
+                      value={editingTeam.name}
+                      onChange={(e) => setEditingTeam(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="Enter team name"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="editTeamDescription">Description</Label>
+                    <Textarea
+                      id="editTeamDescription"
+                      value={editingTeam.description}
+                      onChange={(e) => setEditingTeam(prev => ({ ...prev, description: e.target.value }))}
+                      placeholder="What does this team work on?"
+                      rows={3}
+                    />
+                  </div>
+
+                  <div className="flex justify-end gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setShowEditModal(false);
+                        setEditingTeam(null);
+                      }}
+                      disabled={createLoading}
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={createLoading}>
+                      {createLoading ? 'Updating...' : 'Update Team'}
                     </Button>
                   </div>
                 </form>
