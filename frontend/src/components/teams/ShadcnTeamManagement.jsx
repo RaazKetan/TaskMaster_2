@@ -136,10 +136,10 @@ const fetchTeams = async () => {
       });
 
       // Remove from local state
-      setTeams(prev => prev.filter(team => team.id !== teamId));
+      setTeams(prev => prev.filter(team => team._id !== teamId));
 
       // If this was the selected team, clear selection
-      if (selectedTeam && selectedTeam.id === teamId) {
+      if (selectedTeam && selectedTeam._id === teamId) {
         setSelectedTeam(null);
       }
     } catch (error) {
