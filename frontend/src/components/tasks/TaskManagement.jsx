@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
@@ -28,13 +28,14 @@ const TaskManagement = () => {
   const [showCreateTask, setShowCreateTask] = useState(false);
   const [draggedTask, setDraggedTask] = useState(null);
 
-  const fetchTasksAndProjects = async () => {
+  const fetchTasksAndProjects = useCallback(async () => {
     try {
       setLoading(true);
       const userId = getCurrentUserId();
       
       if (!userId) {
         setError('User not authenticated');
+        setLoading(false);
         return;
       }
 
@@ -58,14 +59,11 @@ const TaskManagement = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchTasksAndProjects();
-    
-    const interval = setInterval(fetchTasksAndProjects, 15000);
-    return () => clearInterval(interval);
-  }, []);
+  }, [fetchTasksAndProjects]);
 
   const handleTaskPriorityUpdate = async (taskId, newPriority) => {
     try {
@@ -170,14 +168,20 @@ const TaskManagement = () => {
     }
   };
 
-  const updateTask = async (updatedTask) => {
+  const const updateTask = async (taskId, updatedData) => {
     try {
+      const userId = getCurrentUserId();
+      const response = await api.put(`/tasks/${taskId}`, {
+        ...updatedData,
+        userId: userId
+      });
+      
       setTasks(prev => prev.map(task => 
-        (task._id || task.id) === (updatedTask._id || updatedTask.id) ? updatedTask : task
+        (task._id || task.id) === taskId ? response.data : task
       ));
-      fetchTasksAndProjects();
     } catch (error) {
       console.error('Error updating task:', error);
+      setError('Failed to update task');
     }
   };
 
