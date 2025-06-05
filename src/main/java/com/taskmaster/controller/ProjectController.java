@@ -126,7 +126,7 @@ public class ProjectController {
             }
 
             Optional<Map<String, Object>> project = projects.stream()
-                .filter(p -> projectId.equals(p.get("_id")))
+                .filter(p -> projectId.equals(p.get("_id")) || projectId.equals(p.get("id")))
                 .findFirst();
 
             if (project.isPresent()) {
