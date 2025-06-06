@@ -46,6 +46,7 @@ const ShadcnTeamManagement = () => {
 const fetchTeams = async () => {
     try {
         setLoading(true);
+        setError(null);
 
         // Get current user ID from localStorage
         const userData = localStorage.getItem('userData');
@@ -53,6 +54,7 @@ const fetchTeams = async () => {
 
         if (!currentUser || !currentUser.userId) {
             setError('User not authenticated');
+            setTeams([]);
             return;
         }
 
@@ -61,10 +63,11 @@ const fetchTeams = async () => {
         });
         const teams = response.data || [];
         setTeams(teams);
-        setError('');
+        setError(null);
     } catch (err) {
-        setError('Failed to fetch teams: ' + err.message);
         console.error('Error fetching teams:', err);
+        setError('Failed to fetch teams: ' + (err.response?.data?.message || err.message));
+        // Don't clear teams on error - keep existing data
     } finally {
         setLoading(false);
     }
@@ -75,16 +78,13 @@ const fetchTeams = async () => {
     setError(null);
 
     try {
-      // Use consistent user data
-      const currentUserId = 'user_123';
-      const currentUserEmail = 'user@taskmaster.com';
-
       // Get current user data from localStorage
       const userData = localStorage.getItem('userData');
       const currentUser = userData ? JSON.parse(userData) : null;
 
       if (!currentUser || !currentUser.userId) {
         setError('User not authenticated');
+        setCreateLoading(false);
         return;
       }
 
@@ -98,12 +98,14 @@ const fetchTeams = async () => {
       const response = await api.post('/teams', teamData);
       console.log('Team created:', response.data);
 
+      // Add the new team to existing teams
       setTeams(prev => [...prev, response.data]);
       setCreateTeamForm({ name: '', description: '' });
       setShowCreateModal(false);
+      setError(null);
     } catch (error) {
       console.error('Error creating team:', error);
-      setError('Failed to create team');
+      setError('Failed to create team: ' + (error.response?.data?.message || error.message));
     } finally {
       setCreateLoading(false);
     }
@@ -131,26 +133,87 @@ const fetchTeams = async () => {
         return;
       }
 
+      if (!teamId) {
+        setError('Invalid team ID');
+        return;
+      }
+
       await api.delete(`/teams/${teamId}`, {
         params: { userId: currentUser.userId }
       });
 
-      // Remove from local state
-      setTeams(prev => prev.filter(team => team._id !== teamId));
+      // Remove from local state with consistent ID handling
+      setTeams(prev => prev.filter(team => {
+        const currentTeamId = team._id || team.id;
+        return currentTeamId !== teamId;
+      }));
 
       // If this was the selected team, clear selection
-      if (selectedTeam && selectedTeam._id === teamId) {
-        setSelectedTeam(null);
+      if (selectedTeam) {
+        const selectedTeamId = selectedTeam._id || selectedTeam.id;
+        if (selectedTeamId === teamId) {
+          setSelectedTeam(null);
+        }
       }
+
+      setError(null);
     } catch (error) {
       console.error('Error deleting team:', error);
-      setError('Failed to delete team. Please try again.');
+      setError('Failed to delete team: ' + (error.response?.data?.message || error.message));
     }
   };
 
   const updateTeam = async (e) => {
     e.preventDefault();
     setCreateLoading(true);
+    setError(null);
+
+    try {
+      // Get current user data from localStorage
+      const userData = localStorage.getItem('userData');
+      const currentUser = userData ? JSON.parse(userData) : null;
+
+      if (!currentUser || !currentUser.userId) {
+        setError('User not authenticated');
+        setCreateLoading(false);
+        return;
+      }
+
+      if (!editingTeam || (!editingTeam._id && !editingTeam.id)) {
+        setError('Invalid team data');
+        setCreateLoading(false);
+        return;
+      }
+
+      const teamId = editingTeam._id || editingTeam.id;
+      const teamData = {
+        ...editingTeam,
+        userId: currentUser.userId
+      };
+
+      const response = await api.put(`/teams/${teamId}`, teamData);
+
+      // Update local state with consistent ID handling
+      setTeams(prev => prev.map(team => {
+        const currentTeamId = team._id || team.id;
+        return currentTeamId === teamId ? response.data : team;
+      }));
+
+      setShowEditModal(false);
+      setEditingTeam(null);
+      setError(null);
+    } catch (error) {
+      console.error('Error updating team:', error);
+      setError('Failed to update team: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setCreateLoading(false);
+    }
+  };
+
+  const removeTeamMember = async (teamId, userId) => {
+    if (!window.confirm('Are you sure you want to remove this member from the team?')) {
+      return;
+    }
 
     try {
       // Get current user data from localStorage
@@ -162,36 +225,16 @@ const fetchTeams = async () => {
         return;
       }
 
-      const teamData = {
-        ...editingTeam,
-        userId: currentUser.userId
-      };
-
-      const response = await api.put(`/teams/${editingTeam._id}`, teamData);
-
-      // Update local state
-      setTeams(prev => prev.map(team => 
-        team._id === editingTeam._id ? response.data : team
-      ));
-
-      setShowEditModal(false);
-      setEditingTeam(null);
-    } catch (error) {
-      console.error('Error updating team:', error);
-      setError('Failed to update team');
-    } finally {
-      setCreateLoading(false);
-    }
-  };
-
-  const removeTeamMember = async (teamId, userId) => {
-    try {
-      await api.delete(`/team-invitations/team/${teamId}/member/${userId}`, {
-        params: { removedBy: 'default_user' }
+      await api.delete(`/teams/${teamId}/members/${userId}`, {
+        params: { removedBy: currentUser.userId }
       });
-      fetchTeams(); // Refresh teams to show updated member list
+      
+      // Refresh teams to show updated member list
+      await fetchTeams();
+      setError(null);
     } catch (error) {
       console.error('Error removing team member:', error);
+      setError('Failed to remove team member: ' + (error.response?.data?.message || error.message));
     }
   };
 
@@ -255,55 +298,60 @@ const fetchTeams = async () => {
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {teams.map((team) => (
-                        <div
-                          key={team._id}
-                          className={cn(
-                            'p-4 border rounded-lg cursor-pointer transition-colors',
-                            selectedTeam?._id === team._id
-                              ? 'border-blue-500 bg-blue-50'
-                              : 'border-slate-200 hover:border-slate-300'
-                          )}
-                          onClick={() => setSelectedTeam(team)}
-                        >
-                          <h3 className="font-medium text-slate-900">{team.name}</h3>
-                          <p className="text-sm text-slate-600 mt-1">{team.description}</p>
-                          <div className="flex items-center justify-between mt-3">
-                            <span className="text-xs text-slate-500">
-                              {Array.isArray(team.members) ? team.members.length : 0} members
-                            </span>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
-                                {team.role || 'Member'}
+                      {teams.map((team) => {
+                        const teamId = team._id || team.id;
+                        const selectedTeamId = selectedTeam?._id || selectedTeam?.id;
+                        
+                        return (
+                          <div
+                            key={teamId}
+                            className={cn(
+                              'p-4 border rounded-lg cursor-pointer transition-colors',
+                              selectedTeamId === teamId
+                                ? 'border-blue-500 bg-blue-50'
+                                : 'border-slate-200 hover:border-slate-300'
+                            )}
+                            onClick={() => setSelectedTeam(team)}
+                          >
+                            <h3 className="font-medium text-slate-900">{team.name || 'Unnamed Team'}</h3>
+                            <p className="text-sm text-slate-600 mt-1">{team.description || 'No description'}</p>
+                            <div className="flex items-center justify-between mt-3">
+                              <span className="text-xs text-slate-500">
+                                {Array.isArray(team.members) ? team.members.length : 0} members
                               </span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEditTeam(team);
-                                }}
-                                className="text-blue-600 hover:bg-blue-50 h-6 w-6 p-0"
-                                title="Edit team"
-                              >
-                                <Edit className="w-3 h-3" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteTeam(team._id || team.id);
-                                }}
-                                className="text-red-600 hover:bg-red-50 h-6 w-6 p-0"
-                                title="Delete team"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </Button>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                                  {team.role || 'Member'}
+                                </span>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleEditTeam(team);
+                                  }}
+                                  className="text-blue-600 hover:bg-blue-50 h-6 w-6 p-0"
+                                  title="Edit team"
+                                >
+                                  <Edit className="w-3 h-3" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteTeam(teamId);
+                                  }}
+                                  className="text-red-600 hover:bg-red-50 h-6 w-6 p-0"
+                                  title="Delete team"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </CardContent>
@@ -373,7 +421,7 @@ const fetchTeams = async () => {
                                     <Button
                                       size="sm"
                                       variant="outline"
-                                      onClick={() => removeTeamMember(selectedTeam.id, memberId)}
+                                      onClick={() => removeTeamMember(selectedTeam._id || selectedTeam.id, memberId)}
                                     >
                                       <UserMinus className="w-4 h-4" />
                                     </Button>
