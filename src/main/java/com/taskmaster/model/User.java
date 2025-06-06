@@ -54,4 +54,7 @@ public class User {
 
     public List<Map<String, Object>> getProjects() { return projects; }
     public void setProjects(List<Map<String, Object>> projects) { this.projects = projects; }
+
+    public List<Map<String, Object>> getTasks() { return tasks; }
+    public void setTasks(List<Map<String, Object>> tasks) { this.tasks = tasks; }
 }

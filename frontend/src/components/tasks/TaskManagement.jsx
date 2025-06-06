@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -32,7 +31,7 @@ const TaskManagement = () => {
     try {
       setLoading(true);
       const userId = getCurrentUserId();
-      
+
       if (!userId) {
         setError('User not authenticated');
         setLoading(false);
@@ -50,7 +49,7 @@ const TaskManagement = () => {
       setProjects(projectsData);
       setTasks(tasksData);
       setError('');
-      
+
       console.log('Projects loaded:', projectsData.length);
       console.log('Tasks loaded:', tasksData.length);
     } catch (error) {
@@ -68,12 +67,12 @@ const TaskManagement = () => {
   const handleTaskPriorityUpdate = async (taskId, newPriority) => {
     try {
       const userId = getCurrentUserId();
-      
+
       await api.put(`/tasks/${taskId}`, {
         priority: newPriority,
         userId: userId
       });
-      
+
       setTasks(prevTasks => 
         prevTasks.map(task => 
           (task._id || task.id) === taskId 
@@ -93,12 +92,12 @@ const TaskManagement = () => {
   const handleTaskStatusUpdate = async (taskId, newStatus) => {
     try {
       const userId = getCurrentUserId();
-      
+
       await api.put(`/tasks/${taskId}`, {
         status: newStatus,
         userId: userId
       });
-      
+
       setTasks(prevTasks => 
         prevTasks.map(task => 
           (task._id || task.id) === taskId 
@@ -124,14 +123,14 @@ const TaskManagement = () => {
       let completedTasksCount = projectTasks.filter(t => 
         t.status === 'COMPLETED' || t.status === 'Done'
       ).length;
-      
+
       if (newTaskStatus === 'COMPLETED' || newTaskStatus === 'Done') {
         completedTasksCount += 1;
       }
 
       const totalTasks = projectTasks.length;
       const progress = totalTasks > 0 ? Math.round((completedTasksCount / totalTasks) * 100) : 0;
-      
+
       let projectStatus = 'Planning';
       if (progress === 100) {
         projectStatus = 'COMPLETED';
@@ -168,35 +167,55 @@ const TaskManagement = () => {
     }
   };
 
-  const updateTask = async (taskId, updatedData) => {
+  const updateTask = async (updatedTask) => {
     try {
       const userId = getCurrentUserId();
-      const response = await api.put(`/tasks/${taskId}`, {
-        ...updatedData,
+
+      const response = await api.put(`/tasks/${updatedTask._id || updatedTask.id}`, {
+        ...updatedTask,
         userId: userId
       });
-      
-      setTasks(prev => prev.map(task => 
-        (task._id || task.id) === taskId ? response.data : task
-      ));
+
+      setTasks(prevTasks => 
+        prevTasks.map(task => 
+          (task._id || task.id) === (updatedTask._id || updatedTask.id) 
+            ? updatedTask 
+            : task
+        )
+      );
+
+      // Update project progress if returned in response
+      if (response.data.projectProgress !== undefined) {
+        setProjects(prevProjects => 
+          prevProjects.map(project => 
+            (project._id || project.id) === updatedTask.projectId
+              ? { ...project, progress: response.data.projectProgress }
+              : project
+          )
+        );
+      }
+
+      console.log('Task updated successfully');
     } catch (error) {
       console.error('Error updating task:', error);
       setError('Failed to update task');
+      // Refresh tasks on error
+      fetchTasksAndProjects();
     }
   };
 
   const filteredTasks = tasks.filter(task => {
     const matchesProject = selectedProject === 'all' || task.projectId === selectedProject;
     const matchesStatus = selectedStatus === 'all' || task.status === selectedStatus;
-    
+
     // Safely handle null/undefined values in search
     const taskTitle = task.title || task.name || '';
     const taskDescription = task.description || '';
     const searchTermLower = searchTerm ? searchTerm.toLowerCase() : '';
-    
+
     const matchesSearch = taskTitle.toLowerCase().includes(searchTermLower) ||
                          taskDescription.toLowerCase().includes(searchTermLower);
-    
+
     return matchesProject && matchesStatus && matchesSearch;
   });
 
@@ -271,13 +290,13 @@ const TaskManagement = () => {
                     {task.priority}
                   </Badge>
                 </div>
-                
+
                 <p className={`text-xs mb-3 line-clamp-2 ${
                   isCompleted ? 'text-green-600' : 'text-slate-600'
                 }`}>
                   {task.description}
                 </p>
-                
+
                 <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
                   <div className="flex items-center gap-3">
                     {task.assignedTo && (
@@ -299,7 +318,7 @@ const TaskManagement = () => {
                     </span>
                   )}
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <Badge 
                     variant="secondary" 
@@ -365,13 +384,13 @@ const TaskManagement = () => {
             {tasks.length}
           </Badge>
         </div>
-        
+
         <div className="space-y-3">
           {tasks.map(task => (
             <TaskCard key={task._id || task.id} task={task} />
           ))}
         </div>
-        
+
         {tasks.length === 0 && (
           <motion.div 
             className="text-center py-8 text-slate-400"
@@ -466,7 +485,7 @@ const TaskManagement = () => {
                         className="pl-10"
                       />
                     </div>
-                    
+
                     <select
                       className="w-[200px] px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       value={selectedProject}
