@@ -10,6 +10,7 @@ import { Textarea } from '../ui/textarea';
 import LoadingMascot from '../common/LoadingMascot';
 import { cn } from '../../lib/utils';
 import { getCurrentUserId } from '../../utils/auth.js';
+import InviteMember from './InviteMember';
 
 const ShadcnTeamManagement = () => {
   const { userSpace } = useAuth();

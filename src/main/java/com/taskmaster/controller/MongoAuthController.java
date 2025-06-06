@@ -22,13 +22,29 @@ public class MongoAuthController {
         return ResponseEntity.ok(Map.of("message", "TaskMaster API is running", "timestamp", System.currentTimeMillis()));
     }
 
-    @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody Map<String, String> data) {
+    @GetMapping("/check-email")
+    public ResponseEntity<?> checkEmail(@RequestParam String email) {
         try {
-            String email = data.get("email");
-            String password = data.get("password");
-            String firstName = data.get("firstName");
-            String lastName = data.get("lastName");
+            User existingUser = userRepository.findByUserEmail(email);
+            Map<String, Object> response = new HashMap<>();
+            response.put("exists", existingUser != null);
+            if (existingUser != null) {
+                response.put("userId", existingUser.getUserId());
+            }
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                .body(Map.of("error", "Failed to check email: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@RequestBody Map<String, String> registrationData) {
+        try {
+            String email = registrationData.get("email");
+            String password = registrationData.get("password");
+            String firstName = registrationData.get("firstName");
+            String lastName = registrationData.get("lastName");
 
             if (email == null || password == null) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Email and password required"));
@@ -157,7 +173,7 @@ public class MongoAuthController {
                                      @RequestParam(required = false) String userId) {
         try {
             User user = null;
-            
+
             // Try session token first (new method)
             if (sessionToken != null && !sessionToken.isEmpty()) {
                 user = userRepository.findBySessionToken(sessionToken);
@@ -217,7 +233,7 @@ public class MongoAuthController {
                                           @RequestHeader(value = "Authorization", required = false) String authHeader) {
         try {
             User user = null;
-            
+
             // Try session token first (new method)
             if (sessionToken != null && !sessionToken.isEmpty()) {
                 user = userRepository.findBySessionToken(sessionToken);
@@ -259,11 +275,11 @@ public class MongoAuthController {
                 List<Map<String, Object>> userTeams = user.getTeams();
                 boolean isTeamMember = userTeams != null && 
                     userTeams.stream().anyMatch(team -> teamId.equals(team.get("id")));
-                
+
                 if (!isTeamMember) {
                     return ResponseEntity.status(403).body(Map.of("error", "You are not a member of the specified team"));
                 }
-                
+
                 newProject.put("type", "TEAM_PROJECT");
             } else {
                 newProject.put("type", "PERSONAL_PROJECT");
@@ -292,7 +308,7 @@ public class MongoAuthController {
                                         @RequestParam(required = false) String teamId) {
         try {
             User user = null;
-            
+
             // Try session token first (new method)
             if (sessionToken != null && !sessionToken.isEmpty()) {
                 user = userRepository.findBySessionToken(sessionToken);
@@ -351,7 +367,7 @@ public class MongoAuthController {
                                                @RequestHeader(value = "Authorization", required = false) String authHeader) {
         try {
             User user = null;
-            
+
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
                 String sessionToken = authHeader.substring(7);
                 user = userRepository.findBySessionToken(sessionToken);
@@ -381,7 +397,7 @@ public class MongoAuthController {
     public ResponseEntity<?> getStatus() {
         try {
             long userCount = userRepository.count();
-            
+
             Map<String, Object> response = new HashMap<>();
             response.put("status", "operational");
             response.put("authentication", "MongoDB-based with users collection");

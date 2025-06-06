@@ -1,128 +1,195 @@
+
 import React, { useState } from 'react';
+import { X, Send, AlertCircle, CheckCircle, UserPlus } from 'lucide-react';
 import api from '../../services/api';
-import { TEAM_ROLES } from '../../utils/constants';
+import { Button } from '../ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
 
 const InviteMember = ({ teamId, onClose, onMemberInvited }) => {
   const [formData, setFormData] = useState({
     email: '',
-    role: TEAM_ROLES.MEMBER
+    role: 'MEMBER'
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   const handleChange = (e) => {
     setFormData(prev => ({
       ...prev,
       [e.target.name]: e.target.value
     }));
+    // Clear error when user starts typing
+    if (error) setError('');
+    if (success) setSuccess('');
+  };
+
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
 
     if (!formData.email.trim()) {
       setError('Email is required');
       return;
     }
 
+    if (!validateEmail(formData.email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      await api.post(`/teams/${teamId}/invite`, formData);
-      onMemberInvited();
+      // First check if user exists with this email
+      const checkUserResponse = await api.get('/auth/check-email', {
+        params: { email: formData.email }
+      });
+
+      if (!checkUserResponse.data.exists) {
+        setError('No user found with this email address. They need to register first.');
+        setLoading(false);
+        return;
+      }
+
+      // Send invitation
+      const response = await api.post(`/teams/${teamId}/invite`, {
+        email: formData.email,
+        role: formData.role
+      });
+
+      setSuccess('Invitation sent successfully! The user will receive a notification.');
+      
+      // Reset form
+      setFormData({ email: '', role: 'MEMBER' });
+      
+      // Notify parent component
+      if (onMemberInvited) {
+        onMemberInvited();
+      }
+
+      // Auto close after success
+      setTimeout(() => {
+        onClose();
+      }, 2000);
+
     } catch (err) {
-      setError(err.response?.data || 'Failed to invite member');
+      console.error('Invitation error:', err);
+      setError(err.response?.data?.message || err.response?.data || 'Failed to send invitation');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-card border border-border rounded-lg max-w-md w-full m-4">
-        <div className="flex items-center justify-between p-6 border-b border-border">
-          <h2 className="text-xl font-semibold text-foreground">Invite Team Member</h2>
-          <button
-            onClick={onClose}
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <i className="fas fa-times"></i>
-          </button>
-        </div>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <Card className="w-full max-w-md mx-4">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <UserPlus className="w-5 h-5" />
+              Invite Team Member
+            </CardTitle>
+            <button
+              onClick={onClose}
+              className="text-slate-400 hover:text-slate-600 p-1"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </CardHeader>
 
-        <form onSubmit={handleSubmit} className="p-6">
-          {error && (
-            <div className="bg-destructive/10 border border-destructive/20 text-destructive rounded-md p-3 mb-4">
-              {error}
-            </div>
-          )}
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <span className="text-sm">{error}</span>
+              </div>
+            )}
 
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
-                Email Address *
-              </label>
-              <input
+            {success && (
+              <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg">
+                <CheckCircle className="w-4 h-4 flex-shrink-0" />
+                <span className="text-sm">{success}</span>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address *</Label>
+              <Input
                 id="email"
                 name="email"
                 type="email"
                 required
-                className="input"
-                placeholder="Enter member's email"
+                placeholder="Enter member's email address"
                 value={formData.email}
                 onChange={handleChange}
+                className="w-full"
               />
+              <p className="text-xs text-slate-500">
+                The user must already have an account to receive invitations
+              </p>
             </div>
 
-            <div>
-              <label htmlFor="role" className="block text-sm font-medium text-foreground mb-2">
-                Role
-              </label>
+            <div className="space-y-2">
+              <Label htmlFor="role">Role</Label>
               <select
                 id="role"
                 name="role"
-                className="input"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={formData.role}
                 onChange={handleChange}
               >
-                <option value={TEAM_ROLES.MEMBER}>Member</option>
-                <option value={TEAM_ROLES.ADMIN}>Admin</option>
-                <option value={TEAM_ROLES.VIEWER}>Viewer</option>
+                <option value="MEMBER">Member</option>
+                <option value="ADMIN">Admin</option>
+                <option value="VIEWER">Viewer</option>
               </select>
-              <p className="text-xs text-muted-foreground mt-1">
-                {formData.role === TEAM_ROLES.ADMIN && 'Can manage team settings and members'}
-                {formData.role === TEAM_ROLES.MEMBER && 'Can create and manage projects and tasks'}
-                {formData.role === TEAM_ROLES.VIEWER && 'Can view projects and tasks only'}
+              <p className="text-xs text-slate-500">
+                {formData.role === 'ADMIN' && 'Can manage team settings and members'}
+                {formData.role === 'MEMBER' && 'Can create and manage projects and tasks'}
+                {formData.role === 'VIEWER' && 'Can view projects and tasks only'}
               </p>
             </div>
-          </div>
 
-          <div className="flex justify-end space-x-3 mt-6">
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn btn-outline btn-md"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn btn-primary btn-md"
-            >
-              {loading ? (
-                <div className="flex items-center">
-                  <i className="fas fa-spinner fa-spin mr-2"></i>
-                  Inviting...
-                </div>
-              ) : (
-                'Send Invitation'
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
+            <div className="flex justify-end gap-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                disabled={loading}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={loading || !formData.email.trim()}
+                className="flex items-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4" />
+                    Send Invitation
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 };

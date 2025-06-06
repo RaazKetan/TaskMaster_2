@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api")
@@ -233,20 +234,63 @@ public class TeamController {
                 role = "MEMBER"; // Default role
             }
 
-            // Find the user who owns the team (for now, we'll use a simple approach)
-            // In a real application, you'd need to verify the requesting user has permission
-            
-            // For demo purposes, we'll simulate sending an invitation
-            // In production, you'd send an actual email invitation
-            
+            // Find the user who will receive the invitation
+            User invitedUser = userRepository.findByUserEmail(email);
+            if (invitedUser == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "No user found with this email address"));
+            }
+
+            // Find the team to get team details
+            User teamOwner = userRepository.findAll().stream()
+                .filter(user -> user.getTeams() != null && user.getTeams().stream()
+                    .anyMatch(team -> teamId.equals(team.get("_id")) || teamId.equals(team.get("id"))))
+                .findFirst()
+                .orElse(null);
+
+            if (teamOwner == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            Map<String, Object> team = teamOwner.getTeams().stream()
+                .filter(t -> teamId.equals(t.get("_id")) || teamId.equals(t.get("id")))
+                .findFirst()
+                .orElse(null);
+
+            if (team == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            // Create invitation notification
             Map<String, Object> invitation = new HashMap<>();
-            invitation.put("email", email);
-            invitation.put("role", role);
+            invitation.put("id", UUID.randomUUID().toString());
+            invitation.put("type", "team_invitation");
             invitation.put("teamId", teamId);
+            invitation.put("teamName", team.get("name"));
+            invitation.put("role", role);
+            invitation.put("invitedBy", teamOwner.getUserId());
+            invitation.put("invitedByEmail", teamOwner.getUserEmail());
             invitation.put("invitedAt", new Date());
             invitation.put("status", "pending");
+            invitation.put("message", "You have been invited to join the team: " + team.get("name"));
+
+            // Add invitation to user's notifications
+            Map<String, Object> userdata = invitedUser.getUserdata();
+            if (userdata == null) {
+                userdata = new HashMap<>();
+            }
             
-            // Simulate successful invitation
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> notifications = (List<Map<String, Object>>) userdata.get("notifications");
+            if (notifications == null) {
+                notifications = new ArrayList<>();
+            }
+            
+            notifications.add(invitation);
+            userdata.put("notifications", notifications);
+            invitedUser.setUserdata(userdata);
+            
+            userRepository.save(invitedUser);
+            
             return ResponseEntity.ok(Map.of(
                 "message", "Invitation sent successfully",
                 "invitation", invitation
@@ -294,6 +338,181 @@ public class TeamController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                 .body(Map.of("error", "Failed to remove member: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/invitations")
+    public ResponseEntity<?> getUserInvitations(@RequestParam String userId) {
+        try {
+            User user = userRepository.findByUserId(userId);
+            if (user == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            Map<String, Object> userdata = user.getUserdata();
+            if (userdata == null) {
+                return ResponseEntity.ok(new ArrayList<>());
+            }
+
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> notifications = (List<Map<String, Object>>) userdata.get("notifications");
+            if (notifications == null) {
+                return ResponseEntity.ok(new ArrayList<>());
+            }
+
+            // Filter only team invitations
+            List<Map<String, Object>> invitations = notifications.stream()
+                .filter(notif -> "team_invitation".equals(notif.get("type")))
+                .collect(Collectors.toList());
+
+            return ResponseEntity.ok(invitations);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                .body(Map.of("error", "Failed to fetch invitations: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/invitations/{invitationId}/accept")
+    public ResponseEntity<?> acceptInvitation(
+            @PathVariable String invitationId,
+            @RequestParam String userId) {
+        try {
+            User user = userRepository.findByUserId(userId);
+            if (user == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            Map<String, Object> userdata = user.getUserdata();
+            if (userdata == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "No invitations found"));
+            }
+
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> notifications = (List<Map<String, Object>>) userdata.get("notifications");
+            if (notifications == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "No invitations found"));
+            }
+
+            // Find the invitation
+            Map<String, Object> invitation = notifications.stream()
+                .filter(notif -> invitationId.equals(notif.get("id")))
+                .findFirst()
+                .orElse(null);
+
+            if (invitation == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            String teamId = (String) invitation.get("teamId");
+            String role = (String) invitation.get("role");
+
+            // Find team owner and add user to team
+            User teamOwner = userRepository.findAll().stream()
+                .filter(u -> u.getTeams() != null && u.getTeams().stream()
+                    .anyMatch(team -> teamId.equals(team.get("_id")) || teamId.equals(team.get("id"))))
+                .findFirst()
+                .orElse(null);
+
+            if (teamOwner != null) {
+                List<Map<String, Object>> teams = teamOwner.getTeams();
+                for (Map<String, Object> team : teams) {
+                    if (teamId.equals(team.get("_id")) || teamId.equals(team.get("id"))) {
+                        @SuppressWarnings("unchecked")
+                        List<Map<String, Object>> members = (List<Map<String, Object>>) team.get("members");
+                        if (members == null) {
+                            members = new ArrayList<>();
+                        }
+
+                        // Check if user is already a member
+                        boolean alreadyMember = members.stream()
+                            .anyMatch(member -> userId.equals(member.get("userId")));
+
+                        if (!alreadyMember) {
+                            Map<String, Object> newMember = new HashMap<>();
+                            newMember.put("userId", userId);
+                            newMember.put("role", role);
+                            newMember.put("joinedAt", new Date());
+                            members.add(newMember);
+                            team.put("members", members);
+                        }
+                        break;
+                    }
+                }
+                userRepository.save(teamOwner);
+
+                // Add team to user's teams list
+                List<Map<String, Object>> userTeams = user.getTeams();
+                if (userTeams == null) {
+                    userTeams = new ArrayList<>();
+                }
+
+                // Check if team is already in user's list
+                boolean teamExists = userTeams.stream()
+                    .anyMatch(team -> teamId.equals(team.get("_id")) || teamId.equals(team.get("id")));
+
+                if (!teamExists) {
+                    Map<String, Object> teamCopy = new HashMap<>();
+                    Map<String, Object> originalTeam = teamOwner.getTeams().stream()
+                        .filter(t -> teamId.equals(t.get("_id")) || teamId.equals(t.get("id")))
+                        .findFirst()
+                        .orElse(null);
+                    
+                    if (originalTeam != null) {
+                        teamCopy.putAll(originalTeam);
+                        teamCopy.put("role", role); // User's role in this team
+                        userTeams.add(teamCopy);
+                        user.setTeams(userTeams);
+                    }
+                }
+            }
+
+            // Update invitation status
+            invitation.put("status", "accepted");
+            invitation.put("acceptedAt", new Date());
+            userdata.put("notifications", notifications);
+            user.setUserdata(userdata);
+            
+            userRepository.save(user);
+
+            return ResponseEntity.ok(Map.of("message", "Invitation accepted successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                .body(Map.of("error", "Failed to accept invitation: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/invitations/{invitationId}/decline")
+    public ResponseEntity<?> declineInvitation(
+            @PathVariable String invitationId,
+            @RequestParam String userId) {
+        try {
+            User user = userRepository.findByUserId(userId);
+            if (user == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            Map<String, Object> userdata = user.getUserdata();
+            if (userdata == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "No invitations found"));
+            }
+
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> notifications = (List<Map<String, Object>>) userdata.get("notifications");
+            if (notifications == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "No invitations found"));
+            }
+
+            // Find and remove the invitation
+            notifications.removeIf(notif -> invitationId.equals(notif.get("id")));
+            userdata.put("notifications", notifications);
+            user.setUserdata(userdata);
+            
+            userRepository.save(user);
+
+            return ResponseEntity.ok(Map.of("message", "Invitation declined"));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                .body(Map.of("error", "Failed to decline invitation: " + e.getMessage()));
         }
     }
 

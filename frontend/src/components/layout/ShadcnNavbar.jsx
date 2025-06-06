@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../ui/button';
 import { LogOut, Settings, User, ChevronDown } from 'lucide-react';
+import NotificationBell from '../ui/NotificationBell';
 
 const ShadcnNavbar = () => {
   const { user, logout } = useAuth();
