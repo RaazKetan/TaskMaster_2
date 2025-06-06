@@ -117,7 +117,7 @@ const TaskManagement = () => {
 
   const updateProjectStatus = async (taskId, newTaskStatus) => {
     try {
-      const task = tasks.find(t => (t._id || t.id) === taskId);
+       const task = tasks.find(t => (t._id || t.id) === taskId);
       if (!task || !task.projectId) return;
 
       const projectTasks = tasks.filter(t => t.projectId === task.projectId);
@@ -168,7 +168,7 @@ const TaskManagement = () => {
     }
   };
 
-  const const updateTask = async (taskId, updatedData) => {
+  const updateTask = async (taskId, updatedData) => {
     try {
       const userId = getCurrentUserId();
       const response = await api.put(`/tasks/${taskId}`, {
