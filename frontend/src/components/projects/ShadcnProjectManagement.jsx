@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Search, Plus, MoreHorizontal, Filter, Trash2, Calendar, Clock, Users, CheckCircle, AlertTriangle, ChevronDown, Edit, FolderPlus } from 'lucide-react';
+import { Search, Plus, Filter, Trash2, Edit } from 'lucide-react';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../ui/button';
@@ -8,24 +7,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Select } from '../ui/select';
-import { Textarea } from '../ui/textarea';
-import { Skeleton } from '../ui/skeleton';
 import LoadingMascot from '../common/LoadingMascot';
 import TaskLoadingCard from '../common/TaskLoadingCard';
 import { cn } from '../../lib/utils';
 import { getCurrentUserId } from '../../utils/auth.js';
 import toast from 'react-hot-toast';
 import { 
-  FadeInItem, 
   ScaleButton, 
   SlideInModal, 
-  SuccessPulse, 
-  DeleteAnimation,
-  StaggerContainer,
-  StaggerItem,
   LoadingSpinner,
-  HoverCard,
-  ProgressBar
 } from '../ui/animations';
 
 const ShadcnProjectManagement = () => {
