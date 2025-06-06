@@ -160,11 +160,22 @@ public class ProjectController {
 
             for (Map<String, Object> project : projects) {
                 if (projectId.equals(project.get("_id")) || projectId.equals(project.get("id"))) {
-                    project.put("name", projectData.get("name"));
-                    project.put("description", projectData.get("description"));
-                    project.put("status", projectData.get("status"));
-                    project.put("priority", projectData.get("priority"));
-                    project.put("deadline", projectData.get("deadline"));
+                    // Only update fields that are provided, preserve existing ones
+                    if (projectData.containsKey("name")) {
+                        project.put("name", projectData.get("name"));
+                    }
+                    if (projectData.containsKey("description")) {
+                        project.put("description", projectData.get("description"));
+                    }
+                    if (projectData.containsKey("status")) {
+                        project.put("status", projectData.get("status"));
+                    }
+                    if (projectData.containsKey("priority")) {
+                        project.put("priority", projectData.get("priority"));
+                    }
+                    if (projectData.containsKey("deadline")) {
+                        project.put("deadline", projectData.get("deadline"));
+                    }
                     project.put("updatedAt", new Date());
                     
                     if (projectData.containsKey("progress")) {

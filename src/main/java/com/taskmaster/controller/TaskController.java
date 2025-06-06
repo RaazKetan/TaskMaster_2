@@ -141,12 +141,25 @@ public class TaskController {
                 if (tasks != null) {
                     for (Map<String, Object> task : tasks) {
                         if (taskId.equals(task.get("_id"))) {
-                            task.put("title", taskData.get("title"));
-                            task.put("description", taskData.get("description"));
-                            task.put("priority", taskData.get("priority"));
-                            task.put("status", taskData.get("status"));
-                            task.put("assignedTo", taskData.get("assignedTo"));
-                            task.put("dueDate", taskData.get("dueDate"));
+                            // Only update fields that are provided, preserve existing ones
+                            if (taskData.containsKey("title")) {
+                                task.put("title", taskData.get("title"));
+                            }
+                            if (taskData.containsKey("description")) {
+                                task.put("description", taskData.get("description"));
+                            }
+                            if (taskData.containsKey("priority")) {
+                                task.put("priority", taskData.get("priority"));
+                            }
+                            if (taskData.containsKey("status")) {
+                                task.put("status", taskData.get("status"));
+                            }
+                            if (taskData.containsKey("assignedTo")) {
+                                task.put("assignedTo", taskData.get("assignedTo"));
+                            }
+                            if (taskData.containsKey("dueDate")) {
+                                task.put("dueDate", taskData.get("dueDate"));
+                            }
                             task.put("updatedAt", new Date());
 
                             user.setProjects(projects);

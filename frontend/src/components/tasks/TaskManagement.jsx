@@ -68,10 +68,18 @@ const TaskManagement = () => {
   const handleTaskPriorityUpdate = async (taskId, newPriority) => {
     try {
       const userId = getCurrentUserId();
+      const task = tasks.find(t => (t._id || t.id) === taskId);
       
+      // Send only the fields we want to update, preserving existing data
       await api.put(`/tasks/${taskId}`, {
         priority: newPriority,
-        userId: userId
+        userId: userId,
+        // Preserve existing fields
+        title: task.title,
+        description: task.description,
+        status: task.status,
+        assignedTo: task.assignedTo,
+        dueDate: task.dueDate
       });
       
       setTasks(prevTasks => 
@@ -93,10 +101,18 @@ const TaskManagement = () => {
   const handleTaskStatusUpdate = async (taskId, newStatus) => {
     try {
       const userId = getCurrentUserId();
+      const task = tasks.find(t => (t._id || t.id) === taskId);
       
+      // Send only the fields we want to update, preserving existing data
       await api.put(`/tasks/${taskId}`, {
         status: newStatus,
-        userId: userId
+        userId: userId,
+        // Preserve existing fields
+        title: task.title,
+        description: task.description,
+        priority: task.priority,
+        assignedTo: task.assignedTo,
+        dueDate: task.dueDate
       });
       
       setTasks(prevTasks => 
