@@ -108,14 +108,34 @@ const AnimatedTeamDashboard = () => {
           activeUsers: teams.reduce((acc, team) => acc + (Array.isArray(team.members) ? team.members.length : 0), 0)
         };
 
-        // Generate team performance data
+        // Generate team performance data based on actual projects
         const teamPerformance = teams.map(team => {
           const teamProjects = allProjects.filter(p => p.teamId === team._id);
+          const completedProjects = teamProjects.filter(p => 
+            p.status === 'COMPLETED' || p.status === 'Done' || p.status === 'completed'
+          );
+          const inProgressProjects = teamProjects.filter(p => 
+            p.status === 'IN_PROGRESS' || p.status === 'In Progress' || p.status === 'ACTIVE' || p.status === 'active'
+          );
+          
+          // Calculate efficiency based on project completion rate and average progress
+          let efficiency = 0;
+          if (teamProjects.length > 0) {
+            const completionRate = (completedProjects.length / teamProjects.length) * 100;
+            const avgProgress = teamProjects.reduce((sum, project) => {
+              return sum + (project.progress || 0);
+            }, 0) / teamProjects.length;
+            
+            // Efficiency is a combination of completion rate and average progress
+            efficiency = Math.round((completionRate * 0.6) + (avgProgress * 0.4));
+          }
+          
           return {
             name: team.name.length > 12 ? team.name.substring(0, 12) + '...' : team.name,
             projects: teamProjects.length,
-            completed: Math.floor(teamProjects.length * (0.3 + Math.random() * 0.5)),
-            efficiency: Math.floor(60 + Math.random() * 35)
+            completed: completedProjects.length,
+            inProgress: inProgressProjects.length,
+            efficiency: Math.max(efficiency, 0) // Ensure non-negative
           };
         });
 
@@ -361,9 +381,15 @@ const AnimatedTeamDashboard = () => {
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="name" />
                       <YAxis />
-                      <Tooltip />
-                      <Bar dataKey="projects" fill="#3b82f6" name="Projects" />
-                      <Bar dataKey="completed" fill="#10b981" name="Completed" />
+                      <Tooltip formatter={(value, name) => {
+                        if (name === 'Total Projects') return [`${value}`, 'Total Projects'];
+                        if (name === 'Completed Projects') return [`${value}`, 'Completed Projects'];
+                        if (name === 'In Progress Projects') return [`${value}`, 'In Progress Projects'];
+                        return [`${value}`, name];
+                      }} />
+                      <Bar dataKey="projects" fill="#3b82f6" name="Total Projects" />
+                      <Bar dataKey="completed" fill="#10b981" name="Completed Projects" />
+                      <Bar dataKey="inProgress" fill="#f59e0b" name="In Progress Projects" />
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -499,7 +525,7 @@ const AnimatedTeamDashboard = () => {
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="name" />
                       <YAxis domain={[0, 100]} />
-                      <Tooltip formatter={(value) => [`${value}%`, 'Efficiency']} />
+                      <Tooltip formatter={(value) => [`${value}%`, 'Project Efficiency (Completion Rate + Progress)']} />
                       <Line 
                         type="monotone" 
                         dataKey="efficiency" 
