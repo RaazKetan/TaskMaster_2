@@ -119,7 +119,6 @@ const ShadcnNavbar = () => {
           )}
         </div>
       </div>
-      </div>
 
       {/* Click outside to close dropdown */}
       {isDropdownOpen && (
