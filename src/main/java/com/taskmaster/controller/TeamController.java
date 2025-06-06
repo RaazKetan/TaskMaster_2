@@ -129,20 +129,42 @@ public class TeamController {
                 return ResponseEntity.notFound().build();
             }
 
+            Map<String, Object> updatedTeam = null;
             for (Map<String, Object> team : teams) {
                 if (teamId.equals(team.get("_id")) || teamId.equals(team.get("id"))) {
                     team.put("name", teamData.get("name"));
                     team.put("description", teamData.get("description"));
                     team.put("updatedAt", new Date());
-                    
-                    user.setTeams(teams);
-                    userRepository.save(user);
-                    
-                    return ResponseEntity.ok(team);
+                    updatedTeam = team;
+                    break;
                 }
             }
 
-            return ResponseEntity.notFound().build();
+            if (updatedTeam == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            // Update all projects that reference this team
+            List<Map<String, Object>> projects = user.getProjects();
+            if (projects != null) {
+                boolean projectsUpdated = false;
+                for (Map<String, Object> project : projects) {
+                    String projectTeamId = (String) project.get("teamId");
+                    if (teamId.equals(projectTeamId)) {
+                        project.put("teamName", teamData.get("name"));
+                        project.put("updatedAt", new Date());
+                        projectsUpdated = true;
+                    }
+                }
+                if (projectsUpdated) {
+                    user.setProjects(projects);
+                }
+            }
+
+            user.setTeams(teams);
+            userRepository.save(user);
+            
+            return ResponseEntity.ok(updatedTeam);
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                 .body(Map.of("error", "Failed to update team: " + e.getMessage()));

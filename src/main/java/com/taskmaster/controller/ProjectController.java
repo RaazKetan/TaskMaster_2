@@ -86,14 +86,29 @@ public class ProjectController {
             newProject.put("_id", UUID.randomUUID().toString());
             newProject.put("name", projectData.get("name"));
             newProject.put("description", projectData.get("description"));
+            newProject.put("status", projectData.get("status"));
+            newProject.put("priority", projectData.get("priority"));
+            newProject.put("startDate", projectData.get("startDate"));
+            newProject.put("endDate", projectData.get("endDate"));
             newProject.put("teamId", projectData.get("teamId"));
-            newProject.put("status", projectData.getOrDefault("status", "planning"));
-            newProject.put("priority", projectData.getOrDefault("priority", "medium"));
+            newProject.put("progress", projectData.getOrDefault("progress", 0));
             newProject.put("createdBy", userId);
             newProject.put("createdAt", new Date());
-            newProject.put("deadline", projectData.get("deadline"));
-            newProject.put("progress", 0);
-            newProject.put("tasks", new ArrayList<>());
+            newProject.put("taskIds", new ArrayList<>());
+
+            // Find and set team name
+            String teamId = (String) projectData.get("teamId");
+            if (teamId != null && !teamId.isEmpty()) {
+                List<Map<String, Object>> teams = user.getTeams();
+                if (teams != null) {
+                    for (Map<String, Object> team : teams) {
+                        if (teamId.equals(team.get("_id")) || teamId.equals(team.get("id"))) {
+                            newProject.put("teamName", team.get("name"));
+                            break;
+                        }
+                    }
+                }
+            }
 
             // Add project to user's projects list
             List<Map<String, Object>> projects = user.getProjects();
@@ -160,31 +175,35 @@ public class ProjectController {
 
             for (Map<String, Object> project : projects) {
                 if (projectId.equals(project.get("_id")) || projectId.equals(project.get("id"))) {
-                    // Only update fields that are provided, preserve existing ones
-                    if (projectData.containsKey("name")) {
-                        project.put("name", projectData.get("name"));
-                    }
-                    if (projectData.containsKey("description")) {
-                        project.put("description", projectData.get("description"));
-                    }
-                    if (projectData.containsKey("status")) {
-                        project.put("status", projectData.get("status"));
-                    }
-                    if (projectData.containsKey("priority")) {
-                        project.put("priority", projectData.get("priority"));
-                    }
-                    if (projectData.containsKey("deadline")) {
-                        project.put("deadline", projectData.get("deadline"));
-                    }
-                    project.put("updatedAt", new Date());
-                    
+                    project.put("name", projectData.get("name"));
+                    project.put("description", projectData.get("description"));
+                    project.put("status", projectData.get("status"));
+                    project.put("priority", projectData.get("priority"));
+                    project.put("startDate", projectData.get("startDate"));
+                    project.put("endDate", projectData.get("endDate"));
+                    project.put("teamId", projectData.get("teamId"));
                     if (projectData.containsKey("progress")) {
                         project.put("progress", projectData.get("progress"));
                     }
-                    
+                    project.put("updatedAt", new Date());
+
+                    // Update team name if teamId changed
+                    String teamId = (String) projectData.get("teamId");
+                    if (teamId != null && !teamId.isEmpty()) {
+                        List<Map<String, Object>> teams = user.getTeams();
+                        if (teams != null) {
+                            for (Map<String, Object> team : teams) {
+                                if (teamId.equals(team.get("_id")) || teamId.equals(team.get("id"))) {
+                                    project.put("teamName", team.get("name"));
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
                     user.setProjects(projects);
                     userRepository.save(user);
-                    
+
                     return ResponseEntity.ok(project);
                 }
             }
@@ -211,7 +230,7 @@ public class ProjectController {
 
             boolean removed = projects.removeIf(project -> 
                 projectId.equals(project.get("_id")) || projectId.equals(project.get("id")));
-            
+
             if (removed) {
                 user.setProjects(projects);
                 userRepository.save(user);

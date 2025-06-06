@@ -199,9 +199,22 @@ const fetchTeams = async () => {
         return currentTeamId === teamId ? response.data : team;
       }));
 
+      // Update selected team if it was the one being edited
+      if (selectedTeam) {
+        const selectedTeamId = selectedTeam._id || selectedTeam.id;
+        if (selectedTeamId === teamId) {
+          setSelectedTeam(response.data);
+        }
+      }
+
       setShowEditModal(false);
       setEditingTeam(null);
       setError(null);
+
+      // Refresh teams data to ensure consistency
+      setTimeout(() => {
+        fetchTeams();
+      }, 500);
     } catch (error) {
       console.error('Error updating team:', error);
       setError('Failed to update team: ' + (error.response?.data?.message || error.message));
