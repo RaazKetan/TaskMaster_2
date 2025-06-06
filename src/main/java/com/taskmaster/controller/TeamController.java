@@ -217,6 +217,86 @@ public class TeamController {
         }
     }
 
+    @PostMapping("/teams/{teamId}/invite")
+    public ResponseEntity<?> inviteTeamMember(
+            @PathVariable String teamId, 
+            @RequestBody Map<String, Object> inviteData) {
+        try {
+            String email = (String) inviteData.get("email");
+            String role = (String) inviteData.get("role");
+            
+            if (email == null || email.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Email is required"));
+            }
+            
+            if (role == null || role.isEmpty()) {
+                role = "MEMBER"; // Default role
+            }
+
+            // Find the user who owns the team (for now, we'll use a simple approach)
+            // In a real application, you'd need to verify the requesting user has permission
+            
+            // For demo purposes, we'll simulate sending an invitation
+            // In production, you'd send an actual email invitation
+            
+            Map<String, Object> invitation = new HashMap<>();
+            invitation.put("email", email);
+            invitation.put("role", role);
+            invitation.put("teamId", teamId);
+            invitation.put("invitedAt", new Date());
+            invitation.put("status", "pending");
+            
+            // Simulate successful invitation
+            return ResponseEntity.ok(Map.of(
+                "message", "Invitation sent successfully",
+                "invitation", invitation
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                .body(Map.of("error", "Failed to send invitation: " + e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/teams/{teamId}/members/{userId}")
+    public ResponseEntity<?> removeTeamMember(
+            @PathVariable String teamId, 
+            @PathVariable String userId,
+            @RequestParam String removedBy) {
+        try {
+            User user = userRepository.findByUserId(removedBy);
+            if (user == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            List<Map<String, Object>> teams = user.getTeams();
+            if (teams == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            // Find the team and remove the member
+            for (Map<String, Object> team : teams) {
+                if (teamId.equals(team.get("_id")) || teamId.equals(team.get("id"))) {
+                    @SuppressWarnings("unchecked")
+                    List<Map<String, Object>> members = (List<Map<String, Object>>) team.get("members");
+                    if (members != null) {
+                        members.removeIf(member -> userId.equals(member.get("userId")));
+                        team.put("members", members);
+                        team.put("updatedAt", new Date());
+                    }
+                    break;
+                }
+            }
+
+            user.setTeams(teams);
+            userRepository.save(user);
+            
+            return ResponseEntity.ok(Map.of("message", "Member removed successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                .body(Map.of("error", "Failed to remove member: " + e.getMessage()));
+        }
+    }
+
     // Helper method to get team name by ID
     public String getTeamNameById(String teamId, String userId) {
         try {

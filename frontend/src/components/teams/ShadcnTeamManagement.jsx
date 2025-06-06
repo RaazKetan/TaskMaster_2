@@ -28,6 +28,7 @@ const ShadcnTeamManagement = () => {
   const [inviteEmail, setInviteEmail] = useState('');
   const [deletingItems, setDeletingItems] = useState(new Set());
   const [animatingItems, setAnimatingItems] = useState(new Set());
+  const [showInviteModal, setShowInviteModal] = useState(false);
 
   useEffect(() => {
     if (userSpace) {
@@ -241,7 +242,7 @@ const fetchTeams = async () => {
       await api.delete(`/teams/${teamId}/members/${userId}`, {
         params: { removedBy: currentUser.userId }
       });
-      
+
       // Refresh teams to show updated member list
       await fetchTeams();
       setError(null);
@@ -249,6 +250,9 @@ const fetchTeams = async () => {
       console.error('Error removing team member:', error);
       setError('Failed to remove team member: ' + (error.response?.data?.message || error.message));
     }
+  };
+  const handleMemberInvited = async () => {
+    await fetchTeams();
   };
 
   if (loading) {
@@ -314,7 +318,7 @@ const fetchTeams = async () => {
                       {teams.map((team) => {
                         const teamId = team._id || team.id;
                         const selectedTeamId = selectedTeam?._id || selectedTeam?.id;
-                        
+
                         return (
                           <div
                             key={teamId}
@@ -445,6 +449,10 @@ const fetchTeams = async () => {
                           </div>
                         </div>
                       )}
+                      <Button onClick={() => setShowInviteModal(true)}>
+                          <UserPlus className="w-4 h-4 mr-2" />
+                          Invite Member
+                      </Button>
                     </CardContent>
                   </Card>
 
@@ -580,6 +588,15 @@ const fetchTeams = async () => {
                 </form>
               </div>
             </div>
+          )}
+
+          {/* Invite Member Modal */}
+          {showInviteModal && selectedTeam && (
+            <InviteMember
+              teamId={selectedTeam._id || selectedTeam.id}
+              onClose={() => setShowInviteModal(false)}
+              onMemberInvited={handleMemberInvited}
+            />
           )}
         </div>
       </div>
