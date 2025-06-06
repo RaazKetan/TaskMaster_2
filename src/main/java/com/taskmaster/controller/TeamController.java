@@ -235,7 +235,7 @@ public class TeamController {
             }
 
             // Find the user who will receive the invitation
-            User invitedUser = userRepository.findByUserEmail(email);
+            User invitedUser = userRepository.findByEmail(email);
             if (invitedUser == null) {
                 return ResponseEntity.badRequest().body(Map.of("error", "No user found with this email address"));
             }

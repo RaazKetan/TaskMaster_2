@@ -25,7 +25,7 @@ public class MongoAuthController {
     @GetMapping("/check-email")
     public ResponseEntity<?> checkEmail(@RequestParam String email) {
         try {
-            User existingUser = userRepository.findByUserEmail(email);
+            User existingUser = userRepository.findByEmail(email);
             Map<String, Object> response = new HashMap<>();
             response.put("exists", existingUser != null);
             if (existingUser != null) {
