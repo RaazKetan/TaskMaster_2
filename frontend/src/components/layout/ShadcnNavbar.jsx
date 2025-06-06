@@ -127,7 +127,6 @@ const ShadcnNavbar = () => {
           onClick={() => setIsDropdownOpen(false)}
         />
       )}
-    </>
     </header>
   );
 };
