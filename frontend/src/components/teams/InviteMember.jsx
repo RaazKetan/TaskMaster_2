@@ -83,7 +83,21 @@ const InviteMember = ({ teamId, onClose, onMemberInvited }) => {
 
     } catch (err) {
       console.error('Invitation error:', err);
-      setError(err.response?.data?.message || err.response?.data || 'Failed to send invitation');
+      let errorMessage = 'Failed to send invitation';
+      
+      if (err.response?.data) {
+        if (typeof err.response.data === 'string') {
+          errorMessage = err.response.data;
+        } else if (err.response.data.message) {
+          errorMessage = err.response.data.message;
+        } else if (err.response.data.error) {
+          errorMessage = err.response.data.error;
+        }
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
