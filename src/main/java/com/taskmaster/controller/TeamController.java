@@ -516,6 +516,125 @@ public class TeamController {
         }
     }
 
+    @GetMapping("/teams/{teamId}/pending-invitations")
+    public ResponseEntity<?> getPendingInvitations(
+            @PathVariable String teamId, 
+            @RequestParam String userId) {
+        try {
+            // Find all users and check their notifications for pending invitations to this team
+            List<User> allUsers = userRepository.findAll();
+            List<Map<String, Object>> pendingInvitations = new ArrayList<>();
+
+            for (User user : allUsers) {
+                Map<String, Object> userdata = user.getUserdata();
+                if (userdata != null) {
+                    @SuppressWarnings("unchecked")
+                    List<Map<String, Object>> notifications = (List<Map<String, Object>>) userdata.get("notifications");
+                    if (notifications != null) {
+                        for (Map<String, Object> notif : notifications) {
+                            if ("team_invitation".equals(notif.get("type")) && 
+                                teamId.equals(notif.get("teamId")) && 
+                                "pending".equals(notif.get("status"))) {
+                                
+                                Map<String, Object> invitation = new HashMap<>(notif);
+                                invitation.put("invitedUserEmail", user.getUserEmail());
+                                invitation.put("invitedUserId", user.getUserId());
+                                pendingInvitations.add(invitation);
+                            }
+                        }
+                    }
+                }
+            }
+
+            return ResponseEntity.ok(pendingInvitations);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                .body(Map.of("error", "Failed to fetch pending invitations: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/teams/{teamId}/resend-invitation")
+    public ResponseEntity<?> resendInvitation(
+            @PathVariable String teamId,
+            @RequestBody Map<String, Object> requestData) {
+        try {
+            String email = (String) requestData.get("email");
+            String invitationId = (String) requestData.get("invitationId");
+            
+            if (email == null || email.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Email is required"));
+            }
+
+            User invitedUser = userRepository.findByEmail(email);
+            if (invitedUser == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "User not found"));
+            }
+
+            Map<String, Object> userdata = invitedUser.getUserdata();
+            if (userdata == null) {
+                userdata = new HashMap<>();
+            }
+
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> notifications = (List<Map<String, Object>>) userdata.get("notifications");
+            if (notifications == null) {
+                notifications = new ArrayList<>();
+            }
+
+            // Update the existing invitation with new timestamp
+            for (Map<String, Object> notif : notifications) {
+                if (invitationId.equals(notif.get("id"))) {
+                    notif.put("invitedAt", new Date());
+                    notif.put("status", "pending");
+                    break;
+                }
+            }
+
+            userdata.put("notifications", notifications);
+            invitedUser.setUserdata(userdata);
+            userRepository.save(invitedUser);
+
+            return ResponseEntity.ok(Map.of("message", "Invitation resent successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                .body(Map.of("error", "Failed to resend invitation: " + e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/invitations/{invitationId}/cancel")
+    public ResponseEntity<?> cancelInvitation(
+            @PathVariable String invitationId,
+            @RequestParam String email) {
+        try {
+            User invitedUser = userRepository.findByEmail(email);
+            if (invitedUser == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            Map<String, Object> userdata = invitedUser.getUserdata();
+            if (userdata == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> notifications = (List<Map<String, Object>>) userdata.get("notifications");
+            if (notifications == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            // Remove the invitation
+            notifications.removeIf(notif -> invitationId.equals(notif.get("id")));
+            userdata.put("notifications", notifications);
+            invitedUser.setUserdata(userdata);
+            userRepository.save(invitedUser);
+
+            return ResponseEntity.ok(Map.of("message", "Invitation cancelled successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                .body(Map.of("error", "Failed to cancel invitation: " + e.getMessage()));
+        }
+    }
+
     // Helper method to get team name by ID
     public String getTeamNameById(String teamId, String userId) {
         try {

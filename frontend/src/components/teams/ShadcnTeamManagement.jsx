@@ -30,6 +30,7 @@ const ShadcnTeamManagement = () => {
   const [deletingItems, setDeletingItems] = useState(new Set());
   const [animatingItems, setAnimatingItems] = useState(new Set());
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [pendingInvitations, setPendingInvitations] = useState([]);
 
   useEffect(() => {
     if (userSpace) {
@@ -252,9 +253,75 @@ const fetchTeams = async () => {
       setError('Failed to remove team member: ' + (error.response?.data?.message || error.message));
     }
   };
+  const fetchPendingInvitations = async (teamId) => {
+    try {
+      const userData = localStorage.getItem('userData');
+      const currentUser = userData ? JSON.parse(userData) : null;
+
+      if (!currentUser || !currentUser.userId || !teamId) return;
+
+      const response = await api.get(`/teams/${teamId}/pending-invitations`, {
+        params: { userId: currentUser.userId }
+      });
+      
+      setPendingInvitations(response.data || []);
+    } catch (error) {
+      console.error('Error fetching pending invitations:', error);
+      setPendingInvitations([]);
+    }
+  };
+
+  const resendInvitation = async (teamId, invitationId, email) => {
+    try {
+      await api.post(`/teams/${teamId}/resend-invitation`, {
+        email: email,
+        invitationId: invitationId
+      });
+      
+      alert('Invitation resent successfully!');
+      await fetchPendingInvitations(teamId);
+    } catch (error) {
+      console.error('Error resending invitation:', error);
+      alert('Failed to resend invitation: ' + (error.response?.data?.error || error.message));
+    }
+  };
+
+  const cancelInvitation = async (invitationId, email) => {
+    if (!window.confirm('Are you sure you want to cancel this invitation?')) {
+      return;
+    }
+
+    try {
+      await api.delete(`/invitations/${invitationId}/cancel`, {
+        params: { email: email }
+      });
+      
+      alert('Invitation cancelled successfully!');
+      if (selectedTeam) {
+        await fetchPendingInvitations(selectedTeam._id || selectedTeam.id);
+      }
+    } catch (error) {
+      console.error('Error cancelling invitation:', error);
+      alert('Failed to cancel invitation: ' + (error.response?.data?.error || error.message));
+    }
+  };
+
   const handleMemberInvited = async () => {
     await fetchTeams();
+    if (selectedTeam) {
+      await fetchPendingInvitations(selectedTeam._id || selectedTeam.id);
+    }
   };
+
+  // Fetch pending invitations when team is selected
+  useEffect(() => {
+    if (selectedTeam) {
+      const teamId = selectedTeam._id || selectedTeam.id;
+      fetchPendingInvitations(teamId);
+    } else {
+      setPendingInvitations([]);
+    }
+  }, [selectedTeam]);
 
   if (loading) {
     return (
@@ -457,6 +524,65 @@ const fetchTeams = async () => {
                     </CardContent>
                   </Card>
 
+                  {/* Pending Invitations */}
+                  {pendingInvitations.length > 0 && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Send className="w-5 h-5" />
+                          Pending Invitations ({pendingInvitations.length})
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          {pendingInvitations.map((invitation) => (
+                            <div key={invitation.id} className="flex items-center justify-between p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                                  <Send className="w-4 h-4 text-yellow-600" />
+                                </div>
+                                <div>
+                                  <span className="text-sm font-medium">
+                                    {invitation.invitedUserEmail}
+                                  </span>
+                                  <div className="text-xs text-slate-500">
+                                    Role: {invitation.role} • Sent: {new Date(invitation.invitedAt).toLocaleDateString()}
+                                  </div>
+                                </div>
+                                <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded">
+                                  Pending
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => resendInvitation(
+                                    selectedTeam._id || selectedTeam.id, 
+                                    invitation.id, 
+                                    invitation.invitedUserEmail
+                                  )}
+                                  className="text-xs"
+                                  title="Resend invitation"
+                                >
+                                  <Send className="w-3 h-3" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => cancelInvitation(invitation.id, invitation.invitedUserEmail)}
+                                  className="text-xs text-red-600 hover:bg-red-50"
+                                  title="Cancel invitation"
+                                >
+                                  <X className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
 
                 </div>
               ) : (

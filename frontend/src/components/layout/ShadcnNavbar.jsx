@@ -53,9 +53,11 @@ const ShadcnNavbar = () => {
         </nav>
 
         {/* User menu */}
-        <div className="flex items-center">
+        <div className="flex items-center gap-4">
           {user && (
-            <div className="relative">
+            <>
+              <NotificationBell />
+              <div className="relative">
               <Button
                 variant="ghost"
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
