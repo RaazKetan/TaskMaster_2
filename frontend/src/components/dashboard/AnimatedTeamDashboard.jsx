@@ -393,10 +393,7 @@ const AnimatedTeamDashboard = () => {
                         dataKey="value"
                       >
                         {dashboardData.projectStatus.map((entry, index) => (
-                          <Cell 
-                            key={`cell-${index}`} 
-                            fill={projectStatusColors[entry.name] || '#6b7280'} 
-                          />
+                          <Cell key={`cell-${index}`} fill={projectStatusColors[entry.name] || '#6b7280'} />
                         ))}
                       </Pie>
                       <Tooltip />
@@ -422,7 +419,12 @@ const AnimatedTeamDashboard = () => {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" />
                     <YAxis />
-                    <Tooltip />
+                    <Tooltip formatter={(value, name) => {
+                        if (name === 'Tasks') return [`${value}`, 'Tasks Created/Updated'];
+                        if (name === 'Projects') return [`${value}`, 'Projects Created/Updated'];
+                        if (name === 'Meetings') return [`${value}`, 'Estimated Meetings'];
+                        return [`${value}`, name];
+                      }} />
                     <Area 
                       type="monotone" 
                       dataKey="tasks" 
