@@ -108,9 +108,15 @@ const ShadcnProjectManagement = () => {
   }, []);
 
   const filteredProjects = projects.filter(project => {
-    const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         project.teamName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (project.description && project.description.toLowerCase().includes(searchTerm.toLowerCase()));
+    // Safely handle null/undefined values in search
+    const projectName = project.name || '';
+    const teamName = project.teamName || '';
+    const projectDescription = project.description || '';
+    const searchTermLower = searchTerm ? searchTerm.toLowerCase() : '';
+    
+    const matchesSearch = projectName.toLowerCase().includes(searchTermLower) ||
+                         teamName.toLowerCase().includes(searchTermLower) ||
+                         projectDescription.toLowerCase().includes(searchTermLower);
     
     const matchesStatus = !selectedStatus || project.status === selectedStatus;
     const matchesPriority = !selectedPriority || project.priority === selectedPriority;
