@@ -415,6 +415,8 @@ public class TeamController {
 
             if (teamOwner != null) {
                 List<Map<String, Object>> teams = teamOwner.getTeams();
+                Map<String, Object> targetTeam = null;
+                
                 for (Map<String, Object> team : teams) {
                     if (teamId.equals(team.get("_id")) || teamId.equals(team.get("id"))) {
                         @SuppressWarnings("unchecked")
@@ -435,6 +437,7 @@ public class TeamController {
                             members.add(newMember);
                             team.put("members", members);
                         }
+                        targetTeam = team;
                         break;
                     }
                 }
@@ -450,18 +453,49 @@ public class TeamController {
                 boolean teamExists = userTeams.stream()
                     .anyMatch(team -> teamId.equals(team.get("_id")) || teamId.equals(team.get("id")));
 
-                if (!teamExists) {
+                if (!teamExists && targetTeam != null) {
                     Map<String, Object> teamCopy = new HashMap<>();
-                    Map<String, Object> originalTeam = teamOwner.getTeams().stream()
-                        .filter(t -> teamId.equals(t.get("_id")) || teamId.equals(t.get("id")))
-                        .findFirst()
-                        .orElse(null);
-                    
-                    if (originalTeam != null) {
-                        teamCopy.putAll(originalTeam);
-                        teamCopy.put("role", role); // User's role in this team
-                        userTeams.add(teamCopy);
-                        user.setTeams(userTeams);
+                    teamCopy.putAll(targetTeam);
+                    teamCopy.put("role", role); // User's role in this team
+                    userTeams.add(teamCopy);
+                    user.setTeams(userTeams);
+                }
+
+                // Copy team projects to the new member
+                List<Map<String, Object>> teamOwnerProjects = teamOwner.getProjects();
+                if (teamOwnerProjects != null) {
+                    List<Map<String, Object>> userProjects = user.getProjects();
+                    if (userProjects == null) {
+                        userProjects = new ArrayList<>();
+                    }
+
+                    // Filter projects that belong to this team
+                    List<Map<String, Object>> teamProjects = teamOwnerProjects.stream()
+                        .filter(project -> teamId.equals(project.get("teamId")))
+                        .collect(ArrayList::new, (list, item) -> {
+                            // Check if project already exists in user's projects
+                            String projectId = (String) item.get("_id");
+                            boolean projectExists = userProjects.stream()
+                                .anyMatch(p -> projectId.equals(p.get("_id")));
+                            
+                            if (!projectExists) {
+                                Map<String, Object> projectCopy = new HashMap<>();
+                                projectCopy.putAll(item);
+                                list.add(projectCopy);
+                            }
+                        }, ArrayList::addAll);
+
+                    userProjects.addAll(teamProjects);
+                    user.setProjects(userProjects);
+
+                    // Copy tasks from team projects
+                    for (Map<String, Object> project : teamProjects) {
+                        @SuppressWarnings("unchecked")
+                        List<Map<String, Object>> projectTasks = (List<Map<String, Object>>) project.get("tasks");
+                        if (projectTasks != null && !projectTasks.isEmpty()) {
+                            // Tasks are already included in the project object, no separate action needed
+                            // as we copied the entire project structure above
+                        }
                     }
                 }
             }

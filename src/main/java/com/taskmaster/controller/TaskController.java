@@ -77,6 +77,9 @@ public class TaskController {
                 return ResponseEntity.badRequest().body(Map.of("error", "No projects found"));
             }
 
+            Map<String, Object> targetProject = null;
+            String teamId = null;
+            
             for (Map<String, Object> project : projects) {
                 if (projectId.equals(project.get("_id"))) {
                     // Create new task
@@ -99,8 +102,16 @@ public class TaskController {
                     }
                     tasks.add(newTask);
 
+                    targetProject = project;
+                    teamId = (String) project.get("teamId");
+                    
                     user.setProjects(projects);
                     userRepository.save(user);
+
+                    // Sync task with team members if project belongs to a team
+                    if (teamId != null && !teamId.isEmpty()) {
+                        syncTaskWithTeamMembers(teamId, projectId, newTask);
+                    }
 
                     // Add project info to task for response
                     newTask.put("projectName", project.get("name"));
@@ -114,6 +125,54 @@ public class TaskController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                 .body(Map.of("error", "Failed to create task: " + e.getMessage()));
+        }
+    }
+
+    private void syncTaskWithTeamMembers(String teamId, String projectId, Map<String, Object> task) {
+        try {
+            // Find all users who are members of this team
+            List<User> allUsers = userRepository.findAll();
+            
+            for (User user : allUsers) {
+                List<Map<String, Object>> userTeams = user.getTeams();
+                if (userTeams != null) {
+                    boolean isMember = userTeams.stream()
+                        .anyMatch(team -> teamId.equals(team.get("_id")) || teamId.equals(team.get("id")));
+                    
+                    if (isMember) {
+                        List<Map<String, Object>> userProjects = user.getProjects();
+                        if (userProjects != null) {
+                            for (Map<String, Object> project : userProjects) {
+                                if (projectId.equals(project.get("_id"))) {
+                                    @SuppressWarnings("unchecked")
+                                    List<Map<String, Object>> tasks = (List<Map<String, Object>>) project.get("tasks");
+                                    if (tasks == null) {
+                                        tasks = new ArrayList<>();
+                                        project.put("tasks", tasks);
+                                    }
+                                    
+                                    // Check if task already exists
+                                    String taskId = (String) task.get("_id");
+                                    boolean taskExists = tasks.stream()
+                                        .anyMatch(t -> taskId.equals(t.get("_id")));
+                                    
+                                    if (!taskExists) {
+                                        Map<String, Object> taskCopy = new HashMap<>();
+                                        taskCopy.putAll(task);
+                                        tasks.add(taskCopy);
+                                        user.setProjects(userProjects);
+                                        userRepository.save(user);
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Log error but don't fail the main operation
+            System.err.println("Error syncing task with team members: " + e.getMessage());
         }
     }
 

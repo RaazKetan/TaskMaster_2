@@ -134,7 +134,7 @@ public class ProjectController {
             newProject.put("createdBy", userId);
             newProject.put("createdAt", new Date());
             newProject.put("dueDate", projectData.get("dueDate"));
-            newProject.put("taskIds", new ArrayList<>());
+            newProject.put("tasks", new ArrayList<>());
 
             // Add project to user's projects list
             List<Map<String, Object>> projects = user.getProjects();
@@ -143,13 +143,55 @@ public class ProjectController {
             }
             projects.add(newProject);
             user.setProjects(projects);
-
             userRepository.save(user);
+
+            // If this project belongs to a team, sync it with all team members
+            if (teamId != null && !teamId.isEmpty()) {
+                syncProjectWithTeamMembers(teamId, newProject);
+            }
 
             return ResponseEntity.ok(newProject);
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                 .body(Map.of("error", "Failed to create project: " + e.getMessage()));
+        }
+    }
+
+    private void syncProjectWithTeamMembers(String teamId, Map<String, Object> project) {
+        try {
+            // Find all users who are members of this team
+            List<User> allUsers = userRepository.findAll();
+            
+            for (User user : allUsers) {
+                List<Map<String, Object>> userTeams = user.getTeams();
+                if (userTeams != null) {
+                    boolean isMember = userTeams.stream()
+                        .anyMatch(team -> teamId.equals(team.get("_id")) || teamId.equals(team.get("id")));
+                    
+                    if (isMember) {
+                        List<Map<String, Object>> userProjects = user.getProjects();
+                        if (userProjects == null) {
+                            userProjects = new ArrayList<>();
+                        }
+                        
+                        // Check if project already exists
+                        String projectId = (String) project.get("_id");
+                        boolean projectExists = userProjects.stream()
+                            .anyMatch(p -> projectId.equals(p.get("_id")));
+                        
+                        if (!projectExists) {
+                            Map<String, Object> projectCopy = new HashMap<>();
+                            projectCopy.putAll(project);
+                            userProjects.add(projectCopy);
+                            user.setProjects(userProjects);
+                            userRepository.save(user);
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Log error but don't fail the main operation
+            System.err.println("Error syncing project with team members: " + e.getMessage());
         }
     }
 
