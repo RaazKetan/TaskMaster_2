@@ -188,8 +188,14 @@ const TaskManagement = () => {
   const filteredTasks = tasks.filter(task => {
     const matchesProject = selectedProject === 'all' || task.projectId === selectedProject;
     const matchesStatus = selectedStatus === 'all' || task.status === selectedStatus;
-    const matchesSearch = (task.title || task.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (task.description || '').toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Safely handle null/undefined values in search
+    const taskTitle = task.title || task.name || '';
+    const taskDescription = task.description || '';
+    const searchTermLower = searchTerm ? searchTerm.toLowerCase() : '';
+    
+    const matchesSearch = taskTitle.toLowerCase().includes(searchTermLower) ||
+                         taskDescription.toLowerCase().includes(searchTermLower);
     
     return matchesProject && matchesStatus && matchesSearch;
   });
