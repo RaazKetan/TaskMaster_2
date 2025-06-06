@@ -215,6 +215,12 @@ const TaskManagement = () => {
 
     const project = projects.find(p => (p._id || p.id) === task.projectId);
     const priorityColor = PRIORITY_COLORS[task.priority] || '#6B7280';
+    const isCompleted = task.status === 'COMPLETED';
+
+    const handleCheckboxChange = async (checked) => {
+      const newStatus = checked ? 'COMPLETED' : 'TODO';
+      await handleTaskStatusUpdate(task._id || task.id, newStatus);
+    };
 
     return (
       <motion.div 
@@ -228,73 +234,96 @@ const TaskManagement = () => {
         <Card
           className={`cursor-move transition-all duration-200 hover:shadow-lg mb-3 ${
             isDragging ? 'opacity-50 rotate-2 scale-105 shadow-2xl' : ''
-          }`}
+          } ${isCompleted ? 'bg-green-50 border-green-200' : ''}`}
           style={{ borderLeft: `4px solid ${priorityColor}` }}
         >
           <CardContent className="p-4">
-            <div className="flex items-start justify-between mb-2">
-              <h3 className="font-semibold text-sm text-slate-900 leading-tight">
-                {task.title || task.name}
-              </h3>
-              <Badge 
-                variant="outline" 
-                className="ml-2 text-xs font-medium"
-                style={{ 
-                  backgroundColor: `${priorityColor}20`,
-                  borderColor: priorityColor,
-                  color: priorityColor 
-                }}
-              >
-                {task.priority}
-              </Badge>
-            </div>
-            
-            <p className="text-xs text-slate-600 mb-3 line-clamp-2">
-              {task.description}
-            </p>
-            
-            <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
-              <div className="flex items-center gap-3">
-                {task.assignedTo && (
-                  <div className="flex items-center gap-1">
-                    <User className="w-3 h-3" />
-                    <span>{task.assignedTo}</span>
+            <div className="flex items-start gap-3 mb-2">
+              <input
+                type="checkbox"
+                checked={isCompleted}
+                onChange={(e) => handleCheckboxChange(e.target.checked)}
+                className="mt-1 w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
+                onClick={(e) => e.stopPropagation()}
+              />
+              <div className="flex-1">
+                <div className="flex items-start justify-between mb-2">
+                  <h3 className={`font-semibold text-sm leading-tight ${
+                    isCompleted ? 'text-green-700 line-through' : 'text-slate-900'
+                  }`}>
+                    {task.title || task.name}
+                  </h3>
+                  <Badge 
+                    variant="outline" 
+                    className="ml-2 text-xs font-medium"
+                    style={{ 
+                      backgroundColor: `${priorityColor}20`,
+                      borderColor: priorityColor,
+                      color: priorityColor 
+                    }}
+                  >
+                    {task.priority}
+                  </Badge>
+                </div>
+                
+                <p className={`text-xs mb-3 line-clamp-2 ${
+                  isCompleted ? 'text-green-600' : 'text-slate-600'
+                }`}>
+                  {task.description}
+                </p>
+                
+                <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
+                  <div className="flex items-center gap-3">
+                    {task.assignedTo && (
+                      <div className="flex items-center gap-1">
+                        <User className="w-3 h-3" />
+                        <span>{task.assignedTo}</span>
+                      </div>
+                    )}
+                    {task.dueDate && (
+                      <div className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        <span>{new Date(task.dueDate).toLocaleDateString()}</span>
+                      </div>
+                    )}
                   </div>
-                )}
-                {task.dueDate && (
-                  <div className="flex items-center gap-1">
-                    <Calendar className="w-3 h-3" />
-                    <span>{new Date(task.dueDate).toLocaleDateString()}</span>
+                  {project && (
+                    <span className="px-2 py-1 rounded bg-blue-100 text-blue-800 text-xs font-medium">
+                      {project.name}
+                    </span>
+                  )}
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <Badge 
+                    variant="secondary" 
+                    className={`text-xs ${isCompleted ? 'bg-green-100 text-green-800' : ''}`}
+                  >
+                    {task.status === 'IN_PROGRESS' ? 'In Progress' : 
+                     task.status === 'COMPLETED' ? 'Completed' : 
+                     task.status === 'REVIEW' ? 'Review' : 'To Do'}
+                  </Badge>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditTask(task);
+                      }}
+                      className="text-blue-500 hover:text-blue-700 text-xs px-2 py-1 rounded bg-blue-50 hover:bg-blue-100 transition-colors"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteTask(task._id || task.id);
+                      }}
+                      className="text-red-500 hover:text-red-700 text-xs px-2 py-1 rounded bg-red-50 hover:bg-red-100 transition-colors"
+                    >
+                      Delete
+                    </button>
                   </div>
-                )}
-              </div>
-              {project && (
-                <span className="px-2 py-1 rounded bg-blue-100 text-blue-800 text-xs font-medium">
-                  {project.name}
-                </span>
-              )}
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <Badge 
-                variant="secondary" 
-                className="text-xs"
-              >
-                {task.status}
-              </Badge>
-              <div className="flex gap-1">
-                <button
-                  onClick={() => handleEditTask(task)}
-                  className="text-blue-500 hover:text-blue-700 text-xs px-2 py-1 rounded bg-blue-50 hover:bg-blue-100 transition-colors"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDeleteTask(task._id || task.id)}
-                  className="text-red-500 hover:text-red-700 text-xs px-2 py-1 rounded bg-red-50 hover:bg-red-100 transition-colors"
-                >
-                  Delete
-                </button>
+                </div>
               </div>
             </div>
           </CardContent>
@@ -303,12 +332,12 @@ const TaskManagement = () => {
     );
   };
 
-  const PriorityColumn = ({ priority, title, tasks, icon: Icon, color }) => {
+  const StatusColumn = ({ status, title, tasks, icon: Icon, color }) => {
     const [{ isOver }, drop] = useDrop({
       accept: 'task',
       drop: (item) => {
-        if (item.priority !== priority) {
-          handleTaskPriorityUpdate(item.id, priority);
+        if (item.status !== status) {
+          handleTaskStatusUpdate(item.id, status);
         }
       },
       collect: (monitor) => ({
@@ -390,11 +419,11 @@ const TaskManagement = () => {
     );
   }
 
-  // Group tasks by priority
-  const urgentTasks = filteredTasks.filter(task => task.priority === 'URGENT');
-  const highTasks = filteredTasks.filter(task => task.priority === 'HIGH');
-  const mediumTasks = filteredTasks.filter(task => task.priority === 'MEDIUM');
-  const lowTasks = filteredTasks.filter(task => task.priority === 'LOW');
+  // Group tasks by status
+  const todoTasks = filteredTasks.filter(task => task.status === 'TODO');
+  const inProgressTasks = filteredTasks.filter(task => task.status === 'IN_PROGRESS');
+  const reviewTasks = filteredTasks.filter(task => task.status === 'REVIEW');
+  const completedTasks = filteredTasks.filter(task => task.status === 'COMPLETED');
 
   return (
     <DndProvider backend={HTML5Backend}>
@@ -409,7 +438,7 @@ const TaskManagement = () => {
               transition={{ duration: 0.5 }}
             >
               <h1 className="text-3xl font-bold text-slate-900 mb-2">Task Management</h1>
-              <p className="text-slate-600">Organize tasks by priority and drag to update</p>
+              <p className="text-slate-600">Organize tasks by status, drag to update, or check to complete</p>
             </motion.div>
 
             {/* Filters */}
@@ -494,33 +523,33 @@ const TaskManagement = () => {
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
               >
-                <PriorityColumn
-                  priority="URGENT"
-                  title="Urgent"
-                  tasks={urgentTasks}
-                  icon={Zap}
-                  color="#DC2626"
-                />
-                <PriorityColumn
-                  priority="HIGH"
-                  title="High Priority"
-                  tasks={highTasks}
-                  icon={AlertTriangle}
-                  color="#EA580C"
-                />
-                <PriorityColumn
-                  priority="MEDIUM"
-                  title="Medium Priority"
-                  tasks={mediumTasks}
-                  icon={AlertCircle}
-                  color="#D97706"
-                />
-                <PriorityColumn
-                  priority="LOW"
-                  title="Low Priority"
-                  tasks={lowTasks}
+                <StatusColumn
+                  status="TODO"
+                  title="To Do"
+                  tasks={todoTasks}
                   icon={Clock}
-                  color="#059669"
+                  color="#6B7280"
+                />
+                <StatusColumn
+                  status="IN_PROGRESS"
+                  title="In Progress"
+                  tasks={inProgressTasks}
+                  icon={AlertCircle}
+                  color="#3B82F6"
+                />
+                <StatusColumn
+                  status="REVIEW"
+                  title="Review"
+                  tasks={reviewTasks}
+                  icon={AlertTriangle}
+                  color="#F59E0B"
+                />
+                <StatusColumn
+                  status="COMPLETED"
+                  title="Completed"
+                  tasks={completedTasks}
+                  icon={CheckCircle}
+                  color="#10B981"
                 />
               </motion.div>
             )}
