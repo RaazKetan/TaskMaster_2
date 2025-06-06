@@ -28,9 +28,33 @@ public class ProjectController {
                 return ResponseEntity.notFound().build();
             }
 
+            // Get projects for the user
             List<Map<String, Object>> projects = user.getProjects();
             if (projects == null) {
                 projects = new ArrayList<>();
+            }
+
+            // Get teams for team name resolution
+            List<Map<String, Object>> teams = user.getTeams();
+            Map<String, String> teamNameMap = new HashMap<>();
+            if (teams != null) {
+                for (Map<String, Object> team : teams) {
+                    String teamId = (String) team.get("_id");
+                    String teamName = (String) team.get("name");
+                    if (teamId != null && teamName != null) {
+                        teamNameMap.put(teamId, teamName);
+                    }
+                }
+            }
+
+            // Ensure all projects have correct team names
+            for (Map<String, Object> project : projects) {
+                String teamId = (String) project.get("teamId");
+                if (teamId != null && teamNameMap.containsKey(teamId)) {
+                    project.put("teamName", teamNameMap.get(teamId));
+                } else if (teamId != null) {
+                    project.put("teamName", "Unknown Team");
+                }
             }
 
             return ResponseEntity.ok(projects);
@@ -81,34 +105,36 @@ public class ProjectController {
                 return ResponseEntity.notFound().build();
             }
 
+            // Get team name from teamId
+            String teamId = (String) projectData.get("teamId");
+            String teamName = "Unknown Team";
+
+            if (teamId != null) {
+                List<Map<String, Object>> teams = user.getTeams();
+                if (teams != null) {
+                    Optional<Map<String, Object>> team = teams.stream()
+                        .filter(t -> teamId.equals(t.get("_id")))
+                        .findFirst();
+                    if (team.isPresent()) {
+                        teamName = (String) team.get().get("name");
+                    }
+                }
+            }
+
             // Create new project
             Map<String, Object> newProject = new HashMap<>();
             newProject.put("_id", UUID.randomUUID().toString());
             newProject.put("name", projectData.get("name"));
             newProject.put("description", projectData.get("description"));
-            newProject.put("status", projectData.get("status"));
-            newProject.put("priority", projectData.get("priority"));
-            newProject.put("startDate", projectData.get("startDate"));
-            newProject.put("endDate", projectData.get("endDate"));
-            newProject.put("teamId", projectData.get("teamId"));
+            newProject.put("status", projectData.getOrDefault("status", "Planning"));
+            newProject.put("priority", projectData.getOrDefault("priority", "Medium"));
             newProject.put("progress", projectData.getOrDefault("progress", 0));
+            newProject.put("teamId", teamId);
+            newProject.put("teamName", teamName);
             newProject.put("createdBy", userId);
             newProject.put("createdAt", new Date());
+            newProject.put("dueDate", projectData.get("dueDate"));
             newProject.put("taskIds", new ArrayList<>());
-
-            // Find and set team name
-            String teamId = (String) projectData.get("teamId");
-            if (teamId != null && !teamId.isEmpty()) {
-                List<Map<String, Object>> teams = user.getTeams();
-                if (teams != null) {
-                    for (Map<String, Object> team : teams) {
-                        if (teamId.equals(team.get("_id")) || teamId.equals(team.get("id"))) {
-                            newProject.put("teamName", team.get("name"));
-                            break;
-                        }
-                    }
-                }
-            }
 
             // Add project to user's projects list
             List<Map<String, Object>> projects = user.getProjects();
@@ -173,42 +199,49 @@ public class ProjectController {
                 return ResponseEntity.notFound().build();
             }
 
+            Map<String, Object> updatedProject = null;
             for (Map<String, Object> project : projects) {
                 if (projectId.equals(project.get("_id")) || projectId.equals(project.get("id"))) {
                     project.put("name", projectData.get("name"));
                     project.put("description", projectData.get("description"));
                     project.put("status", projectData.get("status"));
                     project.put("priority", projectData.get("priority"));
-                    project.put("startDate", projectData.get("startDate"));
-                    project.put("endDate", projectData.get("endDate"));
-                    project.put("teamId", projectData.get("teamId"));
-                    if (projectData.containsKey("progress")) {
-                        project.put("progress", projectData.get("progress"));
-                    }
-                    project.put("updatedAt", new Date());
+                    project.put("progress", projectData.get("progress"));
 
-                    // Update team name if teamId changed
+                    // Handle team assignment
                     String teamId = (String) projectData.get("teamId");
-                    if (teamId != null && !teamId.isEmpty()) {
+                    project.put("teamId", teamId);
+
+                    // Get correct team name
+                    String teamName = "Unknown Team";
+                    if (teamId != null) {
                         List<Map<String, Object>> teams = user.getTeams();
                         if (teams != null) {
-                            for (Map<String, Object> team : teams) {
-                                if (teamId.equals(team.get("_id")) || teamId.equals(team.get("id"))) {
-                                    project.put("teamName", team.get("name"));
-                                    break;
-                                }
+                            Optional<Map<String, Object>> team = teams.stream()
+                                .filter(t -> teamId.equals(t.get("_id")))
+                                .findFirst();
+                            if (team.isPresent()) {
+                                teamName = (String) team.get().get("name");
                             }
                         }
                     }
+                    project.put("teamName", teamName);
 
-                    user.setProjects(projects);
-                    userRepository.save(user);
-
-                    return ResponseEntity.ok(project);
+                    project.put("dueDate", projectData.get("dueDate"));
+                    project.put("updatedAt", new Date());
+                    updatedProject = project;
+                    break;
                 }
             }
 
-            return ResponseEntity.notFound().build();
+            if (updatedProject != null) {
+                user.setProjects(projects);
+                userRepository.save(user);
+
+                return ResponseEntity.ok(updatedProject);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                 .body(Map.of("error", "Failed to update project: " + e.getMessage()));

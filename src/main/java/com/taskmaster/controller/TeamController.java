@@ -161,6 +161,23 @@ public class TeamController {
                 }
             }
 
+            // Also update tasks that might reference this team through projects
+            List<Map<String, Object>> tasks = user.getTasks();
+            if (tasks != null) {
+                boolean tasksUpdated = false;
+                for (Map<String, Object> task : tasks) {
+                    String taskTeamId = (String) task.get("teamId");
+                    if (teamId.equals(taskTeamId)) {
+                        task.put("teamName", teamData.get("name"));
+                        task.put("updatedAt", new Date());
+                        tasksUpdated = true;
+                    }
+                }
+                if (tasksUpdated) {
+                    user.setTasks(tasks);
+                }
+            }
+
             user.setTeams(teams);
             userRepository.save(user);
             
@@ -197,6 +214,28 @@ public class TeamController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                 .body(Map.of("error", "Failed to delete team: " + e.getMessage()));
+        }
+    }
+
+    // Helper method to get team name by ID
+    public String getTeamNameById(String teamId, String userId) {
+        try {
+            User user = userRepository.findByUserId(userId);
+            if (user == null) return "Unknown Team";
+
+            List<Map<String, Object>> teams = user.getTeams();
+            if (teams == null) return "Unknown Team";
+
+            Optional<Map<String, Object>> team = teams.stream()
+                .filter(t -> teamId.equals(t.get("_id")) || teamId.equals(t.get("id")))
+                .findFirst();
+
+            if (team.isPresent()) {
+                return (String) team.get().get("name");
+            }
+            return "Unknown Team";
+        } catch (Exception e) {
+            return "Unknown Team";
         }
     }
 }
