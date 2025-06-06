@@ -50,7 +50,7 @@ const InviteMember = ({ teamId, onClose, onMemberInvited }) => {
 
     try {
       // First check if user exists with this email
-      const checkUserResponse = await api.get('/auth/check-email', {
+      const checkUserResponse = await api.get('/public/check-email', {
         params: { email: formData.email }
       });
 
