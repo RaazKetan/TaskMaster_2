@@ -470,12 +470,13 @@ public class TeamController {
                     }
 
                     // Filter projects that belong to this team
+                    final List<Map<String, Object>> finalUserProjects = userProjects;
                     List<Map<String, Object>> teamProjects = teamOwnerProjects.stream()
                         .filter(project -> teamId.equals(project.get("teamId")))
                         .collect(ArrayList::new, (list, item) -> {
                             // Check if project already exists in user's projects
                             String projectId = (String) item.get("_id");
-                            boolean projectExists = userProjects.stream()
+                            boolean projectExists = finalUserProjects.stream()
                                 .anyMatch(p -> projectId.equals(p.get("_id")));
                             
                             if (!projectExists) {

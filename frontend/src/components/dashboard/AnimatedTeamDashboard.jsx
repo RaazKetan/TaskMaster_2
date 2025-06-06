@@ -419,7 +419,7 @@ const AnimatedTeamDashboard = () => {
                         dataKey="value"
                       >
                         {dashboardData.projectStatus.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={projectStatusColors[entry.name] || '#6b7280'} />
+                          <Cell key={`cell-${entry.name}-${index}`} fill={projectStatusColors[entry.name] || '#6b7280'} />
                         ))}
                       </Pie>
                       <Tooltip />
@@ -493,12 +493,13 @@ const AnimatedTeamDashboard = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {dashboardData.priorityDistribution.map((priority, index) => (
-                    <div key={priority.name} className="space-y-2">
+                    <div key={`priority-${priority.name}-${index}`} className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span className="font-medium">{priority.name} Priority</span>
                         <span className="text-slate-600">{priority.value} projects</span>
                       </div>
                       <motion.div
+                        key={`progress-${priority.name}-${index}`}
                         initial={{ width: 0 }}
                         animate={{ width: "100%" }}
                         transition={{ duration: 1, delay: index * 0.2 }}
