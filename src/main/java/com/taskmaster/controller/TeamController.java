@@ -181,7 +181,7 @@ public class TeamController {
 
             user.setTeams(teams);
             userRepository.save(user);
-            
+
             return ResponseEntity.ok(updatedTeam);
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
@@ -204,7 +204,7 @@ public class TeamController {
 
             boolean removed = teams.removeIf(team -> 
                 teamId.equals(team.get("_id")) || teamId.equals(team.get("id")));
-            
+
             if (removed) {
                 user.setTeams(teams);
                 userRepository.save(user);
@@ -225,11 +225,11 @@ public class TeamController {
         try {
             String email = (String) inviteData.get("email");
             String role = (String) inviteData.get("role");
-            
+
             if (email == null || email.isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Email is required"));
             }
-            
+
             if (role == null || role.isEmpty()) {
                 role = "MEMBER"; // Default role
             }
@@ -278,19 +278,19 @@ public class TeamController {
             if (userdata == null) {
                 userdata = new HashMap<>();
             }
-            
+
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> notifications = (List<Map<String, Object>>) userdata.get("notifications");
             if (notifications == null) {
                 notifications = new ArrayList<>();
             }
-            
+
             notifications.add(invitation);
             userdata.put("notifications", notifications);
             invitedUser.setUserdata(userdata);
-            
+
             userRepository.save(invitedUser);
-            
+
             return ResponseEntity.ok(Map.of(
                 "message", "Invitation sent successfully",
                 "invitation", invitation
@@ -333,7 +333,7 @@ public class TeamController {
 
             user.setTeams(teams);
             userRepository.save(user);
-            
+
             return ResponseEntity.ok(Map.of("message", "Member removed successfully"));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
@@ -456,7 +456,7 @@ public class TeamController {
                         .filter(t -> teamId.equals(t.get("_id")) || teamId.equals(t.get("id")))
                         .findFirst()
                         .orElse(null);
-                    
+
                     if (originalTeam != null) {
                         teamCopy.putAll(originalTeam);
                         teamCopy.put("role", role); // User's role in this team
@@ -471,7 +471,7 @@ public class TeamController {
             invitation.put("acceptedAt", new Date());
             userdata.put("notifications", notifications);
             user.setUserdata(userdata);
-            
+
             userRepository.save(user);
 
             return ResponseEntity.ok(Map.of("message", "Invitation accepted successfully"));
@@ -506,7 +506,7 @@ public class TeamController {
             notifications.removeIf(notif -> invitationId.equals(notif.get("id")));
             userdata.put("notifications", notifications);
             user.setUserdata(userdata);
-            
+
             userRepository.save(user);
 
             return ResponseEntity.ok(Map.of("message", "Invitation declined"));
@@ -535,7 +535,7 @@ public class TeamController {
                             if ("team_invitation".equals(notif.get("type")) && 
                                 teamId.equals(notif.get("teamId")) && 
                                 "pending".equals(notif.get("status"))) {
-                                
+
                                 Map<String, Object> invitation = new HashMap<>(notif);
                                 invitation.put("invitedUserEmail", user.getUserEmail());
                                 invitation.put("invitedUserId", user.getUserId());
@@ -560,7 +560,7 @@ public class TeamController {
         try {
             String email = (String) requestData.get("email");
             String invitationId = (String) requestData.get("invitationId");
-            
+
             if (email == null || email.isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Email is required"));
             }

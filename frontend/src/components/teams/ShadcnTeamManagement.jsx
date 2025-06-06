@@ -33,17 +33,7 @@ const ShadcnTeamManagement = () => {
   const [pendingInvitations, setPendingInvitations] = useState([]);
 
   useEffect(() => {
-    if (userSpace) {
-      fetchTeams();
-    } else {
-      // Create a default user space for demonstration
-      const defaultUserSpace = {
-        userId: 'demo_user_' + Date.now(),
-        userEmail: 'demo@example.com'
-      };
-      // Since we don't have actual auth, we'll work with a demo user
-      fetchTeams();
-    }
+    fetchTeams();
   }, [userSpace]);
 
 const fetchTeams = async () => {
@@ -196,18 +186,14 @@ const fetchTeams = async () => {
 
       const response = await api.put(`/teams/${teamId}`, teamData);
 
-      // Update local state with consistent ID handling
-      setTeams(prev => prev.map(team => {
-        const currentTeamId = team._id || team.id;
-        return currentTeamId === teamId ? response.data : team;
-      }));
+      // Update local state
+      setTeams(prev => prev.map(team => 
+        (team._id || team.id) === teamId ? response.data : team
+      ));
 
       // Update selected team if it was the one being edited
-      if (selectedTeam) {
-        const selectedTeamId = selectedTeam._id || selectedTeam.id;
-        if (selectedTeamId === teamId) {
-          setSelectedTeam(response.data);
-        }
+      if (selectedTeam && (selectedTeam._id || selectedTeam.id) === teamId) {
+        setSelectedTeam(response.data);
       }
 
       setShowEditModal(false);
