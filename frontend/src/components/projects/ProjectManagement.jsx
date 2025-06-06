@@ -101,10 +101,15 @@ const ProjectManagement = () => {
   };
 
   // Filter and paginate projects
-  const filteredProjects = projects.filter(project =>
-    project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    project.teamName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredProjects = projects.filter(project => {
+    // Safely handle null/undefined values in search
+    const projectName = project.name || '';
+    const teamName = project.teamName || '';
+    const searchTermLower = searchTerm ? searchTerm.toLowerCase() : '';
+    
+    return projectName.toLowerCase().includes(searchTermLower) ||
+           teamName.toLowerCase().includes(searchTermLower);
+  });
 
   const totalPages = Math.ceil(filteredProjects.length / projectsPerPage);
   const startIndex = (currentPage - 1) * projectsPerPage;
