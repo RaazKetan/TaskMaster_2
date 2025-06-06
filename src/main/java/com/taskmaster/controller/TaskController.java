@@ -31,7 +31,7 @@ public class TaskController {
             // Get tasks from all user projects
             List<Map<String, Object>> projects = user.getProjects();
             List<Map<String, Object>> allTasks = new ArrayList<>();
-
+            
             if (projects != null) {
                 for (Map<String, Object> project : projects) {
                     List<Map<String, Object>> projectTasks = (List<Map<String, Object>>) project.get("tasks");
@@ -57,11 +57,11 @@ public class TaskController {
         try {
             String userId = (String) taskData.get("userId");
             String projectId = (String) taskData.get("projectId");
-
+            
             if (userId == null || userId.isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "User ID is required"));
             }
-
+            
             if (projectId == null || projectId.isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Project ID is required"));
             }
