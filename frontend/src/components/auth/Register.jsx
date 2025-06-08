@@ -11,18 +11,15 @@ const Register = () => {
     password: '',
     confirmPassword: ''
   });
+
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
   const { register } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -48,15 +45,14 @@ const Register = () => {
         email: formData.email,
         password: formData.password
       };
-      
+
       const registeredUser = await register(userData);
-      
-      // Store user data in localStorage with MongoDB user data
+
       if (registeredUser) {
         localStorage.setItem('userData', JSON.stringify(registeredUser));
         localStorage.setItem('sessionToken', registeredUser.sessionToken);
       }
-      
+
       toast.success('Account created successfully!');
       navigate('/dashboard');
     } catch (err) {
@@ -68,132 +64,89 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="max-w-md w-full space-y-8 p-8">
-        <div className="text-center">
-          <h2 className="text-3xl font-bold text-foreground">Create your account</h2>
-          <p className="mt-2 text-muted-foreground">Join TaskMaster and start collaborating</p>
-        </div>
-        
-        <div className="card">
-          <div className="card-content p-6">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {error && (
-                <div className="bg-destructive/10 border border-destructive/20 text-destructive rounded-md p-3">
-                  {error}
-                </div>
-              )}
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="firstName" className="block text-sm font-medium text-foreground mb-2">
-                    First name
-                  </label>
-                  <input
-                    id="firstName"
-                    name="firstName"
-                    type="text"
-                    required
-                    className="input"
-                    placeholder="First name"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="lastName" className="block text-sm font-medium text-foreground mb-2">
-                    Last name
-                  </label>
-                  <input
-                    id="lastName"
-                    name="lastName"
-                    type="text"
-                    required
-                    className="input"
-                    placeholder="Last name"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
-              
+    <div
+      className="min-h-screen flex items-center justify-center px-4"
+      style={{ backgroundColor: 'oklch(93.2% 0.032 255.585)' }}
+    >
+      <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+        <h2 className="text-2xl font-bold text-center text-gray-800 mb-2">
+          Create your account
+        </h2>
+        <p className="text-center text-gray-500 mb-6">Join TaskMaster and start collaborating</p>
 
-              
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
-                  Email address
-                </label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  className="input"
-                  placeholder="Enter your email"
-                  value={formData.email}
-                  onChange={handleChange}
-                />
-              </div>
-              
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-foreground mb-2">
-                  Password
-                </label>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  required
-                  className="input"
-                  placeholder="Create a password"
-                  value={formData.password}
-                  onChange={handleChange}
-                />
-              </div>
-              
-              <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-foreground mb-2">
-                  Confirm password
-                </label>
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  required
-                  className="input"
-                  placeholder="Confirm your password"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                />
-              </div>
-              
-              <button
-                type="submit"
-                disabled={loading}
-                className="btn btn-primary btn-md w-full"
-              >
-                {loading ? (
-                  <div className="flex items-center">
-                    <i className="fas fa-spinner fa-spin mr-2"></i>
-                    Creating account...
-                  </div>
-                ) : (
-                  'Create account'
-                )}
-              </button>
-            </form>
-            
-            <div className="mt-6 text-center">
-              <p className="text-muted-foreground">
-                Already have an account?{' '}
-                <Link to="/login" className="text-primary hover:underline font-medium">
-                  Sign in
-                </Link>
-              </p>
-            </div>
+        {error && (
+          <div className="bg-red-100 text-red-600 border border-red-300 rounded p-2 text-sm mb-4">
+            {error}
           </div>
-        </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <input
+              type="text"
+              name="firstName"
+              value={formData.firstName}
+              onChange={handleChange}
+              placeholder="First Name"
+              required
+              className="px-4 py-2 border border-gray-300 rounded-md w-full text-sm"
+            />
+            <input
+              type="text"
+              name="lastName"
+              value={formData.lastName}
+              onChange={handleChange}
+              placeholder="Last Name"
+              required
+              className="px-4 py-2 border border-gray-300 rounded-md w-full text-sm"
+            />
+          </div>
+
+          <input
+            type="email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            placeholder="Email address"
+            required
+            className="px-4 py-2 border border-gray-300 rounded-md w-full text-sm"
+          />
+
+          <input
+            type="password"
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            placeholder="Password"
+            required
+            className="px-4 py-2 border border-gray-300 rounded-md w-full text-sm"
+          />
+
+          <input
+            type="password"
+            name="confirmPassword"
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            placeholder="Confirm password"
+            required
+            className="px-4 py-2 border border-gray-300 rounded-md w-full text-sm"
+          />
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-[#196CFF] text-white py-2 rounded-md font-medium hover:bg-blue-700 transition"
+          >
+            {loading ? 'Creating Account...' : 'Sign Up Free'}
+          </button>
+        </form>
+
+        <p className="text-sm text-center mt-4 text-gray-600">
+          Already have an account?{' '}
+          <Link to="/login" className="text-blue-600 font-medium hover:underline">
+            Sign in
+          </Link>
+        </p>
       </div>
     </div>
   );
