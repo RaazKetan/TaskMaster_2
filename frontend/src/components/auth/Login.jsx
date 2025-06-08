@@ -34,7 +34,6 @@ const Login = () => {
 
 
       if (result.success && result.user) {
-        // MongoDB auth - data already stored by AuthContext
         toast.success('Login successful!');
         navigate('/dashboard');
       }
@@ -51,11 +50,7 @@ const Login = () => {
     <div className="flex items-center justify-center min-h-screen bg-white">
       <div className="w-full max-w-md p-8 space-y-8">
         <div className="text-center animate-fade-in">
-          <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-blue-600 rounded-xl">
-            <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
+          {/* Removed the top icon */}
           <h2 className="text-3xl font-bold text-gray-900">Welcome to TaskMaster</h2>
           <p className="mt-2 text-gray-600">Sign in to your account</p>
         </div>
