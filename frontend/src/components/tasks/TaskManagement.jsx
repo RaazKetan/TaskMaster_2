@@ -28,6 +28,8 @@ const TaskManagement = () => {
   const [error, setError] = useState('');
   const [showCreateTask, setShowCreateTask] = useState(false);
   const [draggedTask, setDraggedTask] = useState(null);
+  const [inlineEditingTask, setInlineEditingTask] = useState(null);
+  const [inlineEditValue, setInlineEditValue] = useState('');
 
   const fetchTasksAndProjects = useCallback(async () => {
     try {
@@ -202,6 +204,42 @@ const TaskManagement = () => {
     }
   };
 
+  const handleInlineEdit = (task) => {
+    setInlineEditingTask(task._id || task.id);
+    setInlineEditValue(task.title || task.name);
+  };
+
+  const handleInlineEditSave = async (taskId) => {
+    if (!inlineEditValue.trim()) return;
+    
+    try {
+      const task = tasks.find(t => (t._id || t.id) === taskId);
+      await updateTask(taskId, {
+        title: inlineEditValue.trim(),
+        description: task.description,
+        priority: task.priority,
+        status: task.status,
+        assignedTo: task.assignedTo,
+        dueDate: task.dueDate
+      });
+      
+      setInlineEditingTask(null);
+      setInlineEditValue('');
+    } catch (error) {
+      console.error('Error updating task title:', error);
+      setError('Failed to update task');
+    }
+  };
+
+  const handleInlineEditCancel = () => {
+    setInlineEditingTask(null);
+    setInlineEditValue('');
+  };
+
+  const handleQuickPriorityChange = async (taskId, newPriority) => {
+    await handleTaskPriorityUpdate(taskId, newPriority);
+  };
+
   const filteredTasks = tasks.filter(task => {
     const matchesProject = selectedProject === 'all' || task.projectId === selectedProject;
     const matchesStatus = selectedStatus === 'all' || task.status === selectedStatus;
@@ -265,22 +303,48 @@ const TaskManagement = () => {
               />
               <div className="flex-1">
                 <div className="flex items-start justify-between mb-2">
-                  <h3 className={`font-semibold text-sm leading-tight ${
-                    isCompleted ? 'text-green-700 line-through' : 'text-slate-900'
-                  }`}>
-                    {task.title || task.name}
-                  </h3>
-                  <Badge 
-                    variant="outline" 
-                    className="ml-2 text-xs font-medium"
-                    style={{ 
-                      backgroundColor: `${priorityColor}20`,
-                      borderColor: priorityColor,
-                      color: priorityColor 
-                    }}
-                  >
-                    {task.priority}
-                  </Badge>
+                  {inlineEditingTask === (task._id || task.id) ? (
+                    <div className="flex-1 mr-2">
+                      <Input
+                        value={inlineEditValue}
+                        onChange={(e) => setInlineEditValue(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleInlineEditSave(task._id || task.id);
+                          } else if (e.key === 'Escape') {
+                            handleInlineEditCancel();
+                          }
+                        }}
+                        onBlur={() => handleInlineEditSave(task._id || task.id)}
+                        className="text-sm font-semibold"
+                        autoFocus
+                      />
+                    </div>
+                  ) : (
+                    <h3 
+                      className={`font-semibold text-sm leading-tight cursor-pointer hover:text-blue-600 transition-colors flex-1 ${
+                        isCompleted ? 'text-green-700 line-through' : 'text-slate-900'
+                      }`}
+                      onClick={() => handleInlineEdit(task)}
+                      title="Click to edit title"
+                    >
+                      {task.title || task.name}
+                    </h3>
+                  )}
+                  
+                  <div className="flex items-center gap-1">
+                    <select
+                      value={task.priority}
+                      onChange={(e) => handleQuickPriorityChange(task._id || task.id, e.target.value)}
+                      className="text-xs font-medium border-0 bg-transparent cursor-pointer"
+                      style={{ color: priorityColor }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <option value="HIGH">High</option>
+                      <option value="MEDIUM">Medium</option>
+                      <option value="LOW">Low</option>
+                    </select>
+                  </div>
                 </div>
 
                 <p className={`text-xs mb-3 line-clamp-2 ${
@@ -324,20 +388,32 @@ const TaskManagement = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleEditTask(task);
+                        handleInlineEdit(task);
                       }}
                       className="text-blue-500 hover:text-blue-700 text-xs px-2 py-1 rounded bg-blue-50 hover:bg-blue-100 transition-colors"
+                      title="Quick edit title"
                     >
-                      Edit
+                      Quick Edit
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditTask(task);
+                      }}
+                      className="text-slate-500 hover:text-slate-700 text-xs px-1 py-1 rounded hover:bg-slate-100 transition-colors"
+                      title="Full edit form"
+                    >
+                      ⚙️
                     </button>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDeleteTask(task._id || task.id);
                       }}
-                      className="text-red-500 hover:text-red-700 text-xs px-2 py-1 rounded bg-red-50 hover:bg-red-100 transition-colors"
+                      className="text-red-500 hover:text-red-700 text-xs px-1 py-1 rounded hover:bg-red-100 transition-colors"
+                      title="Delete task"
                     >
-                      Delete
+                      🗑️
                     </button>
                   </div>
                 </div>
