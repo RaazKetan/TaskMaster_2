@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -32,7 +31,7 @@ const TaskManagement = () => {
     try {
       setLoading(true);
       const userId = getCurrentUserId();
-      
+
       if (!userId) {
         setError('User not authenticated');
         setLoading(false);
@@ -50,7 +49,7 @@ const TaskManagement = () => {
       setProjects(projectsData);
       setTasks(tasksData);
       setError('');
-      
+
       console.log('Projects loaded:', projectsData.length);
       console.log('Tasks loaded:', tasksData.length);
     } catch (error) {
@@ -69,7 +68,7 @@ const TaskManagement = () => {
     try {
       const userId = getCurrentUserId();
       const task = tasks.find(t => (t._id || t.id) === taskId);
-      
+
       // Send only the fields we want to update, preserving existing data
       await api.put(`/tasks/${taskId}`, {
         priority: newPriority,
@@ -81,7 +80,7 @@ const TaskManagement = () => {
         assignedTo: task.assignedTo,
         dueDate: task.dueDate
       });
-      
+
       setTasks(prevTasks => 
         prevTasks.map(task => 
           (task._id || task.id) === taskId 
@@ -102,7 +101,7 @@ const TaskManagement = () => {
     try {
       const userId = getCurrentUserId();
       const task = tasks.find(t => (t._id || t.id) === taskId);
-      
+
       // Send only the fields we want to update, preserving existing data
       await api.put(`/tasks/${taskId}`, {
         status: newStatus,
@@ -114,7 +113,7 @@ const TaskManagement = () => {
         assignedTo: task.assignedTo,
         dueDate: task.dueDate
       });
-      
+
       setTasks(prevTasks => 
         prevTasks.map(task => 
           (task._id || task.id) === taskId 
@@ -140,14 +139,14 @@ const TaskManagement = () => {
       let completedTasksCount = projectTasks.filter(t => 
         t.status === 'COMPLETED' || t.status === 'Done'
       ).length;
-      
+
       if (newTaskStatus === 'COMPLETED' || newTaskStatus === 'Done') {
         completedTasksCount += 1;
       }
 
       const totalTasks = projectTasks.length;
       const progress = totalTasks > 0 ? Math.round((completedTasksCount / totalTasks) * 100) : 0;
-      
+
       let projectStatus = 'Planning';
       if (progress === 100) {
         projectStatus = 'COMPLETED';
@@ -191,7 +190,7 @@ const TaskManagement = () => {
         ...updatedData,
         userId: userId
       });
-      
+
       setTasks(prev => prev.map(task => 
         (task._id || task.id) === taskId ? response.data : task
       ));
@@ -204,15 +203,15 @@ const TaskManagement = () => {
   const filteredTasks = tasks.filter(task => {
     const matchesProject = selectedProject === 'all' || task.projectId === selectedProject;
     const matchesStatus = selectedStatus === 'all' || task.status === selectedStatus;
-    
+
     // Safely handle null/undefined values in search
     const taskTitle = task.title || task.name || '';
     const taskDescription = task.description || '';
     const searchTermLower = searchTerm ? searchTerm.toLowerCase() : '';
-    
+
     const matchesSearch = taskTitle.toLowerCase().includes(searchTermLower) ||
                          taskDescription.toLowerCase().includes(searchTermLower);
-    
+
     return matchesProject && matchesStatus && matchesSearch;
   });
 
@@ -281,13 +280,13 @@ const TaskManagement = () => {
                     {task.priority}
                   </Badge>
                 </div>
-                
+
                 <p className={`text-xs mb-3 line-clamp-2 ${
                   isCompleted ? 'text-green-600' : 'text-slate-600'
                 }`}>
                   {task.description}
                 </p>
-                
+
                 <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
                   <div className="flex items-center gap-3">
                     {task.assignedTo && (
@@ -309,7 +308,7 @@ const TaskManagement = () => {
                     </span>
                   )}
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <Badge 
                     variant="secondary" 
@@ -375,13 +374,13 @@ const TaskManagement = () => {
             {tasks.length}
           </Badge>
         </div>
-        
+
         <div className="space-y-3">
           {tasks.map(task => (
             <TaskCard key={task._id || task.id} task={task} />
           ))}
         </div>
-        
+
         {tasks.length === 0 && (
           <motion.div 
             className="text-center py-8 text-slate-400"
@@ -453,8 +452,16 @@ const TaskManagement = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
-              <h1 className="text-3xl font-bold text-slate-900 mb-2">Task Management</h1>
-              <p className="text-slate-600">Organize tasks by status, drag to update, or check to complete</p>
+              <div className="flex items-center justify-between mb-6">
+                <h1 className="text-3xl font-bold text-slate-900 mb-2">Task Management</h1>
+                 <Button
+                    onClick={() => setShowCreateTask(true)}
+                    className="ml-auto"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Task
+                  </Button>
+              </div>
             </motion.div>
 
             {/* Filters */}
@@ -476,7 +483,7 @@ const TaskManagement = () => {
                         className="pl-10"
                       />
                     </div>
-                    
+
                     <select
                       className="w-[200px] px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       value={selectedProject}
@@ -501,13 +508,7 @@ const TaskManagement = () => {
                       <option value="COMPLETED">Completed</option>
                     </select>
 
-                    <Button 
-                      onClick={() => setShowCreateTask(true)}
-                      className="ml-auto"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Task
-                    </Button>
+                    
                   </div>
                 </CardContent>
               </Card>
