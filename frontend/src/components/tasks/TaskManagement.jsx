@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { PRIORITY_COLORS, TASK_STATUSES } from '../../utils/constants';
 import CreateTaskModal from './CreateTaskModal';
 import EditTaskModal from './EditTaskModal';
+import QuickAddTask from './QuickAddTask';
+import FloatingQuickAdd from './FloatingQuickAdd';
 import api from '../../services/api';
 import { getCurrentUserId } from '../../utils/auth';
 import { motion } from 'framer-motion';
@@ -454,13 +456,16 @@ const TaskManagement = () => {
             >
               <div className="flex items-center justify-between mb-6">
                 <h1 className="text-3xl font-bold text-slate-900 mb-2">Task Management</h1>
-                 <Button
+                <div className="flex gap-2">
+                  <Button
                     onClick={() => setShowCreateTask(true)}
-                    className="ml-auto"
+                    variant="outline"
+                    size="sm"
                   >
                     <Plus className="w-4 h-4 mr-2" />
-                    Add Task
+                    Detailed Form
                   </Button>
+                </div>
               </div>
             </motion.div>
 
@@ -512,6 +517,21 @@ const TaskManagement = () => {
                   </div>
                 </CardContent>
               </Card>
+            </motion.div>
+
+            {/* Quick Add Task */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              <QuickAddTask 
+                projects={projects} 
+                onTaskCreated={(newTask) => {
+                  setTasks(prev => [...prev, newTask]);
+                  fetchTasksAndProjects();
+                }}
+              />
             </motion.div>
 
             {/* Task Priority Board */}
@@ -571,10 +591,19 @@ const TaskManagement = () => {
               </motion.div>
             )}
 
+            {/* Floating Quick Add */}
+            <FloatingQuickAdd 
+              projects={projects} 
+              onTaskCreated={(newTask) => {
+                setTasks(prev => [...prev, newTask]);
+                fetchTasksAndProjects();
+              }}
+            />
+
             {/* Real-time indicator */}
             <motion.div 
-              className="fixed bottom-4 right-4"
-              initial={{ opacity: 0, x: 100 }}
+              className="fixed bottom-4 left-4"
+              initial={{ opacity: 0, x: -100 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.5 }}
             >
