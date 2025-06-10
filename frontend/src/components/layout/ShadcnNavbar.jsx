@@ -83,13 +83,6 @@ const ShadcnNavbar = () => {
               <>
                 {/* Calendar icon button before NotificationBell */}
                 <TeamCalendar
-                  tasks={[]} // <-- Pass your tasks array here
-                  onTaskDateChange={(task, newDate) => {
-                    // Update the task's due date in your backend or state
-                  }}
-                  onTaskEdit={(task) => {
-                    // Update the task in your backend or state
-                  }}
                   iconClassName="text-slate-700"
                   notifications={notifications}
                   setNotifications={setNotifications}

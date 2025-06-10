@@ -1,153 +1,87 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
-import { Plus, User, Calendar, Flag, Filter, Search, Clock, CheckCircle, AlertTriangle, AlertCircle, Zap } from 'lucide-react';
+import { Plus, User, Calendar, Search, Clock, CheckCircle, AlertTriangle, AlertCircle } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { PRIORITY_COLORS, TASK_STATUSES } from '../../utils/constants';
+import { PRIORITY_COLORS } from '../../utils/constants';
 import CreateTaskModal from './CreateTaskModal';
 import EditTaskModal from './EditTaskModal';
 import api from '../../services/api';
 import { getCurrentUserId } from '../../utils/auth';
 import { motion } from 'framer-motion';
+import { useTasks } from '../../context/TaskContext';
+
 
 const TaskManagement = () => {
-  const [loading, setLoading] = useState(true);
-  const [tasks, setTasks] = useState([]);
+  const { tasks, loading, error, fetchTasks, addTask, updateTask, deleteTask } = useTasks();
   const [projects, setProjects] = useState([]);
   const [selectedProject, setSelectedProject] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [editingTask, setEditingTask] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [error, setError] = useState('');
   const [showCreateTask, setShowCreateTask] = useState(false);
-  const [draggedTask, setDraggedTask] = useState(null);
 
-  const fetchTasksAndProjects = useCallback(async () => {
+
+  // Only fetch projects here, tasks come from context
+  const fetchProjects = useCallback(async () => {
     try {
-      setLoading(true);
       const userId = getCurrentUserId();
-      
-      if (!userId) {
-        setError('User not authenticated');
-        setLoading(false);
-        return;
-      }
-
-      const [projectsResponse, tasksResponse] = await Promise.all([
-        api.get('/projects', { params: { userId } }),
-        api.get('/tasks', { params: { userId } })
-      ]);
-
-      const projectsData = projectsResponse.data || [];
-      const tasksData = tasksResponse.data || [];
-
-      setProjects(projectsData);
-      setTasks(tasksData);
-      setError('');
-      
-      console.log('Projects loaded:', projectsData.length);
-      console.log('Tasks loaded:', tasksData.length);
+      if (!userId) return;
+      const projectsResponse = await api.get('/projects', { params: { userId } });
+      setProjects(projectsResponse.data || []);
     } catch (error) {
-      console.error('Error fetching tasks and projects:', error);
-      setError('Failed to load tasks and projects');
-    } finally {
-      setLoading(false);
+      console.error('Error fetching projects:', error);
     }
   }, []);
 
+
   useEffect(() => {
-    fetchTasksAndProjects();
-  }, [fetchTasksAndProjects]);
+    fetchProjects();
+  }, [fetchProjects]);
 
-  const handleTaskPriorityUpdate = async (taskId, newPriority) => {
-    try {
-      const userId = getCurrentUserId();
-      const task = tasks.find(t => (t._id || t.id) === taskId);
-      
-      // Send only the fields we want to update, preserving existing data
-      await api.put(`/tasks/${taskId}`, {
-        priority: newPriority,
-        userId: userId,
-        // Preserve existing fields
-        title: task.title,
-        description: task.description,
-        status: task.status,
-        assignedTo: task.assignedTo,
-        dueDate: task.dueDate
-      });
-      
-      setTasks(prevTasks => 
-        prevTasks.map(task => 
-          (task._id || task.id) === taskId 
-            ? { ...task, priority: newPriority } 
-            : task
-        )
-      );
-
-      console.log(`Task ${taskId} priority updated to ${newPriority}`);
-    } catch (error) {
-      console.error('Error updating task priority:', error);
-      setError('Failed to update task priority');
-      fetchTasksAndProjects();
-    }
-  };
 
   const handleTaskStatusUpdate = async (taskId, newStatus) => {
     try {
-      const userId = getCurrentUserId();
       const task = tasks.find(t => (t._id || t.id) === taskId);
-      
-      // Send only the fields we want to update, preserving existing data
-      await api.put(`/tasks/${taskId}`, {
+      await updateTask(taskId, {
         status: newStatus,
-        userId: userId,
-        // Preserve existing fields
         title: task.title,
         description: task.description,
         priority: task.priority,
         assignedTo: task.assignedTo,
         dueDate: task.dueDate
       });
-      
-      setTasks(prevTasks => 
-        prevTasks.map(task => 
-          (task._id || task.id) === taskId 
-            ? { ...task, status: newStatus } 
-            : task
-        )
-      );
-
       updateProjectStatus(taskId, newStatus);
     } catch (error) {
       console.error('Error updating task status:', error);
-      setError('Failed to update task status');
-      fetchTasksAndProjects();
     }
   };
+
 
   const updateProjectStatus = async (taskId, newTaskStatus) => {
     try {
        const task = tasks.find(t => (t._id || t.id) === taskId);
       if (!task || !task.projectId) return;
 
+
       const projectTasks = tasks.filter(t => t.projectId === task.projectId);
-      let completedTasksCount = projectTasks.filter(t => 
+      let completedTasksCount = projectTasks.filter(t =>
         t.status === 'COMPLETED' || t.status === 'Done'
       ).length;
-      
+     
       if (newTaskStatus === 'COMPLETED' || newTaskStatus === 'Done') {
         completedTasksCount += 1;
       }
 
+
       const totalTasks = projectTasks.length;
       const progress = totalTasks > 0 ? Math.round((completedTasksCount / totalTasks) * 100) : 0;
-      
+     
       let projectStatus = 'Planning';
       if (progress === 100) {
         projectStatus = 'COMPLETED';
@@ -155,91 +89,79 @@ const TaskManagement = () => {
         projectStatus = 'ACTIVE';
       }
 
+
       await api.put(`/projects/${task.projectId}`, {
         status: projectStatus,
         progress: progress,
         userId: getCurrentUserId()
       });
 
+
     } catch (error) {
       console.error('Error updating project status:', error);
     }
   };
+
 
   const handleEditTask = (task) => {
     setEditingTask(task);
     setShowEditModal(true);
   };
 
+
   const handleDeleteTask = async (taskId) => {
     if (!window.confirm('Are you sure you want to delete this task?')) return;
-
     try {
-      const userId = getCurrentUserId();
-      await api.delete(`/tasks/${taskId}`, { params: { userId } });
-      setTasks(prev => prev.filter(task => (task._id || task.id) !== taskId));
+      await deleteTask(taskId);
     } catch (error) {
       console.error('Error deleting task:', error);
-      setError('Failed to delete task');
     }
   };
 
-  const updateTask = async (taskId, updatedData) => {
-    try {
-      const userId = getCurrentUserId();
-      const response = await api.put(`/tasks/${taskId}`, {
-        ...updatedData,
-        userId: userId
-      });
-      
-      setTasks(prev => prev.map(task => 
-        (task._id || task.id) === taskId ? response.data : task
-      ));
-    } catch (error) {
-      console.error('Error updating task:', error);
-      setError('Failed to update task');
-    }
-  };
 
   const filteredTasks = tasks.filter(task => {
     const matchesProject = selectedProject === 'all' || task.projectId === selectedProject;
     const matchesStatus = selectedStatus === 'all' || task.status === selectedStatus;
-    
+   
     // Safely handle null/undefined values in search
     const taskTitle = task.title || task.name || '';
     const taskDescription = task.description || '';
     const searchTermLower = searchTerm ? searchTerm.toLowerCase() : '';
-    
+   
     const matchesSearch = taskTitle.toLowerCase().includes(searchTermLower) ||
                          taskDescription.toLowerCase().includes(searchTermLower);
-    
+   
     return matchesProject && matchesStatus && matchesSearch;
   });
+
 
   const TaskCard = ({ task }) => {
     const [{ isDragging }, drag] = useDrag(() => ({
       type: 'task',
-      item: { 
-        id: task._id || task.id, 
+      item: {
+        id: task._id || task.id,
         priority: task.priority,
-        status: task.status 
+        status: task.status
       },
       collect: (monitor) => ({
         isDragging: monitor.isDragging(),
       }),
     }));
 
+
     const project = projects.find(p => (p._id || p.id) === task.projectId);
     const priorityColor = PRIORITY_COLORS[task.priority] || '#6B7280';
     const isCompleted = task.status === 'COMPLETED';
+
 
     const handleCheckboxChange = async (checked) => {
       const newStatus = checked ? 'COMPLETED' : 'TODO';
       await handleTaskStatusUpdate(task._id || task.id, newStatus);
     };
 
+
     return (
-      <motion.div 
+      <motion.div
         ref={drag}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -269,25 +191,25 @@ const TaskManagement = () => {
                   }`}>
                     {task.title || task.name}
                   </h3>
-                  <Badge 
-                    variant="outline" 
+                  <Badge
+                    variant="outline"
                     className="ml-2 text-xs font-medium"
-                    style={{ 
+                    style={{
                       backgroundColor: `${priorityColor}20`,
                       borderColor: priorityColor,
-                      color: priorityColor 
+                      color: priorityColor
                     }}
                   >
                     {task.priority}
                   </Badge>
                 </div>
-                
+               
                 <p className={`text-xs mb-3 line-clamp-2 ${
                   isCompleted ? 'text-green-600' : 'text-slate-600'
                 }`}>
                   {task.description}
                 </p>
-                
+               
                 <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
                   <div className="flex items-center gap-3">
                     {task.assignedTo && (
@@ -309,14 +231,14 @@ const TaskManagement = () => {
                     </span>
                   )}
                 </div>
-                
+               
                 <div className="flex items-center justify-between">
-                  <Badge 
-                    variant="secondary" 
+                  <Badge
+                    variant="secondary"
                     className={`text-xs ${isCompleted ? 'bg-green-100 text-green-800' : ''}`}
                   >
-                    {task.status === 'IN_PROGRESS' ? 'In Progress' : 
-                     task.status === 'COMPLETED' ? 'Completed' : 
+                    {task.status === 'IN_PROGRESS' ? 'In Progress' :
+                     task.status === 'COMPLETED' ? 'Completed' :
                      task.status === 'REVIEW' ? 'Review' : 'To Do'}
                   </Badge>
                   <div className="flex gap-1">
@@ -348,6 +270,7 @@ const TaskManagement = () => {
     );
   };
 
+
   const StatusColumn = ({ status, title, tasks, icon: Icon, color }) => {
     const [{ isOver }, drop] = useDrop({
       accept: 'task',
@@ -361,8 +284,9 @@ const TaskManagement = () => {
       }),
     });
 
+
     return (
-      <div 
+      <div
         ref={drop}
         className={`flex-1 min-h-[600px] transition-all duration-300 ${
           isOver ? 'bg-gradient-to-b from-blue-50 to-blue-100 border-2 border-blue-300 border-dashed scale-[1.02]' : 'bg-slate-50'
@@ -375,15 +299,15 @@ const TaskManagement = () => {
             {tasks.length}
           </Badge>
         </div>
-        
+       
         <div className="space-y-3">
           {tasks.map(task => (
             <TaskCard key={task._id || task.id} task={task} />
           ))}
         </div>
-        
+       
         {tasks.length === 0 && (
-          <motion.div 
+          <motion.div
             className="text-center py-8 text-slate-400"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -397,13 +321,14 @@ const TaskManagement = () => {
     );
   };
 
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50">
         <div className="p-8">
           <div className="max-w-7xl mx-auto">
             <div className="text-center py-12">
-              <motion.div 
+              <motion.div
                 className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"
                 animate={{ rotate: 360 }}
                 transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
@@ -417,6 +342,7 @@ const TaskManagement = () => {
     );
   }
 
+
   if (error) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -426,7 +352,7 @@ const TaskManagement = () => {
           </CardHeader>
           <CardContent>
             <p className="text-slate-600 mb-4">{error}</p>
-            <Button onClick={fetchTasksAndProjects}>
+            <Button onClick={fetchTasks}>
               Retry
             </Button>
           </CardContent>
@@ -435,11 +361,13 @@ const TaskManagement = () => {
     );
   }
 
+
   // Group tasks by status
   const todoTasks = filteredTasks.filter(task => task.status === 'TODO');
   const inProgressTasks = filteredTasks.filter(task => task.status === 'IN_PROGRESS');
   const reviewTasks = filteredTasks.filter(task => task.status === 'REVIEW');
   const completedTasks = filteredTasks.filter(task => task.status === 'COMPLETED');
+
 
   return (
     <DndProvider backend={HTML5Backend}>
@@ -447,7 +375,7 @@ const TaskManagement = () => {
         <div className="p-8">
           <div className="max-w-7xl mx-auto">
             {/* Header */}
-            <motion.div 
+            <motion.div
               className="mb-8"
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -456,6 +384,7 @@ const TaskManagement = () => {
               <h1 className="text-3xl font-bold text-slate-900 mb-2">Task Management</h1>
               <p className="text-slate-600">Organize tasks by status, drag to update, or check to complete</p>
             </motion.div>
+
 
             {/* Filters */}
             <motion.div
@@ -476,7 +405,7 @@ const TaskManagement = () => {
                         className="pl-10"
                       />
                     </div>
-                    
+                   
                     <select
                       className="w-[200px] px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       value={selectedProject}
@@ -490,6 +419,7 @@ const TaskManagement = () => {
                       ))}
                     </select>
 
+
                     <select
                       className="w-[180px] px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       value={selectedStatus}
@@ -501,7 +431,8 @@ const TaskManagement = () => {
                       <option value="COMPLETED">Completed</option>
                     </select>
 
-                    <Button 
+
+                    <Button
                       onClick={() => setShowCreateTask(true)}
                       className="ml-auto"
                     >
@@ -512,6 +443,7 @@ const TaskManagement = () => {
                 </CardContent>
               </Card>
             </motion.div>
+
 
             {/* Task Priority Board */}
             {tasks.length === 0 ? (
@@ -533,7 +465,7 @@ const TaskManagement = () => {
                 </Card>
               </motion.div>
             ) : (
-              <motion.div 
+              <motion.div
                 className="flex gap-6 overflow-x-auto pb-6"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -570,15 +502,16 @@ const TaskManagement = () => {
               </motion.div>
             )}
 
+
             {/* Real-time indicator */}
-            <motion.div 
+            <motion.div
               className="fixed bottom-4 right-4"
               initial={{ opacity: 0, x: 100 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.5 }}
             >
               <div className="flex items-center space-x-2 bg-green-100 text-green-700 px-3 py-2 rounded-full text-sm shadow-lg">
-                <motion.div 
+                <motion.div
                   className="w-2 h-2 bg-green-500 rounded-full"
                   animate={{ scale: [1, 1.5, 1] }}
                   transition={{ duration: 2, repeat: Infinity }}
@@ -589,16 +522,15 @@ const TaskManagement = () => {
           </div>
         </div>
 
+
         {/* Create Task Modal */}
         <CreateTaskModal
           isOpen={showCreateTask}
           onClose={() => setShowCreateTask(false)}
-          onTaskCreated={(newTask) => {
-            setTasks(prev => [...prev, newTask]);
-            fetchTasksAndProjects();
-          }}
+          onTaskCreated={addTask}
           projects={projects}
         />
+
 
         {/* Edit Task Modal */}
         <EditTaskModal
@@ -616,4 +548,7 @@ const TaskManagement = () => {
   );
 };
 
+
 export default TaskManagement;
+
+

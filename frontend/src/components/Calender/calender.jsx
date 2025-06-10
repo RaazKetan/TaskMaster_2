@@ -1,8 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, X, Clock, Flag, Edit2 } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, X, Flag, Edit2, CheckCircle } from 'lucide-react';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, parseISO, isWithinInterval, differenceInHours, startOfWeek as getStartOfWeek, endOfWeek as getEndOfWeek } from 'date-fns';
 import { Button } from '../ui/button';
+import { useTasks } from '../../context/TaskContext';
+import PropTypes from 'prop-types';
 
 
 const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -12,7 +14,6 @@ const defaultTask = {
   title: '',
   dueDate: '',
   priority: 'Medium',
-  time: '',
   assignedTo: '',
 };
 
@@ -125,7 +126,6 @@ const CalendarModal = ({
       title: task.title,
       dueDate: typeof task.dueDate === 'string' ? task.dueDate : format(task.dueDate, 'yyyy-MM-dd'),
       priority: task.priority,
-      time: task.time || '',
       assignedTo: task.assignedTo || '',
     });
     setEditMode(true);
@@ -153,11 +153,24 @@ const CalendarModal = ({
   };
 
 
+  // Close modal on outside click
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleClickOutside = (event) => {
+      if (event.target.classList.contains('calendar-modal-overlay')) {
+        onClose();
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen, onClose]);
+
+
   return (
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 calendar-modal-overlay"
           initial="hidden"
           animate="visible"
           exit="exit"
@@ -212,9 +225,6 @@ const CalendarModal = ({
                 >
                   + Add Task
                 </Button>
-                <Button variant="outline" size="sm" onClick={onClose}>
-                  Close
-                </Button>
               </div>
             </div>
 
@@ -248,20 +258,18 @@ const CalendarModal = ({
                             {(tasksByDate[dateStr] || []).map((task) => (
                               <motion.div
                                 key={task.id}
-                                className={`px-2 py-1 text-xs font-medium truncate rounded cursor-move bg-blue-100 text-blue-700 flex items-center justify-between`}
+                                className={`px-2 py-1 text-xs font-medium truncate rounded cursor-move bg-blue-100 text-blue-700 flex items-center justify-between
+                                ${task.status === 'COMPLETED' ? 'opacity-60' : ''}`}
                                 draggable
                                 onDragStart={() => handleDragStart(task)}
                                 whileHover={{ scale: 1.05 }}
                                 onClick={() => openEditModal(task)}
                                 style={{ cursor: 'pointer' }}
                               >
-                                <span>
+                                <span className="flex items-center">
                                   {task.title}
-                                  {task.time && (
-                                    <span className="ml-2 text-xs text-slate-500">
-                                      <Clock className="inline w-3 h-3 mr-1" />
-                                      {task.time}
-                                    </span>
+                                  {task.status === 'COMPLETED' && (
+                                    <CheckCircle className="inline w-4 h-4 ml-2 text-green-500" />
                                   )}
                                   {task.priority && (
                                     <span className={`ml-2 text-xs font-bold ${priorities.find(p => p.value === task.priority)?.color || 'text-slate-600'}`}>
@@ -305,20 +313,18 @@ const CalendarModal = ({
                           {(tasksByDate[dateStr] || []).map((task) => (
                             <motion.div
                               key={task.id}
-                              className="flex items-center justify-between px-2 py-1 text-xs font-medium text-blue-700 truncate bg-blue-100 rounded cursor-move"
+                              className={`flex items-center justify-between px-2 py-1 text-xs font-medium truncate rounded cursor-move bg-blue-100 text-blue-700
+                              ${task.status === 'COMPLETED' ? 'opacity-60' : ''}`}
                               draggable
                               onDragStart={() => handleDragStart(task)}
                               whileHover={{ scale: 1.05 }}
                               onClick={() => openEditModal(task)}
                               style={{ cursor: 'pointer' }}
                             >
-                              <span>
+                              <span className="flex items-center">
                                 {task.title}
-                                {task.time && (
-                                  <span className="ml-2 text-xs text-slate-500">
-                                    <Clock className="inline w-3 h-3 mr-1" />
-                                    {task.time}
-                                  </span>
+                                {task.status === 'COMPLETED' && (
+                                  <CheckCircle className="inline w-4 h-4 ml-2 text-green-500" />
                                 )}
                                 {task.priority && (
                                   <span className={`ml-2 text-xs font-bold ${priorities.find(p => p.value === task.priority)?.color || 'text-slate-600'}`}>
@@ -371,8 +377,9 @@ const CalendarModal = ({
                     )}
                     <form onSubmit={handleAddTask} className="space-y-3">
                       <div>
-                        <label className="block mb-1 text-sm font-medium">Task Name</label>
+                        <label htmlFor="task-name" className="block mb-1 text-sm font-medium">Task Name</label>
                         <input
+                          id="task-name"
                           type="text"
                           className="w-full px-3 py-2 border border-gray-300 rounded-md"
                           value={addForm.title}
@@ -381,8 +388,9 @@ const CalendarModal = ({
                         />
                       </div>
                       <div>
-                        <label className="block mb-1 text-sm font-medium">Due Date</label>
+                        <label htmlFor="due-date" className="block mb-1 text-sm font-medium">Due Date</label>
                         <input
+                          id="due-date"
                           type="date"
                           className="w-full px-3 py-2 border border-gray-300 rounded-md"
                           value={addForm.dueDate}
@@ -391,17 +399,9 @@ const CalendarModal = ({
                         />
                       </div>
                       <div>
-                        <label className="block mb-1 text-sm font-medium">Time</label>
-                        <input
-                          type="time"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                          value={addForm.time}
-                          onChange={e => handleAddInputChange('time', e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <label className="block mb-1 text-sm font-medium">Priority</label>
+                        <label htmlFor="task-priority" className="block mb-1 text-sm font-medium">Priority</label>
                         <select
+                          id="task-priority"
                           className="w-full px-3 py-2 border border-gray-300 rounded-md"
                           value={addForm.priority}
                           onChange={e => handleAddInputChange('priority', e.target.value)}
@@ -412,8 +412,9 @@ const CalendarModal = ({
                         </select>
                       </div>
                       <div>
-                        <label className="block mb-1 text-sm font-medium">Assigned To</label>
+                        <label htmlFor="assigned-to" className="block mb-1 text-sm font-medium">Assigned To</label>
                         <input
+                          id="assigned-to"
                           type="text"
                           className="w-full px-3 py-2 border border-gray-300 rounded-md"
                           value={addForm.assignedTo}
@@ -437,51 +438,32 @@ const CalendarModal = ({
 
 
 const TeamCalendar = ({
-  tasks,
-  onTaskDateChange,
-  onTaskCreate,
   iconClassName = '',
-  onTaskEdit,
   notifications = [],
   setNotifications,
   setHasUnseenNotifications,
 }) => {
+  const { tasks, addTask, updateTask } = useTasks();
   const [isOpen, setIsOpen] = useState(false);
   const [view, setView] = useState('month');
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [localTasks, setLocalTasks] = useState(tasks);
 
 
-  // Sync local tasks with parent tasks prop
-  useEffect(() => {
-    setLocalTasks(tasks);
-  }, [tasks]);
-
-
-  // Add task handler for local state
-  const handleTaskCreate = (task) => {
-    setLocalTasks((prev) => [...prev, task]);
-    if (onTaskCreate) onTaskCreate(task);
+  // Add task handler for global state
+  const handleTaskCreate = async (task) => {
+    await addTask(task);
   };
 
 
-  // Edit task handler for local state
-  const handleTaskEdit = (task) => {
-    setLocalTasks((prev) =>
-      prev.map((t) => (t.id === task.id ? { ...t, ...task } : t))
-    );
-    if (onTaskEdit) onTaskEdit(task);
+  // Edit task handler for global state
+  const handleTaskEdit = async (task) => {
+    await updateTask(task.id || task._id, task);
   };
 
 
-  // Drag handler for local state
-  const handleTaskDateChange = (task, newDate) => {
-    setLocalTasks((prev) =>
-      prev.map((t) =>
-        t.id === task.id ? { ...t, dueDate: newDate } : t
-      )
-    );
-    if (onTaskDateChange) onTaskDateChange(task, newDate);
+  // Drag handler for global state
+  const handleTaskDateChange = async (task, newDate) => {
+    await updateTask(task.id || task._id, { ...task, dueDate: newDate });
   };
 
 
@@ -490,14 +472,12 @@ const TeamCalendar = ({
     if (!setNotifications || !setHasUnseenNotifications) return;
     const now = new Date();
     let newNotifications = [];
-    localTasks.forEach((task) => {
-      if (!task.dueDate) return;
+    tasks.forEach((task) => {
+      if (!task.dueDate || task.status === 'COMPLETED') return;
       const due = typeof task.dueDate === 'string' ? parseISO(task.dueDate) : task.dueDate;
-      const taskTime = task.time ? task.time : '23:59';
-      const dueDateTime = new Date(`${format(due, 'yyyy-MM-dd')}T${taskTime}`);
+      const dueDateTime = new Date(`${format(due, 'yyyy-MM-dd')}T23:59`);
       const hoursLeft = (dueDateTime - now) / (1000 * 60 * 60);
-      if (hoursLeft <= 12 && hoursLeft > 0) {
-        // Send notification every 3 hours
+      if (hoursLeft <= 48 && hoursLeft > 0) { // 2 days = 48 hours
         const lastNotified = task.lastNotified || 0;
         const hoursSinceLast = (Date.now() - lastNotified) / (1000 * 60 * 60);
         if (hoursSinceLast >= 3 || !lastNotified) {
@@ -505,11 +485,10 @@ const TeamCalendar = ({
             id: `${task.id}-${Date.now()}`,
             taskId: task.id,
             title: task.title,
-            deadline: `${format(due, 'yyyy-MM-dd')} ${task.time || ''}`,
+            deadline: `${format(due, 'yyyy-MM-dd')}`,
             priority: task.priority,
             seen: false,
           });
-          // Mark as notified
           task.lastNotified = Date.now();
         }
       }
@@ -519,7 +498,7 @@ const TeamCalendar = ({
       setHasUnseenNotifications(true);
     }
     // eslint-disable-next-line
-  }, [localTasks, setNotifications, setHasUnseenNotifications]);
+  }, [tasks, setNotifications, setHasUnseenNotifications]);
 
 
   return (
@@ -535,7 +514,7 @@ const TeamCalendar = ({
       <CalendarModal
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
-        tasks={localTasks}
+        tasks={tasks}
         onTaskDateChange={handleTaskDateChange}
         onTaskCreate={handleTaskCreate}
         onTaskEdit={handleTaskEdit}
@@ -549,4 +528,24 @@ const TeamCalendar = ({
 };
 
 
+CalendarModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  tasks: PropTypes.array,
+  onTaskDateChange: PropTypes.func,
+  onTaskCreate: PropTypes.func,
+  onTaskEdit: PropTypes.func,
+  view: PropTypes.string,
+  setView: PropTypes.func,
+  selectedDate: PropTypes.instanceOf(Date),
+  setSelectedDate: PropTypes.func,
+};
+
+
+TeamCalendar.propTypes = {
+  iconClassName: PropTypes.string,
+  notifications: PropTypes.array,
+  setNotifications: PropTypes.func,
+  setHasUnseenNotifications: PropTypes.func,
+};
 export default TeamCalendar;

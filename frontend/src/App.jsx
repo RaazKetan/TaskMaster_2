@@ -1,13 +1,12 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext.jsx';
+import { TaskProvider } from './context/TaskContext.jsx';
 import Login from './components/auth/Login.jsx';
 import Register from './components/auth/Register.jsx';
 import TaskMasterDashboard from './components/Dashboard/TaskMasterDashboard.jsx';
-import ShadcnNavbar from './components/layout/ShadcnNavbar.jsx';
 import TeamList from './components/teams/TeamList.jsx';
 import TeamDetail from './components/teams/TeamDetail.jsx';
-import ProjectList from './components/projects/ProjectList.jsx';
 import ProjectManagement from './components/projects/ProjectManagement.jsx';
 import ShadcnProjectManagement from './components/projects/ShadcnProjectManagement.jsx';
 import ShadcnTeamManagement from './components/teams/ShadcnTeamManagement.jsx';
@@ -22,8 +21,10 @@ import LandingPage from './components/LandingPage.jsx';
 import UserProfile from './components/profile/UserProfile.jsx';
 import './App.css'
 
+
 function AppContent() {
-  const { user, loading, logout } = useAuth();
+  const { user, loading } = useAuth();
+
 
   if (loading) {
     return (
@@ -33,6 +34,7 @@ function AppContent() {
     );
   }
 
+
   return (
     <Router>
       <div className="min-h-screen bg-gray-50">
@@ -41,11 +43,13 @@ function AppContent() {
           <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
           <Route path="/register" element={!user ? <Register /> : <Navigate to="/dashboard" />} />
 
+
           <Route path="/dashboard" element={
             <PrivateRoute>
               <AnimatedTeamDashboard />
             </PrivateRoute>
           } />
+
 
           <Route path="/dashboard-old" element={
             <PrivateRoute>
@@ -53,11 +57,13 @@ function AppContent() {
             </PrivateRoute>
           } />
 
+
           <Route path="/tasks" element={
             <PrivateRoute>
               <TaskManagement />
             </PrivateRoute>
           } />
+
 
           <Route path="/tasks-visualizer" element={
             <PrivateRoute>
@@ -65,11 +71,13 @@ function AppContent() {
             </PrivateRoute>
           } />
 
+
           <Route path="/teams" element={
             <PrivateRoute>
               <ShadcnTeamManagement />
             </PrivateRoute>
           } />
+
 
           <Route path="/teams-old" element={
             <PrivateRoute>
@@ -77,23 +85,26 @@ function AppContent() {
             </PrivateRoute>
           } />
 
+
           <Route path="/teams/:id" element={
             <PrivateRoute>
               <TeamDetail />
             </PrivateRoute>
           } />
 
+
           <Route path="/projects" element={
             <PrivateRoute>
               <ShadcnProjectManagement />
             </PrivateRoute>
           } />
-          
+         
           <Route path="/profile" element={
             <PrivateRoute>
               <UserProfile />
             </PrivateRoute>
           } />
+
 
           <Route path="/projects-old" element={
             <PrivateRoute>
@@ -101,17 +112,20 @@ function AppContent() {
             </PrivateRoute>
           } />
 
+
           <Route path="/projects/:id" element={
             <PrivateRoute>
               <ProjectDetail />
             </PrivateRoute>
           } />
 
+
           <Route path="/projects/:id/kanban" element={
             <PrivateRoute>
               <KanbanBoard />
             </PrivateRoute>
           } />
+
 
           <Route path="/loading-demo" element={<LoadingDemo />} />
         </Routes>
@@ -120,12 +134,16 @@ function AppContent() {
   );
 }
 
+
 function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <TaskProvider>
+        <AppContent />
+      </TaskProvider>
     </AuthProvider>
   );
 }
+
 
 export default App;
