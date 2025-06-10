@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 
-
 const Register = () => {
   const [formData, setFormData] = useState({
     firstName: '',
@@ -12,42 +11,32 @@ const Register = () => {
     password: '',
     confirmPassword: ''
   });
+
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
-
   const { register } = useAuth();
   const navigate = useNavigate();
 
-
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-
 
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       return;
     }
 
-
     if (formData.password.length < 6) {
       setError('Password must be at least 6 characters long');
       return;
     }
 
-
     setLoading(true);
-
 
     try {
       const userData = {
@@ -57,15 +46,12 @@ const Register = () => {
         password: formData.password
       };
 
-
       const registeredUser = await register(userData);
-
 
       if (registeredUser) {
         localStorage.setItem('userData', JSON.stringify(registeredUser));
         localStorage.setItem('sessionToken', registeredUser.sessionToken);
       }
-
 
       toast.success('Account created successfully!');
       navigate('/dashboard');
@@ -77,17 +63,13 @@ const Register = () => {
     }
   };
 
-
   return (
     <div className="flex items-center justify-center min-h-screen bg-white">
       <div className="w-full max-w-md p-8 space-y-8">
         <div className="text-center animate-fade-in">
-          {/* Removed the top icon */}
           <h2 className="text-3xl font-bold text-gray-900">Create your account</h2>
           <p className="mt-2 text-gray-600">Join TaskMaster and start collaborating</p>
         </div>
-
-
         <div className="transition-shadow duration-300 bg-white border border-gray-200 shadow-lg rounded-xl hover:shadow-2xl">
           <div className="p-6">
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -101,8 +83,6 @@ const Register = () => {
                   </div>
                 </div>
               )}
-
-
               <div className="flex gap-3">
                 <div className="flex-1">
                   <label htmlFor="firstName" className="block mb-1 text-sm font-medium text-gray-700">
@@ -137,8 +117,6 @@ const Register = () => {
                   />
                 </div>
               </div>
-
-
               <div>
                 <label htmlFor="email" className="block mb-2 text-sm font-medium text-gray-700">
                   Email
@@ -155,8 +133,6 @@ const Register = () => {
                   autoComplete="email"
                 />
               </div>
-
-
               <div>
                 <label htmlFor="password" className="block mb-2 text-sm font-medium text-gray-700">
                   Password
@@ -173,8 +149,6 @@ const Register = () => {
                   autoComplete="new-password"
                 />
               </div>
-
-
               <div>
                 <label htmlFor="confirmPassword" className="block mb-2 text-sm font-medium text-gray-700">
                   Confirm password
@@ -191,8 +165,6 @@ const Register = () => {
                   autoComplete="new-password"
                 />
               </div>
-
-
               <button
                 type="submit"
                 disabled={loading}
@@ -208,8 +180,6 @@ const Register = () => {
                 )}
               </button>
             </form>
-
-
             <div className="mt-6 text-center">
               <p className="text-gray-600">
                 Already have an account?{' '}
@@ -224,6 +194,5 @@ const Register = () => {
     </div>
   );
 };
-
 
 export default Register;
