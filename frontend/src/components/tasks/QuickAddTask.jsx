@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Calendar } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import api from '../../services/api';
@@ -9,17 +9,18 @@ const QuickAddTask = ({ projects = [], onTaskCreated }) => {
   const [loading, setLoading] = useState(false);
   const [taskTitle, setTaskTitle] = useState('');
   const [selectedProject, setSelectedProject] = useState('');
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!taskTitle.trim()) return;
+    if (!taskTitle.trim()) {
+      alert('Please enter a task title');
+      return;
+    }
 
-    // Use first project if none selected
-    const projectId = selectedProject || (projects[0]?._id || projects[0]?.id);
-
-    if (!projectId) {
-      alert('Please create a project first');
+    if (!selectedProject) {
+      alert('Please select a project');
       return;
     }
 
@@ -29,11 +30,12 @@ const QuickAddTask = ({ projects = [], onTaskCreated }) => {
       const taskData = {
         title: taskTitle,
         description: '',
-        projectId: projectId,
+        projectId: selectedProject,
         priority: 'MEDIUM',
         status: 'TODO',
         assignedTo: '',
-        dueDate: '',
+        dueDate: selectedDate || new Date().toISOString().split('T')[0],
+        createdAt: new Date().toISOString(),
         userId: getCurrentUserId()
       };
 
@@ -42,6 +44,7 @@ const QuickAddTask = ({ projects = [], onTaskCreated }) => {
       if (response.data) {
         onTaskCreated(response.data);
         setTaskTitle('');
+        setSelectedDate(new Date().toISOString().split('T')[0]);
       }
     } catch (error) {
       console.error('Error creating task:', error);
@@ -77,22 +80,27 @@ const QuickAddTask = ({ projects = [], onTaskCreated }) => {
           />
           <Button
             type="submit"
-            disabled={!taskTitle.trim() || loading}
+            disabled={!taskTitle.trim() || !selectedProject || loading}
             className="px-4"
           >
             {loading ? 'Adding...' : 'Add Task'}
           </Button>
         </div>
 
-        {projects.length > 1 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {/* Project Selection - Mandatory */}
           <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              Project <span className="text-red-500">*</span>
+            </label>
             <select
               value={selectedProject}
               onChange={(e) => setSelectedProject(e.target.value)}
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               disabled={loading}
+              required
             >
-              <option value="">Default Project ({projects[0]?.name || 'First Project'})</option>
+              <option value="">Select a project...</option>
               {projects.map(project => (
                 <option key={project._id || project.id} value={project._id || project.id}>
                   {project.name}
@@ -100,7 +108,24 @@ const QuickAddTask = ({ projects = [], onTaskCreated }) => {
               ))}
             </select>
           </div>
-        )}
+
+          {/* Due Date */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              Due Date
+            </label>
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="pl-10 text-sm"
+                disabled={loading}
+              />
+            </div>
+          </div>
+        </div>
       </form>
 
       <div className="mt-2 text-xs text-gray-500">

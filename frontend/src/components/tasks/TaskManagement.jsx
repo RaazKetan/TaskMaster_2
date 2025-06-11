@@ -76,6 +76,17 @@ const TaskManagement = () => {
     try {
       const task = tasks.find(t => (t._id || t.id) === taskId);
       const userId = getCurrentUserId();
+      const currentDate = new Date().toISOString();
+
+      // Determine which date field to update based on status
+      let statusDates = {};
+      if (newStatus === 'IN_PROGRESS') {
+        statusDates.startedAt = currentDate;
+      } else if (newStatus === 'REVIEW') {
+        statusDates.reviewedAt = currentDate;
+      } else if (newStatus === 'COMPLETED') {
+        statusDates.completedAt = currentDate;
+      }
 
       const updateData = {
         userId: userId,
@@ -85,13 +96,15 @@ const TaskManagement = () => {
         priority: task.priority,
         assignedTo: task.assignedTo || '',
         dueDate: task.dueDate || '',
-        projectId: task.projectId
+        projectId: task.projectId,
+        updatedAt: currentDate,
+        ...statusDates
       };
 
       await api.put(`/tasks/${taskId}`, updateData);
       
       // Update task in context
-      await updateTask(taskId, { ...task, status: newStatus });
+      await updateTask(taskId, { ...task, status: newStatus, updatedAt: currentDate, ...statusDates });
       
       updateProjectStatus(taskId, newStatus);
     } catch (error) {
@@ -322,6 +335,21 @@ const TaskManagement = () => {
                     </span>
                   )}
                 </div>
+                
+                {/* Status Date Information */}
+                {(task.startedAt || task.reviewedAt || task.completedAt) && (
+                  <div className="text-xs text-slate-400 mb-2">
+                    {task.status === 'IN_PROGRESS' && task.startedAt && (
+                      <span>Started: {new Date(task.startedAt).toLocaleDateString()}</span>
+                    )}
+                    {task.status === 'REVIEW' && task.reviewedAt && (
+                      <span>In Review: {new Date(task.reviewedAt).toLocaleDateString()}</span>
+                    )}
+                    {task.status === 'COMPLETED' && task.completedAt && (
+                      <span>Completed: {new Date(task.completedAt).toLocaleDateString()}</span>
+                    )}
+                  </div>
+                )}
                 <div className="flex items-center justify-between">
                   <Badge
                     variant="secondary"
@@ -378,10 +406,27 @@ const TaskManagement = () => {
       drop: async (item) => {
         if (item.status !== status) {
           try {
+            const currentDate = new Date().toISOString();
+            let statusDates = {};
+            
+            // Determine which date field to update based on status
+            if (status === 'IN_PROGRESS') {
+              statusDates.startedAt = currentDate;
+            } else if (status === 'REVIEW') {
+              statusDates.reviewedAt = currentDate;
+            } else if (status === 'COMPLETED') {
+              statusDates.completedAt = currentDate;
+            }
+
             // Update immediately in UI for better UX
             const taskToUpdate = tasks.find(t => (t._id || t.id) === item.id);
             if (taskToUpdate) {
-              await updateTask(item.id, { ...taskToUpdate, status: status });
+              await updateTask(item.id, { 
+                ...taskToUpdate, 
+                status: status, 
+                updatedAt: currentDate,
+                ...statusDates 
+              });
             }
             // Then sync with backend
             await handleTaskStatusUpdate(item.id, status);
