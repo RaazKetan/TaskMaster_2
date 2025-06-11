@@ -1,11 +1,12 @@
 package com.taskmaster.model;
 
-import jakarta.persistence.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Entity
-@Table(name = "tasks")
+@Document(collection = "tasks")
 public class Task {
     @Id
     private String id;
