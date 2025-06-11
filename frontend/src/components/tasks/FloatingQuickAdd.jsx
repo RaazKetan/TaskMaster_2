@@ -64,20 +64,21 @@ const FloatingQuickAdd = ({ projects = [], onTaskCreated, className = "" }) => {
 
   if (!isExpanded) {
     return (
-      <div className={`fixed bottom-6 right-6 z-50 ${className}`}>
+      <div className={`fixed bottom-6 right-6 z-[9999] ${className}`}>
         <Button
           onClick={() => setIsExpanded(true)}
-          className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 bg-blue-600 hover:bg-blue-700"
+          className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 bg-blue-600 hover:bg-blue-700 text-white"
           size="lg"
+          title="Quick Add Task"
         >
-          <Zap className="h-6 w-6" />
+          <Zap className="h-6 w-6 text-white" />
         </Button>
       </div>
     );
   }
 
   return (
-    <div className={`fixed bottom-6 right-6 z-50 ${className}`}>
+    <div className={`fixed bottom-6 right-6 z-[9999] ${className}`}>
       <div className="bg-white rounded-lg shadow-xl border border-gray-200 p-4 w-80 max-w-[calc(100vw-3rem)]">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
