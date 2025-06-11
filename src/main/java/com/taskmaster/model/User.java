@@ -1,22 +1,37 @@
 package com.taskmaster.model;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import jakarta.persistence.*;
 import java.util.List;
 import java.util.Map;
 
-@Document(collection = "users")
+@Entity
+@Table(name = "users")
 public class User {
     @Id
     private String userId;
+    
+    @Column(unique = true)
     private String email;
+    
     private String password;
     private String sessionToken;
     private String createdAt;
     private String updatedAt;
+    
+    @Convert(converter = JsonConverter.class)
+    @Column(columnDefinition = "TEXT")
     private Map<String, Object> userdata;
+    
+    @Convert(converter = JsonListConverter.class)
+    @Column(columnDefinition = "TEXT")
     private List<Map<String, Object>> teams;
+    
+    @Convert(converter = JsonListConverter.class)
+    @Column(columnDefinition = "TEXT")
     private List<Map<String, Object>> projects;
+    
+    @Convert(converter = JsonListConverter.class)
+    @Column(columnDefinition = "TEXT")
     private List<Map<String, Object>> tasks;
 
     // Constructors
