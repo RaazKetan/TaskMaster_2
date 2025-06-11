@@ -1,249 +1,316 @@
-# TaskMaster - Project Management App
 
-A modern project management platform with React frontend and Spring Boot backend.
+# TaskMaster - Advanced Project Management Platform
 
-## Quick Setup for macOS
+<div align="center">
 
-### Install Prerequisites
+![TaskMaster Logo](https://img.shields.io/badge/TaskMaster-Project%20Management-blue?style=for-the-badge)
 
-1. **Install Homebrew** (if not already installed):
+A modern, full-stack project management platform built with React, Spring Boot, and MongoDB. Features real-time collaboration, Kanban boards, team management, and animated dashboards.
+
+[![Java](https://img.shields.io/badge/Java-17+-orange?style=flat-square)](https://www.oracle.com/java/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x-brightgreen?style=flat-square)](https://spring.io/projects/spring-boot)
+[![React](https://img.shields.io/badge/React-18+-blue?style=flat-square)](https://reactjs.org/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-green?style=flat-square)](https://www.mongodb.com/atlas)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-3.x-38B2AC?style=flat-square)](https://tailwindcss.com/)
+
+</div>
+
+## 🚀 Features
+
+### Core Functionality
+- **🎯 Project Management**: Create, organize, and track projects with detailed timelines
+- **📋 Task Management**: Comprehensive task creation with priorities, deadlines, and status tracking
+- **👥 Team Collaboration**: Invite members, assign roles, and collaborate in real-time
+- **📊 Kanban Boards**: Visual task management with drag-and-drop functionality
+- **📈 Analytics Dashboard**: Real-time insights with animated charts and metrics
+- **🔔 Notifications**: Smart notification system for team updates and deadlines
+- **📅 Calendar Integration**: Built-in calendar for deadline and milestone tracking
+
+### Advanced Features
+- **🎨 Modern UI/UX**: Sleek interface with smooth animations using Framer Motion
+- **🌓 Responsive Design**: Works seamlessly across desktop, tablet, and mobile
+- **⚡ Real-time Updates**: Live collaboration with instant synchronization
+- **🔍 Smart Search**: Quick find functionality across projects, tasks, and teams
+- **📱 Progressive Web App**: Install and use offline capabilities
+- **🎭 Role-based Access**: Granular permissions for team members
+
+## 🛠️ Technology Stack
+
+### Frontend
+- **React 18** - Modern UI library with hooks and context
+- **Vite** - Lightning-fast build tool and dev server
+- **Tailwind CSS** - Utility-first CSS framework
+- **Framer Motion** - Smooth animations and micro-interactions
+- **Lucide React** - Beautiful, customizable icons
+- **Axios** - HTTP client for API communication
+
+### Backend
+- **Spring Boot 3.x** - Enterprise-grade Java framework
+- **Java 17** - Latest LTS version with modern features
+- **Maven** - Dependency management and build automation
+- **Spring Data MongoDB** - Database abstraction layer
+- **Spring Security** - Authentication and authorization
+
+### Database & Infrastructure
+- **MongoDB Atlas** - Cloud-native NoSQL database
+- **Replit** - Cloud development and hosting platform
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Java 17+ installed
+- Node.js 18+ installed
+- Maven 3.6+ installed
+- MongoDB Atlas account (or local MongoDB)
+
+### Installation
+
+1. **Clone the repository**
    ```bash
-   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+   git clone https://github.com/yourusername/taskmaster.git
+   cd taskmaster
    ```
 
-2. **Install required software**:
+2. **Backend Setup**
    ```bash
-   # Install Java
-   brew install openjdk@17
+   # Install dependencies and compile
+   mvn clean install -DskipTests
    
-   # Install Maven
-   brew install maven
-   
-   # Install Node.js
-   brew install node
-   
-   # Install MongoDB
-   brew tap mongodb/brew
-   brew install mongodb-community
+   # Start the backend server
+   mvn spring-boot:run -Dspring-boot.run.args="--server.port=8000"
    ```
 
-## Running the App
+3. **Frontend Setup**
+   ```bash
+   # Navigate to frontend directory
+   cd frontend
+   
+   # Install dependencies
+   npm install
+   
+   # Start development server
+   npm run dev -- --port 5000 --host 0.0.0.0
+   ```
 
-### Step 1: Download and Setup
-1. Clone or download this project
-2. Open Terminal and navigate to the project folder
+4. **Access the Application**
+   - Frontend: `http://localhost:5000`
+   - Backend API: `http://localhost:8000/api`
 
-### Step 2: Start MongoDB
-```bash
-# Create data directory and set permissions
-sudo mkdir -p /tmp/mongodb
-sudo chown $(whoami) /tmp/mongodb
+### Environment Configuration
 
-# Start MongoDB service
-brew services start mongodb-community
-
-# Verify MongoDB is running
-brew services list | grep mongodb
-# Should show "started"
-
-# Alternative manual start if service fails
-mongod --dbpath /tmp/mongodb --port 27017 --bind_ip 0.0.0.0
-```
-
-### Step 3: Start Backend (Spring Boot)
-Open a new terminal tab and run:
-```bash
-# Verify Java version first
-java -version
-# Should show version 17 or higher
-
-# Clean and install dependencies
-mvn clean install -DskipTests
-
-# Start the backend
-mvn spring-boot:run -Dspring-boot.run.args="--server.port=8000"
-
-# Backend should show "Started TaskmasterApplication" when ready
-# API will be available at: http://localhost:8000/api/public
-```
-
-### Step 4: Start Frontend (React)
-Open another terminal tab and run:
-```bash
-# Navigate to frontend folder
-cd frontend
-
-# Verify Node.js version
-node --version
-# Should show version 18 or higher
-
-# Install dependencies
-npm install
-
-# Start the development server
-npm run dev
-
-# Frontend should show "Local: http://localhost:5000/" when ready
-```
-
-### Step 5: Access the App
-- Wait for all services to start (should see success messages in each terminal)
-- Open your web browser
-- Go to: `http://localhost:5000`
-- You should see the TaskMaster login page
-- Click "Register" to create a new account
-- Start creating projects and teams with animated interactions
-
-### Verification Steps:
-1. MongoDB: `brew services list | grep mongodb` shows "started"
-2. Backend: Terminal shows "Started TaskmasterApplication" 
-3. Frontend: Terminal shows "Local: http://localhost:5000/"
-4. Browser: Login page loads without errors
-
-## What You'll See
-- **Dashboard**: Overview of your projects and teams
-- **Projects**: Create and manage projects with animated interactions
-- **Teams**: Create teams and collaborate
-- **Smooth Animations**: Framer Motion micro-interactions throughout the app
-
-## Common Local Development Issues & Solutions
-
-### Issue: "BUILD FAILURE" or Backend Won't Start
-```bash
-# Clean and rebuild the project
-mvn clean
-mvn clean install -DskipTests
-
-# If still failing, check Java version
-java -version
-# Should show Java 17 or higher
-
-# Set JAVA_HOME if needed
-export JAVA_HOME=/opt/homebrew/opt/openjdk@17
-```
-
-### Issue: MongoDB Connection Errors
-```bash
-# Check if MongoDB is actually running
-brew services list | grep mongodb
-
-# If not running, start it
-brew services start mongodb-community
-
-# Check MongoDB logs
-brew services info mongodb-community
-
-# Alternative: Run MongoDB manually
-mongod --config /opt/homebrew/etc/mongod.conf
-```
-
-### Issue: "Port Already in Use" Errors
-```bash
-# For backend (port 8000)
-lsof -ti:8000 | xargs kill -9
-
-# For frontend (port 5000) 
-lsof -ti:5000 | xargs kill -9
-
-# For MongoDB (port 27017)
-lsof -ti:27017 | xargs kill -9
-```
-
-### Issue: Frontend Dependencies Problems
-```bash
-# Complete cleanup and reinstall
-cd frontend
-rm -rf node_modules package-lock.json
-npm cache clean --force
-npm install
-
-# If still issues, try different Node version
-node --version
-# Should be 18+ 
-```
-
-### Issue: Environment Variables Not Working
 Create a `.env` file in the root directory:
-```bash
-# Create .env file
-touch .env
-
-# Add these lines to .env
-echo "MONGODB_URI=mongodb://localhost:27017/taskmaster" >> .env
+```env
+MONGODB_URI=mongodb+srv://your-username:your-password@cluster.mongodb.net/taskmaster
+JWT_SECRET=your-jwt-secret-key
+FRONTEND_URL=http://localhost:5000
 ```
 
-### Issue: JAVA_HOME Not Defined Error
-```bash
-# Quick fix for current session
-export JAVA_HOME=$(/usr/libexec/java_home)
-export PATH="$JAVA_HOME/bin:$PATH"
+## 📋 Usage Guide
 
-# Permanent fix (choose your shell)
-# For Zsh (default on newer macOS)
-echo 'export JAVA_HOME=$(/usr/libexec/java_home)' >> ~/.zshrc
-source ~/.zshrc
+### Getting Started
+1. **Register**: Create your account on the registration page
+2. **Create Team**: Set up your first team and invite members
+3. **Start Project**: Create your first project and assign it to your team
+4. **Add Tasks**: Break down your project into manageable tasks
+5. **Track Progress**: Use the Kanban board and dashboard to monitor progress
 
-# For Bash
-echo 'export JAVA_HOME=$(/usr/libexec/java_home)' >> ~/.bash_profile
-source ~/.bash_profile
+### Key Workflows
 
-# Install Java if missing
-brew install openjdk@17
-
-# Verify setup
-echo $JAVA_HOME
-mvn -version
-```
-See LOCAL_JAVA_SETUP.md for detailed instructions.
-
-### Issue: "Permission Denied" Errors
-```bash
-# Fix MongoDB data directory permissions
-sudo mkdir -p /tmp/mongodb
-sudo chown $(whoami) /tmp/mongodb
-
-# Fix Homebrew permissions if needed
-sudo chown -R $(whoami) /opt/homebrew
+#### Project Creation
+```javascript
+// Quick project creation with team assignment
+const newProject = {
+  name: "Website Redesign",
+  description: "Complete overhaul of company website",
+  teamId: "team_123",
+  priority: "HIGH",
+  deadline: "2024-12-31"
+};
 ```
 
-### Issue: Java PATH Problems
-```bash
-# For Intel Macs
-echo 'export PATH="/usr/local/opt/openjdk@17/bin:$PATH"' >> ~/.zshrc
+#### Task Management
+- **Create**: Use the quick-add feature or detailed task form
+- **Organize**: Drag and drop tasks between status columns
+- **Assign**: Add team members and set priorities
+- **Track**: Monitor progress with real-time updates
 
-# For Apple Silicon Macs (M1/M2)
-echo 'export PATH="/opt/homebrew/opt/openjdk@17/bin:$PATH"' >> ~/.zshrc
+#### Team Collaboration
+- **Invite Members**: Send email invitations with role assignments
+- **Real-time Chat**: Built-in communication for team coordination
+- **Notifications**: Stay updated with project changes and deadlines
 
-# Reload terminal
-source ~/.zshrc
+## 🏗️ Architecture
+
+### System Architecture
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   React SPA     │────│  Spring Boot    │────│  MongoDB Atlas  │
+│   (Frontend)    │    │   (Backend)     │    │   (Database)    │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
-### Complete Reset (Nuclear Option)
-If nothing works, start fresh:
+### Database Schema
+- **Users**: Authentication, profiles, and user preferences
+- **Teams**: Team information, member roles, and permissions
+- **Projects**: Project details, timelines, and team assignments
+- **Tasks**: Task information, status, priorities, and assignments
+
+### API Endpoints
+
+#### Authentication
+- `POST /api/auth/register` - User registration
+- `POST /api/auth/login` - User login
+- `POST /api/auth/logout` - User logout
+
+#### Projects
+- `GET /api/projects` - List user projects
+- `POST /api/projects` - Create new project
+- `PUT /api/projects/{id}` - Update project
+- `DELETE /api/projects/{id}` - Delete project
+
+#### Tasks
+- `GET /api/tasks` - List project tasks
+- `POST /api/tasks` - Create new task
+- `PUT /api/tasks/{id}` - Update task status/details
+- `DELETE /api/tasks/{id}` - Delete task
+
+#### Teams
+- `GET /api/teams` - List user teams
+- `POST /api/teams` - Create new team
+- `POST /api/teams/{id}/invite` - Invite team member
+
+## 🎨 UI Components
+
+### Custom Components
+- **QuickAddTask**: Inline task creation with smart defaults
+- **KanbanBoard**: Drag-and-drop task management
+- **AnimatedDashboard**: Real-time metrics with smooth animations
+- **NotificationBell**: Smart notification system
+- **TeamCalendar**: Integrated calendar for deadlines
+
+### Design System
+- **Colors**: Consistent color palette with theme support
+- **Typography**: Clean, readable font hierarchy
+- **Spacing**: Systematic spacing scale
+- **Animations**: Subtle micro-interactions for better UX
+
+## 🔧 Development
+
+### Available Scripts
+
+#### Backend
 ```bash
-# Stop all services
-brew services stop mongodb-community
-pkill -f spring-boot
-pkill -f vite
-
-# Clean everything
-mvn clean
-rm -rf frontend/node_modules frontend/package-lock.json
-rm -rf /tmp/mongodb
-
-# Restart in order
-brew services start mongodb-community
-mvn clean install
-mvn spring-boot:run -Dspring-boot.run.args="--server.port=8000" &
-cd frontend && npm install && npm run dev
+mvn clean install        # Install dependencies
+mvn spring-boot:run      # Start development server
+mvn test                 # Run tests
+mvn package             # Build for production
 ```
 
-## Tech Stack
-- **Frontend**: React + Vite + Tailwind CSS + Framer Motion
-- **Backend**: Spring Boot + Java
-- **Database**: MongoDB (single collection architecture)
-- **Authentication**: Custom MongoDB-based session authentication
-- **Features**: Real-time animations, project management, team collaboration
+#### Frontend
+```bash
+npm install             # Install dependencies
+npm run dev            # Start development server
+npm run build          # Build for production
+npm run preview        # Preview production build
+npm run lint           # Run ESLint
+```
 
-## That's It!
-Your TaskMaster app should now be running locally on your Mac. The app includes smooth animations and a modern interface for managing projects and teams.
+### Project Structure
+```
+taskmaster/
+├── src/main/java/              # Backend source code
+│   └── com/taskmaster/
+│       ├── controller/         # REST controllers
+│       ├── model/             # Data models
+│       ├── repository/        # Data access layer
+│       └── service/           # Business logic
+├── frontend/src/              # Frontend source code
+│   ├── components/            # React components
+│   ├── context/              # React context providers
+│   ├── services/             # API services
+│   └── utils/                # Utility functions
+├── target/                   # Build artifacts
+└── README.md                # Project documentation
+```
+
+## 🌟 Contributing
+
+### Development Guidelines
+1. **Code Style**: Follow established patterns and conventions
+2. **Testing**: Write tests for new features and bug fixes
+3. **Documentation**: Update documentation for API changes
+4. **Git Flow**: Use feature branches and pull requests
+
+### Getting Involved
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📞 Support
+
+### Troubleshooting
+
+#### Common Issues
+- **Port conflicts**: Ensure ports 5000 and 8000 are available
+- **Database connection**: Verify MongoDB Atlas credentials
+- **Build failures**: Check Java and Node.js versions
+
+#### Getting Help
+- 📧 Email: support@taskmaster.dev
+- 💬 Discord: [TaskMaster Community](https://discord.gg/taskmaster)
+- 📖 Documentation: [Wiki Pages](./WIKI.md)
+
+## 🔄 Deployment
+
+### Replit Deployment
+This project is optimized for deployment on Replit:
+
+1. **Fork the Repl**: Import from GitHub or create new Repl
+2. **Environment Setup**: Configure secrets and environment variables
+3. **Deploy**: Use Replit's one-click deployment feature
+
+### Production Considerations
+- Environment variables for sensitive data
+- Database connection pooling
+- Error monitoring and logging
+- Performance optimization
+
+## 📊 Roadmap
+
+### Upcoming Features
+- [ ] **Mobile App**: Native iOS and Android applications
+- [ ] **Advanced Analytics**: Custom reports and data visualization
+- [ ] **API Integration**: Connect with popular tools (Slack, GitHub, etc.)
+- [ ] **Time Tracking**: Built-in time tracking for tasks and projects
+- [ ] **File Management**: Document sharing and version control
+- [ ] **Advanced Permissions**: Granular access control
+
+### Version History
+- **v1.0.0** - Initial release with core features
+- **v1.1.0** - Added Kanban boards and team collaboration
+- **v1.2.0** - Introduced animated dashboard and notifications
+- **v1.3.0** - Enhanced task management and calendar integration
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- **Spring Boot Team** - For the excellent framework
+- **React Team** - For the powerful UI library
+- **MongoDB** - For the flexible database solution
+- **Replit** - For the amazing development platform
+- **Open Source Community** - For inspiration and contributions
+
+---
+
+<div align="center">
+
+**[🌟 Star this repo](https://github.com/yourusername/taskmaster)** • **[🐛 Report Bug](https://github.com/yourusername/taskmaster/issues)** • **[✨ Request Feature](https://github.com/yourusername/taskmaster/issues)**
+
+Made with ❤️ by the TaskMaster Team
+
+</div>
