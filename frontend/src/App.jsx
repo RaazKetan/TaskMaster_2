@@ -19,6 +19,7 @@ import TaskPriorityVisualizer from './components/tasks/TaskPriorityVisualizer.js
 import PrivateRoute from './components/auth/PrivateRoute.jsx';
 import LandingPage from './components/LandingPage.jsx';
 import UserProfile from './components/profile/UserProfile.jsx';
+import NotFound from './components/common/NotFound.jsx';
 import './App.css'
 
 
@@ -128,6 +129,9 @@ function AppContent() {
 
 
           <Route path="/loading-demo" element={<LoadingDemo />} />
+          
+          {/* 404 Route - Must be last */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </div>
     </Router>
