@@ -6,15 +6,15 @@ import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Plus, User, Calendar, Search, Clock, CheckCircle, AlertTriangle, AlertCircle } from 'lucide-react';
 import { Input } from '../ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { PRIORITY_COLORS } from '../../utils/constants';
 import CreateTaskModal from './CreateTaskModal';
 import EditTaskModal from './EditTaskModal';
+import QuickAddTask from './QuickAddTask';
+import FloatingQuickAdd from './FloatingQuickAdd';
 import api from '../../services/api';
 import { getCurrentUserId } from '../../utils/auth';
 import { motion } from 'framer-motion';
 import { useTasks } from '../../context/TaskContext';
-
 
 const TaskManagement = () => {
   const { tasks, loading, error, fetchTasks, addTask, updateTask, deleteTask } = useTasks();
@@ -25,7 +25,9 @@ const TaskManagement = () => {
   const [editingTask, setEditingTask] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showCreateTask, setShowCreateTask] = useState(false);
-
+  const [draggedTask, setDraggedTask] = useState(null);
+  const [inlineEditingTask, setInlineEditingTask] = useState(null);
+  const [inlineEditValue, setInlineEditValue] = useState('');
 
   // Only fetch projects here, tasks come from context
   const fetchProjects = useCallback(async () => {
@@ -39,16 +41,36 @@ const TaskManagement = () => {
     }
   }, []);
 
-
   useEffect(() => {
     fetchProjects();
   }, [fetchProjects]);
 
+  const handleTaskPriorityUpdate = async (taskId, newPriority) => {
+    try {
+      const userId = getCurrentUserId();
+      const task = tasks.find(t => (t._id || t.id) === taskId);
+
+      await api.put(`/tasks/${taskId}`, {
+        priority: newPriority,
+        userId: userId,
+        title: task.title,
+        description: task.description,
+        status: task.status,
+        assignedTo: task.assignedTo,
+        dueDate: task.dueDate
+      });
+
+      fetchTasks();
+    } catch (error) {
+      console.error('Error updating task priority:', error);
+    }
+  };
 
   const handleTaskStatusUpdate = async (taskId, newStatus) => {
     try {
       const task = tasks.find(t => (t._id || t.id) === taskId);
-      await updateTask(taskId, {
+
+      await api.put(`/tasks/${taskId}`, {
         status: newStatus,
         title: task.title,
         description: task.description,
@@ -56,32 +78,31 @@ const TaskManagement = () => {
         assignedTo: task.assignedTo,
         dueDate: task.dueDate
       });
+
       updateProjectStatus(taskId, newStatus);
+      fetchTasks();
     } catch (error) {
       console.error('Error updating task status:', error);
     }
   };
 
-
   const updateProjectStatus = async (taskId, newTaskStatus) => {
     try {
-       const task = tasks.find(t => (t._id || t.id) === taskId);
+      const task = tasks.find(t => (t._id || t.id) === taskId);
       if (!task || !task.projectId) return;
-
 
       const projectTasks = tasks.filter(t => t.projectId === task.projectId);
       let completedTasksCount = projectTasks.filter(t =>
         t.status === 'COMPLETED' || t.status === 'Done'
       ).length;
-     
+
       if (newTaskStatus === 'COMPLETED' || newTaskStatus === 'Done') {
         completedTasksCount += 1;
       }
 
-
       const totalTasks = projectTasks.length;
       const progress = totalTasks > 0 ? Math.round((completedTasksCount / totalTasks) * 100) : 0;
-     
+
       let projectStatus = 'Planning';
       if (progress === 100) {
         projectStatus = 'COMPLETED';
@@ -89,25 +110,20 @@ const TaskManagement = () => {
         projectStatus = 'ACTIVE';
       }
 
-
       await api.put(`/projects/${task.projectId}`, {
         status: projectStatus,
         progress: progress,
         userId: getCurrentUserId()
       });
-
-
     } catch (error) {
       console.error('Error updating project status:', error);
     }
   };
 
-
   const handleEditTask = (task) => {
     setEditingTask(task);
     setShowEditModal(true);
   };
-
 
   const handleDeleteTask = async (taskId) => {
     if (!window.confirm('Are you sure you want to delete this task?')) return;
@@ -118,22 +134,49 @@ const TaskManagement = () => {
     }
   };
 
+  const handleInlineEdit = (task) => {
+    setInlineEditingTask(task._id || task.id);
+    setInlineEditValue(task.title || task.name);
+  };
+
+  const handleInlineEditSave = async (taskId) => {
+    if (!inlineEditValue.trim()) return;
+    try {
+      const task = tasks.find(t => (t._id || t.id) === taskId);
+      await updateTask(taskId, {
+        title: inlineEditValue.trim(),
+        description: task.description,
+        priority: task.priority,
+        status: task.status,
+        assignedTo: task.assignedTo,
+        dueDate: task.dueDate
+      });
+      setInlineEditingTask(null);
+      setInlineEditValue('');
+    } catch (error) {
+      console.error('Error updating task title:', error);
+    }
+  };
+
+  const handleInlineEditCancel = () => {
+    setInlineEditingTask(null);
+    setInlineEditValue('');
+  };
+
+  const handleQuickPriorityChange = async (taskId, newPriority) => {
+    await handleTaskPriorityUpdate(taskId, newPriority);
+  };
 
   const filteredTasks = tasks.filter(task => {
     const matchesProject = selectedProject === 'all' || task.projectId === selectedProject;
     const matchesStatus = selectedStatus === 'all' || task.status === selectedStatus;
-   
-    // Safely handle null/undefined values in search
     const taskTitle = task.title || task.name || '';
     const taskDescription = task.description || '';
     const searchTermLower = searchTerm ? searchTerm.toLowerCase() : '';
-   
     const matchesSearch = taskTitle.toLowerCase().includes(searchTermLower) ||
                          taskDescription.toLowerCase().includes(searchTermLower);
-   
     return matchesProject && matchesStatus && matchesSearch;
   });
-
 
   const TaskCard = ({ task }) => {
     const [{ isDragging }, drag] = useDrag(() => ({
@@ -148,17 +191,14 @@ const TaskManagement = () => {
       }),
     }));
 
-
     const project = projects.find(p => (p._id || p.id) === task.projectId);
     const priorityColor = PRIORITY_COLORS[task.priority] || '#6B7280';
     const isCompleted = task.status === 'COMPLETED';
-
 
     const handleCheckboxChange = async (checked) => {
       const newStatus = checked ? 'COMPLETED' : 'TODO';
       await handleTaskStatusUpdate(task._id || task.id, newStatus);
     };
-
 
     return (
       <motion.div
@@ -186,30 +226,53 @@ const TaskManagement = () => {
               />
               <div className="flex-1">
                 <div className="flex items-start justify-between mb-2">
-                  <h3 className={`font-semibold text-sm leading-tight ${
-                    isCompleted ? 'text-green-700 line-through' : 'text-slate-900'
-                  }`}>
-                    {task.title || task.name}
-                  </h3>
-                  <Badge
-                    variant="outline"
-                    className="ml-2 text-xs font-medium"
-                    style={{
-                      backgroundColor: `${priorityColor}20`,
-                      borderColor: priorityColor,
-                      color: priorityColor
-                    }}
-                  >
-                    {task.priority}
-                  </Badge>
+                  {inlineEditingTask === (task._id || task.id) ? (
+                    <div className="flex-1 mr-2">
+                      <Input
+                        value={inlineEditValue}
+                        onChange={(e) => setInlineEditValue(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleInlineEditSave(task._id || task.id);
+                          } else if (e.key === 'Escape') {
+                            handleInlineEditCancel();
+                          }
+                        }}
+                        onBlur={() => handleInlineEditSave(task._id || task.id)}
+                        className="text-sm font-semibold"
+                        autoFocus
+                      />
+                    </div>
+                  ) : (
+                    <h3 
+                      className={`font-semibold text-sm leading-tight cursor-pointer hover:text-blue-600 transition-colors flex-1 ${
+                        isCompleted ? 'text-green-700 line-through' : 'text-slate-900'
+                      }`}
+                      onClick={() => handleInlineEdit(task)}
+                      title="Click to edit title"
+                    >
+                      {task.title || task.name}
+                    </h3>
+                  )}
+                  <div className="flex items-center gap-1">
+                    <select
+                      value={task.priority}
+                      onChange={(e) => handleQuickPriorityChange(task._id || task.id, e.target.value)}
+                      className="text-xs font-medium border-0 bg-transparent cursor-pointer"
+                      style={{ color: priorityColor }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <option value="HIGH">High</option>
+                      <option value="MEDIUM">Medium</option>
+                      <option value="LOW">Low</option>
+                    </select>
+                  </div>
                 </div>
-               
                 <p className={`text-xs mb-3 line-clamp-2 ${
                   isCompleted ? 'text-green-600' : 'text-slate-600'
                 }`}>
                   {task.description}
                 </p>
-               
                 <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
                   <div className="flex items-center gap-3">
                     {task.assignedTo && (
@@ -231,7 +294,6 @@ const TaskManagement = () => {
                     </span>
                   )}
                 </div>
-               
                 <div className="flex items-center justify-between">
                   <Badge
                     variant="secondary"
@@ -245,20 +307,32 @@ const TaskManagement = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleEditTask(task);
+                        handleInlineEdit(task);
                       }}
                       className="text-blue-500 hover:text-blue-700 text-xs px-2 py-1 rounded bg-blue-50 hover:bg-blue-100 transition-colors"
+                      title="Quick edit title"
                     >
-                      Edit
+                      Quick Edit
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditTask(task);
+                      }}
+                      className="text-slate-500 hover:text-slate-700 text-xs px-1 py-1 rounded hover:bg-slate-100 transition-colors"
+                      title="Full edit form"
+                    >
+                      ⚙️
                     </button>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDeleteTask(task._id || task.id);
                       }}
-                      className="text-red-500 hover:text-red-700 text-xs px-2 py-1 rounded bg-red-50 hover:bg-red-100 transition-colors"
+                      className="text-red-500 hover:text-red-700 text-xs px-1 py-1 rounded hover:bg-red-100 transition-colors"
+                      title="Delete task"
                     >
-                      Delete
+                      🗑️
                     </button>
                   </div>
                 </div>
@@ -269,7 +343,6 @@ const TaskManagement = () => {
       </motion.div>
     );
   };
-
 
   const StatusColumn = ({ status, title, tasks, icon: Icon, color }) => {
     const [{ isOver }, drop] = useDrop({
@@ -283,7 +356,6 @@ const TaskManagement = () => {
         isOver: monitor.isOver(),
       }),
     });
-
 
     return (
       <div
@@ -299,13 +371,11 @@ const TaskManagement = () => {
             {tasks.length}
           </Badge>
         </div>
-       
         <div className="space-y-3">
           {tasks.map(task => (
             <TaskCard key={task._id || task.id} task={task} />
           ))}
         </div>
-       
         {tasks.length === 0 && (
           <motion.div
             className="text-center py-8 text-slate-400"
@@ -320,7 +390,6 @@ const TaskManagement = () => {
       </div>
     );
   };
-
 
   if (loading) {
     return (
@@ -342,7 +411,6 @@ const TaskManagement = () => {
     );
   }
 
-
   if (error) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -361,13 +429,11 @@ const TaskManagement = () => {
     );
   }
 
-
   // Group tasks by status
   const todoTasks = filteredTasks.filter(task => task.status === 'TODO');
   const inProgressTasks = filteredTasks.filter(task => task.status === 'IN_PROGRESS');
   const reviewTasks = filteredTasks.filter(task => task.status === 'REVIEW');
   const completedTasks = filteredTasks.filter(task => task.status === 'COMPLETED');
-
 
   return (
     <DndProvider backend={HTML5Backend}>
@@ -381,10 +447,20 @@ const TaskManagement = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
-              <h1 className="text-3xl font-bold text-slate-900 mb-2">Task Management</h1>
-              <p className="text-slate-600">Organize tasks by status, drag to update, or check to complete</p>
+              <div className="flex items-center justify-between mb-6">
+                <h1 className="text-3xl font-bold text-slate-900 mb-2">Task Management</h1>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => setShowCreateTask(true)}
+                    variant="outline"
+                    size="sm"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Detailed Form
+                  </Button>
+                </div>
+              </div>
             </motion.div>
-
 
             {/* Filters */}
             <motion.div
@@ -405,7 +481,6 @@ const TaskManagement = () => {
                         className="pl-10"
                       />
                     </div>
-                   
                     <select
                       className="w-[200px] px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       value={selectedProject}
@@ -418,8 +493,6 @@ const TaskManagement = () => {
                         </option>
                       ))}
                     </select>
-
-
                     <select
                       className="w-[180px] px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       value={selectedStatus}
@@ -430,20 +503,10 @@ const TaskManagement = () => {
                       <option value="IN_PROGRESS">In Progress</option>
                       <option value="COMPLETED">Completed</option>
                     </select>
-
-
-                    <Button
-                      onClick={() => setShowCreateTask(true)}
-                      className="ml-auto"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Task
-                    </Button>
                   </div>
                 </CardContent>
               </Card>
             </motion.div>
-
 
             {/* Task Priority Board */}
             {tasks.length === 0 ? (
@@ -502,11 +565,10 @@ const TaskManagement = () => {
               </motion.div>
             )}
 
-
             {/* Real-time indicator */}
-            <motion.div
-              className="fixed bottom-4 right-4"
-              initial={{ opacity: 0, x: 100 }}
+            <motion.div 
+              className="fixed bottom-4 left-4"
+              initial={{ opacity: 0, x: -100 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.5 }}
             >
@@ -522,7 +584,6 @@ const TaskManagement = () => {
           </div>
         </div>
 
-
         {/* Create Task Modal */}
         <CreateTaskModal
           isOpen={showCreateTask}
@@ -530,7 +591,6 @@ const TaskManagement = () => {
           onTaskCreated={addTask}
           projects={projects}
         />
-
 
         {/* Edit Task Modal */}
         <EditTaskModal
@@ -548,7 +608,4 @@ const TaskManagement = () => {
   );
 };
 
-
 export default TaskManagement;
-
-
