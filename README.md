@@ -53,7 +53,6 @@ A modern, full-stack project management platform built with React, Spring Boot, 
 
 ### Database & Infrastructure
 - **MongoDB Atlas** - Cloud-native NoSQL database
-- **Replit** - Cloud development and hosting platform
 
 ## 🚀 Quick Start
 
@@ -101,7 +100,6 @@ A modern, full-stack project management platform built with React, Spring Boot, 
 Create a `.env` file in the root directory:
 ```env
 MONGODB_URI=mongodb+srv://your-username:your-password@cluster.mongodb.net/taskmaster
-JWT_SECRET=your-jwt-secret-key
 FRONTEND_URL=http://localhost:5000
 ```
 
@@ -258,18 +256,10 @@ taskmaster/
 - **Build failures**: Check Java and Node.js versions
 
 #### Getting Help
-- 📧 Email: support@taskmaster.dev
-- 💬 Discord: [TaskMaster Community](https://discord.gg/taskmaster)
 - 📖 Documentation: [Wiki Pages](./WIKI.md)
 
 ## 🔄 Deployment
 
-### Replit Deployment
-This project is optimized for deployment on Replit:
-
-1. **Fork the Repl**: Import from GitHub or create new Repl
-2. **Environment Setup**: Configure secrets and environment variables
-3. **Deploy**: Use Replit's one-click deployment feature
 
 ### Production Considerations
 - Environment variables for sensitive data
@@ -302,14 +292,13 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Spring Boot Team** - For the excellent framework
 - **React Team** - For the powerful UI library
 - **MongoDB** - For the flexible database solution
-- **Replit** - For the amazing development platform
 - **Open Source Community** - For inspiration and contributions
 
 ---
 
 <div align="center">
 
-**[🌟 Star this repo](https://github.com/yourusername/taskmaster)** • **[🐛 Report Bug](https://github.com/yourusername/taskmaster/issues)** • **[✨ Request Feature](https://github.com/yourusername/taskmaster/issues)**
+**[🌟 Star this repo](https://github.com/RaazKetan/TaskMaster_2)**
 
 Made with ❤️ by the TaskMaster Team
 

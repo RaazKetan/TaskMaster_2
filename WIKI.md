@@ -32,16 +32,14 @@
 
 ### Installation Guide
 
-#### For Replit (Recommended)
 1. **Import Project**
    ```bash
    # Fork this repl or import from GitHub
-   https://github.com/yourusername/taskmaster
+   https://github.com/RaazKetan/TaskMaster_2
    ```
 
 2. **Environment Setup**
    ```bash
-   # Set up secrets in Replit Secrets tab
    MONGODB_URI=your_mongodb_connection_string
    JWT_SECRET=your_jwt_secret
    ```
@@ -634,18 +632,9 @@ API Service → React Component → UI Update
 
 ---
 
-## 🚀 Deployment
-
-### Replit Deployment (Recommended)
-
-#### Automatic Deployment
-1. **Fork Repository**: Import project to Replit
-2. **Configure Secrets**: Set environment variables in Secrets tab
-3. **Deploy**: Use Replit's automatic deployment feature
 
 #### Environment Variables
 ```bash
-# Required secrets in Replit
 MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/taskmaster
 JWT_SECRET=your-secret-key-here
 NODE_ENV=production
@@ -868,7 +857,7 @@ A: A plugin system is planned for future releases to allow third-party extension
 A: Yes, TaskMaster can be self-hosted. See the deployment guide for instructions.
 
 **Q: What are the hosting requirements?**
-A: Minimum 2GB RAM, 10GB storage, and a MongoDB database. Replit hosting is recommended for simplicity.
+A: Minimum 2GB RAM, 10GB storage, and a MongoDB database.
 
 **Q: How do I scale for more users?**
 A: Use horizontal scaling with load balancers and multiple server instances. MongoDB Atlas handles database scaling automatically.
@@ -884,16 +873,13 @@ A: HTTPS is required for production deployments to ensure security and enable PW
 - **GitHub Issues**: Report bugs and request features
 - **Documentation**: Check this wiki for detailed information
 - **Community Discord**: Join our Discord server for real-time help
-- **Email Support**: Contact support@taskmaster.dev
+- **Email Support**: Contact 21ketanraaz@gmail.com
 
 ### Contributing
 - **Code Contributions**: Submit pull requests for bug fixes and features
 - **Documentation**: Help improve documentation and tutorials
 - **Testing**: Report bugs and test new features
 - **Translation**: Help translate TaskMaster to other languages
-
-### Changelog
-See [CHANGELOG.md](CHANGELOG.md) for detailed version history and updates.
 
 ---
 
