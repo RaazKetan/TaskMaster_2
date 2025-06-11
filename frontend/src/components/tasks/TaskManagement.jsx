@@ -50,39 +50,54 @@ const TaskManagement = () => {
       const userId = getCurrentUserId();
       const task = tasks.find(t => (t._id || t.id) === taskId);
 
-      await api.put(`/tasks/${taskId}`, {
-        priority: newPriority,
+      const updateData = {
         userId: userId,
+        priority: newPriority,
         title: task.title,
-        description: task.description,
+        description: task.description || '',
         status: task.status,
-        assignedTo: task.assignedTo,
-        dueDate: task.dueDate
-      });
+        assignedTo: task.assignedTo || '',
+        dueDate: task.dueDate || '',
+        projectId: task.projectId
+      };
 
-      fetchTasks();
+      await api.put(`/tasks/${taskId}`, updateData);
+      
+      // Update task in context
+      await updateTask(taskId, { ...task, priority: newPriority });
     } catch (error) {
       console.error('Error updating task priority:', error);
+      // Revert the UI change if API call fails
+      fetchTasks();
     }
   };
 
   const handleTaskStatusUpdate = async (taskId, newStatus) => {
     try {
       const task = tasks.find(t => (t._id || t.id) === taskId);
+      const userId = getCurrentUserId();
 
-      await api.put(`/tasks/${taskId}`, {
+      const updateData = {
+        userId: userId,
         status: newStatus,
         title: task.title,
-        description: task.description,
+        description: task.description || '',
         priority: task.priority,
-        assignedTo: task.assignedTo,
-        dueDate: task.dueDate
-      });
+        assignedTo: task.assignedTo || '',
+        dueDate: task.dueDate || '',
+        projectId: task.projectId
+      };
 
+      await api.put(`/tasks/${taskId}`, updateData);
+      
+      // Update task in context
+      await updateTask(taskId, { ...task, status: newStatus });
+      
       updateProjectStatus(taskId, newStatus);
-      fetchTasks();
     } catch (error) {
       console.error('Error updating task status:', error);
+      // Revert the UI change if API call fails
+      fetchTasks();
     }
   };
 
@@ -143,18 +158,31 @@ const TaskManagement = () => {
     if (!inlineEditValue.trim()) return;
     try {
       const task = tasks.find(t => (t._id || t.id) === taskId);
-      await updateTask(taskId, {
+      const userId = getCurrentUserId();
+      
+      const updateData = {
+        userId: userId,
         title: inlineEditValue.trim(),
-        description: task.description,
+        description: task.description || '',
         priority: task.priority,
         status: task.status,
-        assignedTo: task.assignedTo,
-        dueDate: task.dueDate
-      });
+        assignedTo: task.assignedTo || '',
+        dueDate: task.dueDate || '',
+        projectId: task.projectId
+      };
+
+      // Update in context first
+      await updateTask(taskId, { ...task, title: inlineEditValue.trim() });
+      
+      // Then sync with backend
+      await api.put(`/tasks/${taskId}`, updateData);
+      
       setInlineEditingTask(null);
       setInlineEditValue('');
     } catch (error) {
       console.error('Error updating task title:', error);
+      // Revert if there's an error
+      fetchTasks();
     }
   };
 
@@ -347,9 +375,21 @@ const TaskManagement = () => {
   const StatusColumn = ({ status, title, tasks, icon: Icon, color }) => {
     const [{ isOver }, drop] = useDrop({
       accept: 'task',
-      drop: (item) => {
+      drop: async (item) => {
         if (item.status !== status) {
-          handleTaskStatusUpdate(item.id, status);
+          try {
+            // Update immediately in UI for better UX
+            const taskToUpdate = tasks.find(t => (t._id || t.id) === item.id);
+            if (taskToUpdate) {
+              await updateTask(item.id, { ...taskToUpdate, status: status });
+            }
+            // Then sync with backend
+            await handleTaskStatusUpdate(item.id, status);
+          } catch (error) {
+            console.error('Error in drag and drop:', error);
+            // Revert if there's an error
+            fetchTasks();
+          }
         }
       },
       collect: (monitor) => ({
@@ -466,8 +506,6 @@ const TaskManagement = () => {
                 projects={projects} 
                 onTaskCreated={(newTask) => {
                   addTask(newTask);
-                  // Also trigger refresh for dashboard
-                  fetchTasks();
                 }}
               />
             </motion.div>
