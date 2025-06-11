@@ -460,6 +460,16 @@ const TaskManagement = () => {
                   </Button>
                 </div>
               </div>
+
+              {/* Quick Add Task - Inline Version */}
+              <QuickAddTask 
+                projects={projects} 
+                onTaskCreated={(newTask) => {
+                  addTask(newTask);
+                  // Also trigger refresh for dashboard
+                  fetchTasks();
+                }}
+              />
             </motion.div>
 
             {/* Filters */}
