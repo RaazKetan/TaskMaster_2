@@ -1,3 +1,4 @@
+
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
@@ -38,4 +39,7 @@ export default defineConfig({
     "process.env": {},
   },
   plugins: [react(), tailwindcss()],
+  css: {
+    postcss: "./postcss.config.js",
+  },
 });
