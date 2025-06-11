@@ -32,7 +32,7 @@ const Login = () => {
       const timer = setTimeout(() => {
         setIsRateLimited(false);
         setAttempts(0);
-      }, 300000); // 5 minutes
+      }, 300000);
       return () => clearTimeout(timer);
     }
   }, [attempts]);
@@ -62,6 +62,10 @@ const Login = () => {
     setError('');
   };
 
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -83,7 +87,9 @@ const Login = () => {
         } else {
           localStorage.removeItem('rememberedEmail');
         }
+      }
 
+      if (result.success && result.user) {
         toast.success('Login successful!');
         const from = location.state?.from?.pathname || '/dashboard';
         navigate(from, { replace: true });
@@ -97,10 +103,6 @@ const Login = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
   };
 
   return (
@@ -187,7 +189,6 @@ const Login = () => {
                   Remember me
                 </label>
               </div>
-
               <div className="text-sm">
                 <Link to="/forgot-password" className="text-[#0051d4] hover:text-[#003b99] font-medium transition-colors duration-200">
                   Forgot your password?
@@ -230,6 +231,5 @@ const Login = () => {
     </div>
   );
 };
-
 
 export default Login;
