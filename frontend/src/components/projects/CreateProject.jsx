@@ -15,6 +15,7 @@ const CreateProject = ({ teams, onClose, onProjectCreated }) => {
   const [tagInput, setTagInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  
 
   const handleChange = (e) => {
     setFormData(prev => ({
