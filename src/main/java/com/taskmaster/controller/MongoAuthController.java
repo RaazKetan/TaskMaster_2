@@ -393,6 +393,74 @@ public class MongoAuthController {
         }
     }
 
+    @PutMapping("/user/{userId}")
+    public ResponseEntity<?> updateUser(@PathVariable String userId, 
+                                       @RequestBody Map<String, Object> updateData,
+                                       @RequestHeader(value = "Session-Token", required = false) String sessionToken) {
+        try {
+            if (sessionToken == null || sessionToken.isEmpty()) {
+                return ResponseEntity.status(401).body(Map.of("error", "No session token provided"));
+            }
+
+            User user = userRepository.findBySessionToken(sessionToken);
+            if (user == null || !user.getUserId().equals(userId)) {
+                return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
+            }
+
+            // Update userdata
+            if (updateData.containsKey("userdata")) {
+                user.setUserdata((Map<String, Object>) updateData.get("userdata"));
+            }
+
+            // Update password if provided
+            if (updateData.containsKey("currentPassword") && updateData.containsKey("newPassword")) {
+                String currentPassword = (String) updateData.get("currentPassword");
+                String newPassword = (String) updateData.get("newPassword");
+
+                if (!currentPassword.equals(user.getPassword())) {
+                    return ResponseEntity.status(400).body(Map.of("error", "Current password is incorrect"));
+                }
+
+                user.setPassword(newPassword);
+            }
+
+            user.setUpdatedAt(LocalDateTime.now().toString());
+            userRepository.save(user);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "User updated successfully");
+            response.put("userdata", user.getUserdata());
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to update user: " + e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/user/{userId}")
+    public ResponseEntity<?> deleteUser(@PathVariable String userId,
+                                       @RequestHeader(value = "Session-Token", required = false) String sessionToken) {
+        try {
+            if (sessionToken == null || sessionToken.isEmpty()) {
+                return ResponseEntity.status(401).body(Map.of("error", "No session token provided"));
+            }
+
+            User user = userRepository.findBySessionToken(sessionToken);
+            if (user == null || !user.getUserId().equals(userId)) {
+                return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
+            }
+
+            userRepository.delete(user);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "User deleted successfully");
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to delete user: " + e.getMessage()));
+        }
+    }
+
     @GetMapping("/status")
     public ResponseEntity<?> getStatus() {
         try {

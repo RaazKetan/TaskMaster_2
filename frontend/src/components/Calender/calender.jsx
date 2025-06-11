@@ -64,10 +64,33 @@ const CalendarModal = ({
   const tasksByDate = useMemo(() => {
     const map = {};
     tasks.forEach((task) => {
-      const dateObj = typeof task.dueDate === 'string' ? parseISO(task.dueDate) : task.dueDate;
-      const dateStr = format(dateObj, 'yyyy-MM-dd');
-      if (!map[dateStr]) map[dateStr] = [];
-      map[dateStr].push(task);
+      try {
+        if (!task.dueDate) return; // Skip tasks without due dates
+        
+        let dateObj;
+        if (typeof task.dueDate === 'string') {
+          // Handle various date string formats
+          if (task.dueDate.includes('T')) {
+            dateObj = parseISO(task.dueDate);
+          } else {
+            dateObj = new Date(task.dueDate);
+          }
+        } else {
+          dateObj = new Date(task.dueDate);
+        }
+        
+        // Check if date is valid
+        if (isNaN(dateObj.getTime())) {
+          console.warn('Invalid date for task:', task.title, task.dueDate);
+          return;
+        }
+        
+        const dateStr = format(dateObj, 'yyyy-MM-dd');
+        if (!map[dateStr]) map[dateStr] = [];
+        map[dateStr].push(task);
+      } catch (error) {
+        console.warn('Error parsing date for task:', task.title, error);
+      }
     });
     return map;
   }, [tasks]);
@@ -473,24 +496,45 @@ const TeamCalendar = ({
     const now = new Date();
     let newNotifications = [];
     tasks.forEach((task) => {
-      if (!task.dueDate || task.status === 'COMPLETED') return;
-      const due = typeof task.dueDate === 'string' ? parseISO(task.dueDate) : task.dueDate;
-      const dueDateTime = new Date(`${format(due, 'yyyy-MM-dd')}T23:59`);
-      const hoursLeft = (dueDateTime - now) / (1000 * 60 * 60);
-      if (hoursLeft <= 48 && hoursLeft > 0) { // 2 days = 48 hours
-        const lastNotified = task.lastNotified || 0;
-        const hoursSinceLast = (Date.now() - lastNotified) / (1000 * 60 * 60);
-        if (hoursSinceLast >= 3 || !lastNotified) {
-          newNotifications.push({
-            id: `${task.id}-${Date.now()}`,
-            taskId: task.id,
-            title: task.title,
-            deadline: `${format(due, 'yyyy-MM-dd')}`,
-            priority: task.priority,
-            seen: false,
-          });
-          task.lastNotified = Date.now();
+      try {
+        if (!task.dueDate || task.status === 'COMPLETED') return;
+        
+        let due;
+        if (typeof task.dueDate === 'string') {
+          if (task.dueDate.includes('T')) {
+            due = parseISO(task.dueDate);
+          } else {
+            due = new Date(task.dueDate);
+          }
+        } else {
+          due = new Date(task.dueDate);
         }
+        
+        // Check if date is valid
+        if (isNaN(due.getTime())) {
+          console.warn('Invalid due date for notification:', task.title, task.dueDate);
+          return;
+        }
+        
+        const dueDateTime = new Date(`${format(due, 'yyyy-MM-dd')}T23:59`);
+        const hoursLeft = (dueDateTime - now) / (1000 * 60 * 60);
+        if (hoursLeft <= 48 && hoursLeft > 0) { // 2 days = 48 hours
+          const lastNotified = task.lastNotified || 0;
+          const hoursSinceLast = (Date.now() - lastNotified) / (1000 * 60 * 60);
+          if (hoursSinceLast >= 3 || !lastNotified) {
+            newNotifications.push({
+              id: `${task.id}-${Date.now()}`,
+              taskId: task.id,
+              title: task.title,
+              deadline: `${format(due, 'yyyy-MM-dd')}`,
+              priority: task.priority,
+              seen: false,
+            });
+            task.lastNotified = Date.now();
+          }
+        }
+      } catch (error) {
+        console.warn('Error processing notification for task:', task.title, error);
       }
     });
     if (newNotifications.length > 0) {
