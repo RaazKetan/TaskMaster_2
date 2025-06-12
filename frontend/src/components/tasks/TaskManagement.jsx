@@ -126,46 +126,57 @@ const TaskManagement = () => {
         )
       );
 
+      // After updating a task status, also update the project progress in the local state
+      const updateProjectProgressInState = (projectId, progress, status) => {
+        setProjects(prevProjects => prevProjects.map(project => {
+          if ((project._id || project.id) === projectId) {
+            return { ...project, progress, status };
+          }
+          return project;
+        }));
+      };
+
+      const updateProjectStatus = async (taskId, newTaskStatus) => {
+        try {
+          const task = tasks.find(t => (t._id || t.id) === taskId);
+          if (!task || !task.projectId) return;
+
+          const projectTasks = tasks.filter(t => t.projectId === task.projectId);
+          let completedTasksCount = projectTasks.filter(t =>
+            t.status === 'COMPLETED' || t.status === 'Done'
+          ).length;
+
+          if (newTaskStatus === 'COMPLETED' || newTaskStatus === 'Done') {
+            completedTasksCount += 1;
+          }
+
+          const totalTasks = projectTasks.length;
+          const progress = totalTasks > 0 ? Math.round((completedTasksCount / totalTasks) * 100) : 0;
+
+          let projectStatus = 'Planning';
+          if (progress === 100) {
+            projectStatus = 'COMPLETED';
+          } else if (progress > 0) {
+            projectStatus = 'ACTIVE';
+          }
+
+          await api.put(`/projects/${task.projectId}`, {
+            status: projectStatus,
+            progress: progress,
+            userId: getCurrentUserId()
+          });
+          // Update local state immediately
+          updateProjectProgressInState(task.projectId, progress, projectStatus);
+        } catch (error) {
+          console.error('Error updating project status:', error);
+        }
+      };
+
       updateProjectStatus(taskId, newStatus);
     } catch (error) {
       console.error('Error updating task status:', error);
       setError('Failed to update task status');
       fetchTasksAndProjects();
-    }
-  };
-
-  const updateProjectStatus = async (taskId, newTaskStatus) => {
-    try {
-       const task = tasks.find(t => (t._id || t.id) === taskId);
-      if (!task || !task.projectId) return;
-
-      const projectTasks = tasks.filter(t => t.projectId === task.projectId);
-      let completedTasksCount = projectTasks.filter(t => 
-        t.status === 'COMPLETED' || t.status === 'Done'
-      ).length;
-
-      if (newTaskStatus === 'COMPLETED' || newTaskStatus === 'Done') {
-        completedTasksCount += 1;
-      }
-
-      const totalTasks = projectTasks.length;
-      const progress = totalTasks > 0 ? Math.round((completedTasksCount / totalTasks) * 100) : 0;
-
-      let projectStatus = 'Planning';
-      if (progress === 100) {
-        projectStatus = 'COMPLETED';
-      } else if (progress > 0) {
-        projectStatus = 'ACTIVE';
-      }
-
-      await api.put(`/projects/${task.projectId}`, {
-        status: projectStatus,
-        progress: progress,
-        userId: getCurrentUserId()
-      });
-
-    } catch (error) {
-      console.error('Error updating project status:', error);
     }
   };
 

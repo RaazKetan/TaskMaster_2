@@ -53,57 +53,71 @@ const ShadcnProjectManagement = () => {
     // TODO: Implement progress tracker modal
   };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        // Get current user data from localStorage
-        const userData = localStorage.getItem('userData');
-        if (!userData) {
-          setError('No user data found. Please log in again.');
-          return;
-        }
-        
-        const parsedUserData = JSON.parse(userData);
-        const userId = parsedUserData.userId;
-        
-        if (!userId) {
-          setError('Invalid user data. Please log in again.');
-          return;
-        }
-
-        // Fetch teams and projects data with userId parameter
-        const teamsResponse = await api.get('/teams', {
-          params: { userId: userId }
-        });
-        const teams = teamsResponse.data || [];
-        setTeams(teams);
-
-        const projectsResponse = await api.get('/projects', {
-          params: { userId: userId }
-        });
-        const projects = projectsResponse.data || [];
-        
-        // Add team names to projects
-        const projectsWithTeamNames = projects.map(project => {
-          const team = teams.find(t => (t._id || t.id) === project.teamId);
-          return {
-            ...project,
-            teamName: team ? team.name : 'Unknown Team'
-          };
-        });
-        
-        setProjects(projectsWithTeamNames);
-      } catch (error) {
-        setError('Error fetching data: ' + error.message);
-        console.error('Error fetching teams and projects:', error);
-      } finally {
-        setLoading(false);
+  // Fetch teams and projects, and map teamId to teamName
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const userData = localStorage.getItem('userData');
+      if (!userData) {
+        setError('No user data found. Please log in again.');
+        return;
       }
-    };
+      const parsedUserData = JSON.parse(userData);
+      const userId = parsedUserData.userId;
+      if (!userId) {
+        setError('Invalid user data. Please log in again.');
+        return;
+      }
+      // Fetch all teams for the user
+      const teamsResponse = await api.get('/teams', { params: { userId } });
+      let teams = teamsResponse.data || [];
+      setTeams(teams);
+      // Fetch all projects for the user
+      const projectsResponse = await api.get('/projects', { params: { userId } });
+      let projects = projectsResponse.data || [];
+      // Build teamId to name map (normalize all IDs to string)
+      const teamIdToName = {};
+      teams.forEach(t => {
+        const id = (t._id || '').toString();
+        if (id) teamIdToName[id] = t.name;
+      });
+      // Find projects with missing teamName
+      const missingTeamIds = new Set();
+      projects.forEach(p => {
+        const tid = (p.teamId || '').toString();
+        if (tid && !teamIdToName[tid]) missingTeamIds.add(tid);
+      });
+      // Try to fetch missing teams and update the map
+      if (missingTeamIds.size > 0) {
+        for (const tid of missingTeamIds) {
+          try {
+            const teamResp = await api.get(`/teams/${tid}`);
+            if (teamResp.data && teamResp.data.name) {
+              teamIdToName[tid] = teamResp.data.name;
+              teams.push(teamResp.data);
+            }
+          } catch (err) {
+            // If not found, leave as 'Unknown Team'
+          }
+        }
+        setTeams([...teams]);
+      }
+      // Map teamName for all projects using _id
+      projects = projects.map(p => ({
+        ...p,
+        teamName: teamIdToName[(p.teamId || '').toString()] || 'Unknown Team'
+      }));
+      setProjects(projects);
+    } catch (error) {
+      setError('Error fetching data: ' + error.message);
+      console.error('Error fetching teams and projects:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchData();
   }, []);
 
@@ -190,12 +204,8 @@ const ShadcnProjectManagement = () => {
 
       let response;
       if (editingProject) {
-        // Update existing project - log the project being edited
-        console.log('Editing project:', editingProject);
-        console.log('Using project ID:', editingProject._id || editingProject.id);
         response = await api.put(`/projects/${editingProject._id || editingProject.id}`, projectData);
       } else {
-        // Create new project
         response = await api.post('/projects', projectData);
       }
       
@@ -204,16 +214,15 @@ const ShadcnProjectManagement = () => {
       console.log('Project response:', response.data);
       
       // Add the new project to the list with team name
-      const selectedTeam = teams.find(team => 
-        team._id === createProjectForm.teamId || team.id === createProjectForm.teamId || team.name === createProjectForm.teamId);
+      const selectedTeam = teams.find(team => (team._id || '').toString() === (createProjectForm.teamId || '').toString());
       const projectWithTeam = {
         ...response.data,
         teamName: selectedTeam ? selectedTeam.name : response.data.teamId || 'Unknown Team'
       };
       
       if (editingProject) {
-        // Update existing project in list
-        setProjects(prev => prev.map(p => 
+        // Update existing project in list (replace, do not add)
+        setProjects(prev => prev.map(p =>
           (p._id === editingProject._id || p.id === editingProject.id) ? projectWithTeam : p
         ));
         toast.success('Project updated successfully!');
@@ -246,6 +255,9 @@ const ShadcnProjectManagement = () => {
         status: 'Planning',
         deadline: ''
       });
+      // Always re-fetch projects and teams after create/edit to avoid duplicates and stale data
+      await fetchData();
+      toast.success(editingProject ? 'Project updated successfully!' : 'Project created successfully!');
     } catch (error) {
       console.error('Error creating project:', error);
       setError('Failed to create project. Please try again.');
@@ -271,27 +283,20 @@ const ShadcnProjectManagement = () => {
     if (!window.confirm('Are you sure you want to delete this project?')) {
       return;
     }
-
-    // Start delete animation
     setDeletingItems(prev => new Set([...prev, projectId]));
-
     try {
       const userId = getCurrentUserId();
       await api.delete(`/projects/${projectId}`, {
         params: { userId: userId }
       });
-      
-      // Complete animation and remove from list
-      setTimeout(() => {
-        setProjects(prev => prev.filter(p => p.id !== projectId));
-        setDeletingItems(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(projectId);
-          return newSet;
-        });
-        toast.success('Project deleted successfully');
-        fetchData(); // Refresh the data
-      }, 600);
+      // Always re-fetch after delete to avoid stale/duplicate data
+      await fetchData();
+      setDeletingItems(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(projectId);
+        return newSet;
+      });
+      toast.success('Project deleted successfully');
     } catch (error) {
       console.error('Error deleting project:', error);
       setDeletingItems(prev => {
@@ -647,7 +652,7 @@ const ShadcnProjectManagement = () => {
                 >
                   <option value="">Select a team</option>
                   {teams.map(team => (
-                    <option key={team.id} value={team.id}>{team.name}</option>
+                    <option key={team._id} value={team._id}>{team.name}</option>
                   ))}
                 </select>
               </div>
