@@ -242,7 +242,7 @@ const ShadcnProjectManagement = () => {
         name: '',
         description: '',
         teamId: '',
-        priority: 'Medium',
+        priority: 'medium',
         status: 'Planning',
         deadline: ''
       });
@@ -364,7 +364,7 @@ const ShadcnProjectManagement = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
       {/* Main Content */}
       <div className="p-8">
         <div className="max-w-6xl mx-auto">
@@ -581,162 +581,182 @@ const ShadcnProjectManagement = () => {
         </div>
       </div>
 
-      {/* Create Project Modal */}
-      <SlideInModal isOpen={showCreateModal}>
-        <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-slate-900">
-                {editingProject ? 'Edit Project' : 'Create New Project'}
-              </h3>
-              <button
-                onClick={() => {
-                  setShowCreateModal(false);
-                  setEditingProject(null);
-                  setCreateProjectForm({
-                    name: '',
-                    description: '',
-                    teamId: '',
-                    priority: 'Medium',
-                    status: 'Planning',
-                    deadline: ''
-                  });
-                }}
-                className="text-slate-400 hover:text-slate-600"
-              >
-                ×
-              </button>
-            </div>
-            
-            <form onSubmit={handleCreateProject} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Project Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={createProjectForm.name}
-                  onChange={(e) => setCreateProjectForm(prev => ({...prev, name: e.target.value}))}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter project name"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Description
-                </label>
-                <textarea
-                  value={createProjectForm.description}
-                  onChange={(e) => setCreateProjectForm(prev => ({...prev, description: e.target.value}))}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Project description"
-                  rows={3}
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Team *
-                </label>
-                <select
-                  required
-                  value={createProjectForm.teamId}
-                  onChange={(e) => setCreateProjectForm(prev => ({...prev, teamId: e.target.value}))}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select a team</option>
-                  {teams.map(team => (
-                    <option key={team.id} value={team.id}>{team.name}</option>
-                  ))}
-                </select>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Priority
-                  </label>
-                  <select
-                    value={createProjectForm.priority}
-                    onChange={(e) => setCreateProjectForm(prev => ({...prev, priority: e.target.value}))}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="Low">Low</option>
-                    <option value="Medium">Medium</option>
-                    <option value="High">High</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Status
-                  </label>
-                  <select
-                    value={createProjectForm.status}
-                    onChange={(e) => setCreateProjectForm(prev => ({...prev, status: e.target.value}))}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="Planning">Planning</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="On Hold">On Hold</option>
-                    <option value="Completed">Completed</option>
-                  </select>
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Deadline
-                </label>
-                <input
-                  type="date"
-                  value={createProjectForm.deadline}
-                  onChange={(e) => setCreateProjectForm(prev => ({...prev, deadline: e.target.value}))}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              
-              <div className="flex justify-end gap-3 pt-4">
-                <ScaleButton
-                  type="button"
-                  onClick={() => {
-                    setShowCreateModal(false);
-                    setEditingProject(null);
-                    setCreateProjectForm({
-                      name: '',
-                      description: '',
-                      teamId: '',
-                      priority: 'Medium',
-                      status: 'Planning',
-                      deadline: ''
-                    });
-                  }}
-                  disabled={createLoading}
-                  className="px-4 py-2 text-slate-600 border border-slate-300 rounded-md hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500"
-                >
-                  Cancel
-                </ScaleButton>
-                <ScaleButton 
-                  type="submit" 
-                  disabled={createLoading}
-                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 flex items-center justify-center"
-                >
-                  {createLoading ? (
-                    <>
-                      <LoadingSpinner size={16} color="white" />
-                      <span className="ml-2">Creating...</span>
-                    </>
-                  ) : (
-                    editingProject ? 'Update Project' : 'Create Project'
-                  )}
-                </ScaleButton>
-              </div>
-            </form>
-          </div>
-      </SlideInModal>
+      {/* Create Project Modal bg-white rounded-xl shadow-xl border border-[#cddcea] animate-slide-up p-8 max-w-[700px] w-full mx-auto max-h-[90vh] overflow-y-auto custom-scrollbar */}
+      {/* Enhanced Create Project Modal */}
+<SlideInModal isOpen={showCreateModal}>
+  <div className="layout-content-container flex flex-col w-[512px] max-w-[960px] py-5 flex-1 border border-[#cddcea] p-6 shadow-md rounded-lg bg-white">
+        <div className="flex justify-between items-center mb-4">
+      <h3 className="text-lg font-semibold text-slate-900">
+        {editingProject ? 'Edit Project' : 'Create New Project'}
+      </h3>
+      <button
+        onClick={() => {
+          setShowCreateModal(false);
+          setEditingProject(null);
+          setCreateProjectForm({
+            name: '',
+            description: '',
+            teamId: '',
+            priority: 'Medium',
+            status: 'Planning',
+            deadline: ''
+          });
+        }}
+        className="h-10 w-10 flex items-center justify-center rounded-md text-slate-400 hover:text-black hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 text-xl"
+        title="Close"
+      >
+        ×
+      </button>
+    </div>
+
+    <form onSubmit={handleCreateProject} className="space-y-6">
+      {/* Project Name */}
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">
+          Project Name <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          required
+          value={createProjectForm.name}
+          onChange={(e) => setCreateProjectForm(prev => ({ ...prev, name: e.target.value }))}
+          className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Enter project name"
+        />
+        {!createProjectForm.name && (
+          <p className="text-xs text-red-500 mt-1">Project name is required.</p>
+        )}
+      </div>
+
+      {/* Description */}
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">
+          Description
+        </label>
+        <textarea
+          value={createProjectForm.description}
+          onChange={(e) => setCreateProjectForm(prev => ({ ...prev, description: e.target.value }))}
+          className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Project description"
+          rows={3}
+        />
+      </div>
+
+      {/* Team */}
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">
+          Team <span className="text-red-500">*</span>
+        </label>
+        <select
+          required
+          value={createProjectForm.teamId}
+          onChange={(e) => setCreateProjectForm(prev => ({ ...prev, teamId: e.target.value }))}
+          className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">Select a team</option>
+          {teams.map(team => (
+            <option key={team.id} value={team.id}>{team.name}</option>
+          ))}
+        </select>
+        {!createProjectForm.teamId && (
+          <p className="text-xs text-red-500 mt-1">Please select a team.</p>
+        )}
+      </div>
+
+      {/* Priority and Status */}
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">
+            Priority
+          </label>
+          <select
+            value={createProjectForm.priority}
+            onChange={(e) => setCreateProjectForm(prev => ({ ...prev, priority: e.target.value }))}
+            className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">
+            Status
+          </label>
+          <select
+            value={createProjectForm.status}
+            onChange={(e) => setCreateProjectForm(prev => ({ ...prev, status: e.target.value }))}
+            className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="Planning">Planning</option>
+            <option value="In Progress">In Progress</option>
+            <option value="On Hold">On Hold</option>
+            <option value="Completed">Completed</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Deadline */}
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">
+          Deadline
+        </label>
+        <input
+          type="date"
+          value={createProjectForm.deadline}
+          onChange={(e) => setCreateProjectForm(prev => ({ ...prev, deadline: e.target.value }))}
+          className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex justify-end gap-3 pt-4">
+        <ScaleButton
+          type="button"
+          onClick={() => {
+            setShowCreateModal(false);
+            setEditingProject(null);
+            setCreateProjectForm({
+              name: '',
+              description: '',
+              teamId: '',
+              priority: 'Medium',
+              status: 'Planning',
+              deadline: ''
+            });
+          }}
+          disabled={createLoading}
+          className="px-4 py-2 text-slate-600 border border-slate-300 rounded-md hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500"
+        >
+          Cancel
+        </ScaleButton>
+        <ScaleButton
+          type="submit"
+          disabled={createLoading}
+          className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 flex items-center justify-center"
+        >
+          {createLoading ? (
+            <>
+              <LoadingSpinner size={16} color="white" />
+              <span className="ml-2">Saving...</span>
+            </>
+          ) : (
+            editingProject ? 'Update Project' : 'Create Project'
+          )}
+        </ScaleButton>
+      </div>
+    </form>
+  </div>
+</SlideInModal>
     </div>
   );
 };
 
 export default ShadcnProjectManagement;
+
+
+
+
+
+

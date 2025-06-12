@@ -193,7 +193,7 @@ const CalendarModal = ({
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 calendar-modal-overlay"
+          className="fixed inset-0 z-50 flex items-center justify-center  bg-gradient-to-br from-blue-50 to-blue-100 p-6 calendar-modal-overlay"
           initial="hidden"
           animate="visible"
           exit="exit"
@@ -372,7 +372,7 @@ const CalendarModal = ({
             <AnimatePresence>
               {showAddModal && (
                 <motion.div
-                  className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40"
+                  className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 p-6"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}

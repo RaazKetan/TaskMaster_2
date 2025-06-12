@@ -339,7 +339,7 @@ const fetchTeams = async () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 p-6">
       <div className="p-8">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
@@ -404,7 +404,7 @@ const fetchTeams = async () => {
                               <span className="text-xs text-slate-500">
                                 {Array.isArray(team.members) ? team.members.length : 0} members
                               </span>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-6">
                                 <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
                                   {team.role || 'Member'}
                                 </span>
@@ -415,10 +415,10 @@ const fetchTeams = async () => {
                                     e.stopPropagation();
                                     handleEditTeam(team);
                                   }}
-                                  className="text-blue-600 hover:bg-blue-50 h-6 w-6 p-0"
+                                  className="text-black-600 hover:bg-yellow-200 h-6 w-8 p-0"
                                   title="Edit team"
                                 >
-                                  <Edit className="w-3 h-3" />
+                                  <Edit className="w-3 h-3" />Edit
                                 </Button>
                                 <Button
                                   variant="ghost"
@@ -427,10 +427,11 @@ const fetchTeams = async () => {
                                     e.stopPropagation();
                                     handleDeleteTeam(teamId);
                                   }}
-                                  className="text-red-600 hover:bg-red-50 h-6 w-6 p-0"
+                                  
+                                  className="text-black-600 hover:bg-red-200 h-6 w-10 p-0"
                                   title="Delete team"
                                 >
-                                  <Trash2 className="w-3 h-3" />
+                                  <Trash2 className="w-3 h-3" />Delete
                                 </Button>
                               </div>
                             </div>
@@ -603,8 +604,8 @@ const fetchTeams = async () => {
 
           {/* Create Team Modal */}
           {showCreateModal && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="fixed inset-0 bg-gradient-to-br from-blue-50 to-blue-100 p-6 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 border border-gray-200 p-6 shadow-md rounded-lg bg-white">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-semibold">Create New Team</h3>
                   <button
@@ -658,7 +659,7 @@ const fetchTeams = async () => {
 
           {/* Edit Team Modal */}
           {showEditModal && editingTeam && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="fixed inset-0 bg-gradient-to-br from-blue-50 to-blue-100 p-6 flex items-center justify-center z-50">
               <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-semibold">Edit Team</h3>

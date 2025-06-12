@@ -522,7 +522,7 @@ const TaskManagement = () => {
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 p-6">
         <div className="p-8">
           <div className="max-w-7xl mx-auto">
             {/* Header */}
@@ -537,11 +537,11 @@ const TaskManagement = () => {
                 <div className="flex gap-2">
                   <Button
                     onClick={() => setShowCreateTask(true)}
-                    variant="outline"
                     size="sm"
+                    className="text-white border-blue-600 bg-blue hover:bg-blue-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Detailed Form
+                    <Plus className="w-7 h-6 mr-2" />
+                    Create task
                   </Button>
                 </div>
               </div>

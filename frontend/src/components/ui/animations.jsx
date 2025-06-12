@@ -41,7 +41,7 @@ export const SlideInModal = ({ children, isOpen }) => (
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
         transition={{ duration: 0.2 }}
-        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        className="fixed inset-0 bg-gradient-to-br from-blue-50 to-blue-100 p-6 flex items-center justify-center z-50"
       >
         <motion.div
           initial={{ opacity: 0, y: 50 }}
@@ -154,7 +154,7 @@ export const FloatingButton = ({ children, className = "", onClick }) => (
     onClick={onClick}
     whileHover={{ 
       scale: 1.05,
-      boxShadow: "0 10px 25px rgba(0,0,0,0.2)"
+      boxShadow: "0 10px 25px rgba(10, 11, 10, 0.2)"
     }}
     whileTap={{ scale: 0.95 }}
     initial={{ scale: 0 }}
