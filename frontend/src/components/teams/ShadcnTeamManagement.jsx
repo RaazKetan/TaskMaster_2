@@ -415,7 +415,7 @@ const fetchTeams = async () => {
                                     e.stopPropagation();
                                     handleEditTeam(team);
                                   }}
-                                  className="text-black-600 hover:bg-yellow-200 h-6 w-8 p-0"
+                                  className="text-black-600 hover:bg-green-200 h-6 w-8 p-0"
                                   title="Edit team"
                                 >
                                   <Edit className="w-3 h-3" />Edit
@@ -604,7 +604,7 @@ const fetchTeams = async () => {
 
           {/* Create Team Modal */}
           {showCreateModal && (
-            <div className="fixed inset-0 bg-gradient-to-br from-blue-50 to-blue-100 p-6 flex items-center justify-center z-50">
+            <div className="fixed inset-0 bg-gradient-to-br from-blue-800 to-blue-100 p-6 flex items-center justify-center z-50">
               <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 border border-gray-200 p-6 shadow-md rounded-lg bg-white">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-semibold">Create New Team</h3>
@@ -659,7 +659,7 @@ const fetchTeams = async () => {
 
           {/* Edit Team Modal */}
           {showEditModal && editingTeam && (
-            <div className="fixed inset-0 bg-gradient-to-br from-blue-50 to-blue-100 p-6 flex items-center justify-center z-50">
+            <div className="fixed inset-0 bg-gradient-to-br from-blue-800 to-blue-100 p-6 flex items-center justify-center z-50">
               <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-semibold">Edit Team</h3>

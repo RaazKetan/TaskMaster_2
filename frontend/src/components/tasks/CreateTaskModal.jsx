@@ -83,7 +83,7 @@ const CreateTaskModal = ({ isOpen, onClose, onTaskCreated, projects = [] }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-blue-50 to-blue-100 p-6 bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-gradient-to-br from-blue-800 to-blue-100 p-6 bg-opacity-50 flex items-center justify-center z-50">
       <Card className="w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto rounded-lg shadow-lg">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-6">
           <CardTitle className="text-lg font-semibold">Create New Task</CardTitle>

@@ -103,7 +103,7 @@ const InviteMember = ({ teamId, onClose, onMemberInvited }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-blue-50 to-blue-100 p-6 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-gradient-to-br from-blue-800 to-blue-100 p-6 flex items-center justify-center z-50">
       <Card className="w-full max-w-md mx-4">
         <CardHeader>
           <div className="flex items-center justify-between">

@@ -106,7 +106,7 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 p-6">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-800 to-blue-100 p-6">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center animate-fade-in">
           <div className="mx-auto h-12 w-12 bg-[#0051d4] rounded-xl flex items-center justify-center mb-4 shadow-md">
