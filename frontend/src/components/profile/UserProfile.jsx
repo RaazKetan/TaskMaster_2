@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { User, Mail, Calendar, Settings, Bell, Lock, Eye, EyeOff, Trash2, Edit2 } from 'lucide-react';
-import ShadcnNavbar from '../layout/ShadcnNavbar';
+// import ShadcnNavbar from '../layout/ShadcnNavbar';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 
@@ -126,7 +126,7 @@ const UserProfile = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <ShadcnNavbar />
+      {/* <ShadcnNavbar /> */}
       
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}

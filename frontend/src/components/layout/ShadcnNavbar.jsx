@@ -95,7 +95,30 @@ const ShadcnNavbar = () => {
                     iconClassName="text-slate-700"
                     hasUnseen={hasUnseenNotifications}
                   />
-                  {/* Show notification dropdown */}
+            {/* Show notification dropdown */}
+                  {showNotifications && (
+                    <div className="absolute right-0 z-50 mt-2 bg-white border border-gray-200 rounded-md shadow-lg w-80 animate-fade-in">
+                      <div className="p-3 font-semibold text-gray-700 border-b">Notifications</div>
+                      <div className="overflow-y-auto max-h-60">
+                        {notifications.length === 0 && (
+                          <div className="px-4 py-2 text-sm text-slate-500">No notifications</div>
+                        )}
+                        {notifications.map((n) => (
+                          <div
+                            key={n.id}
+                            className={`px-4 py-2 text-sm border-b last:border-b-0 ${n.seen ? 'bg-white' : 'bg-blue-50 font-semibold'}`}
+                          >
+                            <div>
+                              <span className="font-bold">{n.title}</span>
+                              <span className="ml-2 text-xs text-slate-500">{n.priority}</span>
+                            </div>
+                            <div className="text-xs text-slate-500">Deadline: {n.deadline}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+      {/* Show notification dropdown */}
                   {showNotifications && (
                     <div className="absolute right-0 z-50 mt-2 bg-white border border-gray-200 rounded-md shadow-lg w-80 animate-fade-in">
                       <div className="p-3 font-semibold text-gray-700 border-b">Notifications</div>
