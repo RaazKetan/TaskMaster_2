@@ -247,8 +247,8 @@ const TaskManagement = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
+        whileHover={{  y: -5, boxShadow: "0 10px 25px rgba(0,0,0,0.10)" }}
+       
       >
         <Card
           className={`cursor-move transition-all duration-200 hover:shadow-lg mb-3 ${
@@ -262,7 +262,7 @@ const TaskManagement = () => {
                 type="checkbox"
                 checked={isCompleted}
                 onChange={(e) => handleCheckboxChange(e.target.checked)}
-                className="mt-1 w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
+                className=" w-4 h-4 mt-1 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
                 onClick={(e) => e.stopPropagation()}
               />
               <div className="flex-1">
@@ -299,7 +299,7 @@ const TaskManagement = () => {
                     <select
                       value={task.priority}
                       onChange={(e) => handleQuickPriorityChange(task._id || task.id, e.target.value)}
-                      className="text-xs font-medium border-0 bg-transparent cursor-pointer"
+                      className="text-xs font-medium bg-transparent border-0 cursor-pointer"
                       style={{ color: priorityColor }}
                       onClick={(e) => e.stopPropagation()}
                     >
@@ -314,7 +314,7 @@ const TaskManagement = () => {
                 }`}>
                   {task.description}
                 </p>
-                <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
+                <div className="flex items-center justify-between mb-2 text-xs text-slate-500 ">
                   <div className="flex items-center gap-3">
                     {task.assignedTo && (
                       <div className="flex items-center gap-1">
@@ -330,7 +330,7 @@ const TaskManagement = () => {
                     )}
                   </div>
                   {project && (
-                    <span className="px-2 py-1 rounded bg-blue-100 text-blue-800 text-xs font-medium">
+                    <span className="px-2 py-1  text-xs font-medium  text-blue-800 bg-blue-100 rounded    ">
                       {project.name}
                     </span>
                   )}
@@ -338,7 +338,7 @@ const TaskManagement = () => {
                 
                 {/* Status Date Information */}
                 {(task.startedAt || task.reviewedAt || task.completedAt) && (
-                  <div className="text-xs text-slate-400 mb-2">
+                  <div className="mb-2 text-xs text-slate-400 ">
                     {task.status === 'IN_PROGRESS' && task.startedAt && (
                       <span>Started: {new Date(task.startedAt).toLocaleDateString()}</span>
                     )}
@@ -365,7 +365,7 @@ const TaskManagement = () => {
                         e.stopPropagation();
                         handleInlineEdit(task);
                       }}
-                      className="text-blue-500 hover:text-blue-700 text-xs px-2 py-1 rounded bg-blue-50 hover:bg-blue-100 transition-colors"
+                      className="px-2 py-1 text-xs  text-blue-500 transition-colors rounded  hover:text-blue-700  bg-blue-50 hover:bg-blue-100 "
                       title="Quick edit title"
                     >
                       Quick Edit
@@ -375,7 +375,7 @@ const TaskManagement = () => {
                         e.stopPropagation();
                         handleEditTask(task);
                       }}
-                      className="text-slate-500 hover:text-slate-700 text-xs px-1 py-1 rounded hover:bg-slate-100 transition-colors"
+                      className="px-1 py-1 text-xs transition-colors rounded text-slate-500 hover:text-slate-700  hover:bg-slate-100 "
                       title="Full edit form"
                     >
                       ⚙️
@@ -385,7 +385,7 @@ const TaskManagement = () => {
                         e.stopPropagation();
                         handleDeleteTask(task._id || task.id);
                       }}
-                      className="text-red-500 hover:text-red-700 text-xs px-1 py-1 rounded hover:bg-red-100 transition-colors"
+                      className="px-1 py-1 text-xs  text-red-500 transition-colors rounded hover:text-red-700  bg-blue-50 hover:bg-red-100 "
                       title="Delete task"
                     >
                       🗑️
@@ -463,7 +463,7 @@ const TaskManagement = () => {
         </div>
         {tasks.length === 0 && (
           <motion.div
-            className="text-center py-8 text-slate-400"
+            className="py-8 text-center  text-slate-400"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
@@ -480,14 +480,14 @@ const TaskManagement = () => {
     return (
       <div className="min-h-screen bg-slate-50">
         <div className="p-8">
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center py-12">
+          <div className="mx-auto max-w-7xl ">
+            <div className="py-12 text-center ">
               <motion.div
-                className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"
+                className="w-16 h-16 mx-auto mb-4 border-b-2 border-blue-600  rounded-full  animate-spin"
                 animate={{ rotate: 360 }}
                 transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
               />
-              <h2 className="text-xl font-semibold text-slate-700 mb-2">Loading your task board...</h2>
+              <h2 className="mb-2 text-xl font-semibold text-slate-700 ">Loading your task board...</h2>
               <p className="text-slate-500">Fetching projects and tasks from database</p>
             </div>
           </div>
@@ -498,13 +498,13 @@ const TaskManagement = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className=" flex items-centerjustify-center  min-h-screen bg-slate-50 ">
         <Card className="max-w-md mx-auto">
           <CardHeader>
             <CardTitle className="text-red-600">Error Loading Tasks</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-slate-600 mb-4">{error}</p>
+            <p className="mb-4 text-slate-600 ">{error}</p>
             <Button onClick={fetchTasks}>
               Retry
             </Button>
@@ -524,7 +524,7 @@ const TaskManagement = () => {
     <DndProvider backend={HTML5Backend}>
       <div className="min-h-screen bg-slate-50">
         <div className="p-8">
-          <div className="max-w-7xl mx-auto">
+          <div className="mx-auto max-w-7xl ">
             {/* Header */}
             <motion.div
               className="mb-8"
@@ -533,18 +533,18 @@ const TaskManagement = () => {
               transition={{ duration: 0.5 }}
             >
               <div className="flex items-center justify-between mb-6">
-                <h1 className="text-3xl font-bold text-slate-900 mb-2">Task Management</h1>
-                <div className="flex gap-2">
-                  <Button
+                <h1 className="w-full mb-0 text-3xl font-bold text-slate-900 ">Task Management</h1>
+                  <motion.button
+                    whileHover={{ scale: 1.04}}
+                    whileTap={{ scale:0.97}}                  
                     onClick={() => setShowCreateTask(true)}
-                    variant="outline"
-                    size="sm"
+                    className="px-3 py-1.5 ml-4 text-sm font-medium text-white transition-colors bg-blue-600 rounded-md shadow hover:bg-blue-700"
+                    style={{ whiteSpace: 'nowrap'}}
                   >
-                    <Plus className="w-4 h-4 mr-2" />
+                    <Plus className="inline w-4 h-4 mr-2" />
                     Detailed Form
-                  </Button>
+                  </motion.button>
                 </div>
-              </div>
 
               {/* Quick Add Task - Inline Version */}
               <QuickAddTask 
@@ -557,15 +557,18 @@ const TaskManagement = () => {
 
             {/* Filters */}
             <motion.div
+              whileHover={{ y: -5, boxShadow: "0 10px 25px rgba(0,0,0,0.10)" }}
+              transition={{ duration: 0.2}}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
+              className="mb-6"
+              
             >
-              <Card className="mb-6">
-                <CardContent className="p-6">
-                  <div className="flex flex-wrap items-center gap-4">
+              <Card>
+                <CardContent className="flex-items-center justify-center px-4 py-0">
+                  <div className="flex flex-wrap items-center justify-center w-full gap-4">
                     <div className="relative flex-1 max-w-sm">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+                      <Search className="absolute w-4 h-4 transform -translate-y-1/2 left-3 top-1/2 text-slate-400 " />
                       <Input
                         type="text"
                         placeholder="Search tasks..."
@@ -607,12 +610,13 @@ const TaskManagement = () => {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5 }}
+                whileHover={{y: -5, boxShadow: "0 10px 25px rgba(0,0,0,0.10)"}}
               >
-                <Card className="text-center py-12">
+                <Card className="py-12 text-center ">
                   <CardContent>
                     <Clock className="w-16 h-16 mx-auto mb-4 text-slate-300" />
-                    <h3 className="text-lg font-semibold text-slate-600 mb-2">No Tasks Yet</h3>
-                    <p className="text-slate-500 mb-4">Create your first task to get started with priority management</p>
+                    <h3 className="mb-2 text-lg font-semibold text-slate-600 ">No Tasks Yet</h3>
+                    <p className="mb-4 text-slate-500 ">Create your first task to get started with priority management</p>
                     <Button onClick={() => setShowCreateTask(true)}>
                       <Plus className="w-4 h-4 mr-2" />
                       Create First Task
@@ -622,7 +626,7 @@ const TaskManagement = () => {
               </motion.div>
             ) : (
               <motion.div
-                className="flex gap-6 overflow-x-auto pb-6"
+                className="flex gap-6  pb-6 overflow-x-auto"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
@@ -665,7 +669,7 @@ const TaskManagement = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.5 }}
             >
-              <div className="flex items-center space-x-2 bg-green-100 text-green-700 px-3 py-2 rounded-full text-sm shadow-lg">
+              <div className="flex items-center px-3 py-2  space-x-2 text-sm text-green-700 bg-green-100  rounded-full  shadow-lg">
                 <motion.div
                   className="w-2 h-2 bg-green-500 rounded-full"
                   animate={{ scale: [1, 1.5, 1] }}
