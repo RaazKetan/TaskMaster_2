@@ -309,10 +309,8 @@ const ShadcnTeamManagement = () => {
                           </div>
                         </div>
                         <Button
-                          variant="outline"
-                          size="sm"
-                          className="mt-2"
                           onClick={() => setShowInviteModal(true)}
+                          className="flex items-center gap-2 px-6 py-2 font-semibold text-white transition-all bg-blue-600 rounded-lg shadow hover:bg-blue-700"
                         >
                           <UserPlus className="w-4 h-4 mr-2" />
                           Invite Member
@@ -379,7 +377,7 @@ const ShadcnTeamManagement = () => {
                     onClick={() => setShowCreateModal(false)}
                     className="text-slate-400 hover:text-slate-600"
                   >
-                    ×
+                    Ã—
                   </button>
                 </div>
                 <form onSubmit={createTeam} className="space-y-4">
@@ -435,7 +433,7 @@ const ShadcnTeamManagement = () => {
                     }}
                     className="text-slate-400 hover:text-slate-600"
                   >
-                    ×
+                    Ã—
                   </button>
                 </div>
                 <form onSubmit={updateTeam} className="space-y-4">
