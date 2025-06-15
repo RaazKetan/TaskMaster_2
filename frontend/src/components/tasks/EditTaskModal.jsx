@@ -76,7 +76,7 @@ const EditTaskModal = ({ isOpen, onClose, task, onTaskUpdated, projects = [] }) 
 
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-gradient-to-br from-blue-800 to-blue-100 p-6 flex items-center justify-center z-50">
       <Card className="w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-lg font-semibold flex items-center">

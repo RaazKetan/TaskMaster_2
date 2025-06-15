@@ -12,6 +12,7 @@ import TaskLoadingCard from '../common/TaskLoadingCard';
 import { cn } from '../../lib/utils';
 import { getCurrentUserId } from '../../utils/auth.js';
 import toast from 'react-hot-toast';
+import { Progress } from '../ui/progress';
 import { 
   ScaleButton, 
   SlideInModal, 
@@ -37,7 +38,8 @@ const ShadcnProjectManagement = () => {
     teamId: '',
     priority: 'Medium',
     status: 'Planning',
-    deadline: ''
+    deadline: '',
+    
   });
   const [createLoading, setCreateLoading] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
@@ -46,6 +48,11 @@ const ShadcnProjectManagement = () => {
   const [deletingItems, setDeletingItems] = useState(new Set());
   const [successPulse, setSuccessPulse] = useState(false);
   const projectsPerPage = 10;
+
+  const [showProjectInlineConfirmBox, setShowProjectInlineConfirmBox] = useState(false);
+  const [projectToDeleteId, setProjectToDeleteId] = useState(null);
+  const [projectToDeleteName, setProjectToDeleteName] = useState('');
+  
 
   // Add missing showProgressTracker function
   const showProgressTracker = (project) => {
@@ -242,7 +249,7 @@ const ShadcnProjectManagement = () => {
         name: '',
         description: '',
         teamId: '',
-        priority: 'Medium',
+        priority: 'medium',
         status: 'Planning',
         deadline: ''
       });
@@ -267,40 +274,73 @@ const ShadcnProjectManagement = () => {
     setShowCreateModal(true); // Use the same modal for editing
   };
 
-  const handleDeleteProject = async (projectId) => {
-    if (!window.confirm('Are you sure you want to delete this project?')) {
+
+  const handleDeleteProjectClick = (projectId, projectName) => {
+    setProjectToDeleteId(projectId);
+    setProjectToDeleteName(projectName || 'this project');
+    setShowProjectInlineConfirmBox(true);
+  };
+
+  // MODIFIED FUNCTION: Now called when "Delete" is confirmed in the inline box
+  const handleConfirmDeleteProject = async () => {
+    setShowProjectInlineConfirmBox(false); // Hide the confirmation box immediately
+    setError(null); // Clear previous errors
+
+    if (!projectToDeleteId) {
+      setError('Invalid project ID for deletion confirmation.');
       return;
     }
 
-    // Start delete animation
-    setDeletingItems(prev => new Set([...prev, projectId]));
+    // Start delete animation (optional, but good for feedback)
+    setDeletingItems(prev => new Set([...prev, projectToDeleteId]));
 
     try {
-      const userId = getCurrentUserId();
-      await api.delete(`/projects/${projectId}`, {
+      const userId = getCurrentUserId(); // Ensure this correctly gets the user ID
+      if (!userId) {
+        setError('User not authenticated for deletion.');
+        return;
+      }
+
+      await api.delete(`/projects/${projectToDeleteId}`, {
         params: { userId: userId }
       });
       
       // Complete animation and remove from list
       setTimeout(() => {
-        setProjects(prev => prev.filter(p => p.id !== projectId));
+        setProjects(prev => prev.filter(p => (p._id || p.id) !== projectToDeleteId));
         setDeletingItems(prev => {
           const newSet = new Set(prev);
-          newSet.delete(projectId);
+          newSet.delete(projectToDeleteId);
           return newSet;
         });
         toast.success('Project deleted successfully');
-        fetchData(); // Refresh the data
+        // A full re-fetch might be heavy; ensure your filter handles removed item
+        // If fetchData is crucial for other states, keep it, otherwise rely on local filter
+        // await fetchData(); 
       }, 600);
+
+      setProjectToDeleteId(null); // Clear the stored ID after successful deletion
+      setProjectToDeleteName(''); // Clear the stored name
     } catch (error) {
       console.error('Error deleting project:', error);
+      setError('Failed to delete project: ' + (error.response?.data?.message || error.message));
       setDeletingItems(prev => {
         const newSet = new Set(prev);
-        newSet.delete(projectId);
+        newSet.delete(projectToDeleteId);
         return newSet;
       });
       toast.error('Failed to delete project');
+      setProjectToDeleteId(null); // Clear the ID even on error
+      setProjectToDeleteName(''); // Clear the name
     }
+  };
+
+  // NEW FUNCTION: Called when user cancels project deletion from the inline confirmation box
+  const handleCancelDeleteProject = () => {
+    setShowProjectInlineConfirmBox(false);
+    setProjectToDeleteId(null);
+    setProjectToDeleteName('');
+    setError(null);
   };
 
   const deleteProject = async (projectId) => {
@@ -364,7 +404,7 @@ const ShadcnProjectManagement = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
       {/* Main Content */}
       <div className="p-8">
         <div className="max-w-6xl mx-auto">
@@ -498,7 +538,7 @@ const ShadcnProjectManagement = () => {
                   <tbody className="bg-white divide-y divide-slate-200">
                     {currentProjects.map((project, index) => (
                       <tr key={project._id || project.id || index} className="hover:bg-slate-50 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-1 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-slate-900">
                             {project.name}
                           </div>
@@ -518,7 +558,7 @@ const ShadcnProjectManagement = () => {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="w-full bg-slate-200 rounded-full h-2">
                             <div
-                              className="bg-blue-600 h-2 rounded-full"
+                              className="bg-red-600 h-2 rounded-full"
                               style={{ width: `${project.progress || 0}%` }}
                             ></div>
                           </div>
@@ -536,7 +576,7 @@ const ShadcnProjectManagement = () => {
                               <Edit className="w-4 h-4" />
                             </ScaleButton>
                             <ScaleButton
-                              onClick={() => handleDeleteProject(project._id || project.id)}
+                              onClick={() => handleDeleteProjectClick(project._id || project.id, project.name)} // <--- CHANGE TO THIS
                               className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
                               title="Delete project"
                             >
@@ -581,162 +621,218 @@ const ShadcnProjectManagement = () => {
         </div>
       </div>
 
-      {/* Create Project Modal */}
-      <SlideInModal isOpen={showCreateModal}>
-        <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-slate-900">
-                {editingProject ? 'Edit Project' : 'Create New Project'}
-              </h3>
-              <button
-                onClick={() => {
-                  setShowCreateModal(false);
-                  setEditingProject(null);
-                  setCreateProjectForm({
-                    name: '',
-                    description: '',
-                    teamId: '',
-                    priority: 'Medium',
-                    status: 'Planning',
-                    deadline: ''
-                  });
-                }}
-                className="text-slate-400 hover:text-slate-600"
-              >
-                ×
-              </button>
-            </div>
-            
-            <form onSubmit={handleCreateProject} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Project Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={createProjectForm.name}
-                  onChange={(e) => setCreateProjectForm(prev => ({...prev, name: e.target.value}))}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter project name"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Description
-                </label>
-                <textarea
-                  value={createProjectForm.description}
-                  onChange={(e) => setCreateProjectForm(prev => ({...prev, description: e.target.value}))}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Project description"
-                  rows={3}
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Team *
-                </label>
-                <select
-                  required
-                  value={createProjectForm.teamId}
-                  onChange={(e) => setCreateProjectForm(prev => ({...prev, teamId: e.target.value}))}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select a team</option>
-                  {teams.map(team => (
-                    <option key={team.id} value={team.id}>{team.name}</option>
-                  ))}
-                </select>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Priority
-                  </label>
-                  <select
-                    value={createProjectForm.priority}
-                    onChange={(e) => setCreateProjectForm(prev => ({...prev, priority: e.target.value}))}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="Low">Low</option>
-                    <option value="Medium">Medium</option>
-                    <option value="High">High</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Status
-                  </label>
-                  <select
-                    value={createProjectForm.status}
-                    onChange={(e) => setCreateProjectForm(prev => ({...prev, status: e.target.value}))}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="Planning">Planning</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="On Hold">On Hold</option>
-                    <option value="Completed">Completed</option>
-                  </select>
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Deadline
-                </label>
-                <input
-                  type="date"
-                  value={createProjectForm.deadline}
-                  onChange={(e) => setCreateProjectForm(prev => ({...prev, deadline: e.target.value}))}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              
-              <div className="flex justify-end gap-3 pt-4">
-                <ScaleButton
-                  type="button"
-                  onClick={() => {
-                    setShowCreateModal(false);
-                    setEditingProject(null);
-                    setCreateProjectForm({
-                      name: '',
-                      description: '',
-                      teamId: '',
-                      priority: 'Medium',
-                      status: 'Planning',
-                      deadline: ''
-                    });
-                  }}
-                  disabled={createLoading}
-                  className="px-4 py-2 text-slate-600 border border-slate-300 rounded-md hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500"
-                >
-                  Cancel
-                </ScaleButton>
-                <ScaleButton 
-                  type="submit" 
-                  disabled={createLoading}
-                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 flex items-center justify-center"
-                >
-                  {createLoading ? (
-                    <>
-                      <LoadingSpinner size={16} color="white" />
-                      <span className="ml-2">Creating...</span>
-                    </>
-                  ) : (
-                    editingProject ? 'Update Project' : 'Create Project'
-                  )}
-                </ScaleButton>
-              </div>
-            </form>
+      {/* Create Project Modal bg-white rounded-xl shadow-xl border border-[#cddcea] animate-slide-up p-8 max-w-[700px] w-full mx-auto max-h-[90vh] overflow-y-auto custom-scrollbar */}
+      {/* Enhanced Create Project Modal */}
+<SlideInModal isOpen={showCreateModal}>
+  <div className="layout-content-container flex flex-col w-[512px] max-w-[960px] py-5 flex-1 border border-[#cddcea] p-6 shadow-md rounded-lg bg-white">
+        <div className="flex justify-between items-center mb-4">
+      <h3 className="text-lg font-semibold text-slate-900">
+        {editingProject ? 'Edit Project' : 'Create New Project'}
+      </h3>
+      <button
+        onClick={() => {
+          setShowCreateModal(false);
+          setEditingProject(null);
+          setCreateProjectForm({
+            name: '',
+            description: '',
+            teamId: '',
+            priority: 'Medium',
+            status: 'Planning',
+            deadline: ''
+          });
+        }}
+        className="h-10 w-10 flex items-center justify-center rounded-md text-slate-400 hover:text-black hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 text-xl"
+        title="Close"
+      >
+        ×
+      </button>
+    </div>
+
+    <form onSubmit={handleCreateProject} className="space-y-6">
+      {/* Project Name */}
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">
+          Project Name <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          required
+          value={createProjectForm.name}
+          onChange={(e) => setCreateProjectForm(prev => ({ ...prev, name: e.target.value }))}
+          className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Enter project name"
+        />
+        {!createProjectForm.name && (
+          <p className="text-xs text-red-500 mt-1"></p>
+        )}
+      </div>
+
+      {/* Description */}
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">
+          Description
+        </label>
+        <textarea
+          value={createProjectForm.description}
+          onChange={(e) => setCreateProjectForm(prev => ({ ...prev, description: e.target.value }))}
+          className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Project description"
+          rows={3}
+        />
+      </div>
+
+      {/* Team */}
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">
+          Team <span className="text-red-500">*</span>
+        </label>
+        <select
+          required
+          value={createProjectForm.teamId}
+          onChange={(e) => setCreateProjectForm(prev => ({ ...prev, teamId: e.target.value }))}
+          className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">Select a team</option>
+          {teams.map(team => (
+            <option key={team.id} value={team.id}>{team.name}</option>
+          ))}
+        </select>
+        {!createProjectForm.teamId && (
+          <p className="text-xs text-red-500 mt-1">.</p>
+        )}
+      </div>
+
+      {/* Priority and Status */}
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">
+            Priority
+          </label>
+          <select
+            value={createProjectForm.priority}
+            onChange={(e) => setCreateProjectForm(prev => ({ ...prev, priority: e.target.value }))}
+            className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">
+            Status
+          </label>
+          <select
+            value={createProjectForm.status}
+            onChange={(e) => setCreateProjectForm(prev => ({ ...prev, status: e.target.value }))}
+            className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="Planning">Planning</option>
+            <option value="In Progress">In Progress</option>
+            <option value="On Hold">On Hold</option>
+            <option value="Completed">Completed</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Deadline */}
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">
+          Deadline
+        </label>
+        <input
+          type="date"
+          value={createProjectForm.deadline}
+          onChange={(e) => setCreateProjectForm(prev => ({ ...prev, deadline: e.target.value }))}
+          className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex justify-end gap-3 pt-4">
+        <ScaleButton
+          type="button"
+          onClick={() => {
+            setShowCreateModal(false);
+            setEditingProject(null);
+            setCreateProjectForm({
+              name: '',
+              description: '',
+              teamId: '',
+              priority: 'Medium',
+              status: 'Planning',
+              deadline: ''
+            });
+          }}
+          disabled={createLoading}
+          className="px-4 py-2 text-slate-600 border border-slate-300 rounded-md hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500"
+        >
+          Cancel
+        </ScaleButton>
+        <ScaleButton
+          type="submit"
+          disabled={createLoading}
+          className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 flex items-center justify-center"
+        >
+          {createLoading ? (
+            <>
+              <LoadingSpinner size={16} color="white" />
+              <span className="ml-2">Saving...</span>
+            </>
+          ) : (
+            editingProject ? 'Update Project' : 'Create Project'
+          )}
+        </ScaleButton>
+      </div>
+    </form>
+  </div>
+</SlideInModal>
+
+{showProjectInlineConfirmBox && (
+      <div className="fixed inset-0 z-[999] flex items-center justify-center">
+        {/* Overlay for blurring background - ONLY BLUR, NO COLOR */}
+        <div
+          className="absolute inset-0 backdrop-blur-md" // Changed to backdrop-blur-md for more blur
+          onClick={handleCancelDeleteProject} // Allows clicking outside to cancel
+        ></div>
+
+        {/* Confirmation Box */}
+        <div className="relative bg-white rounded-lg shadow-xl p-6 max-w-sm mx-auto z-10 animate-fade-in-up">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Confirm Project Deletion</h3>
+          <p className="text-gray-700 mb-6">
+            Are you sure you want to delete **{projectToDeleteName}**? This action cannot be undone and will permanently remove this project.
+          </p>
+          <div className="flex justify-end space-x-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCancelDeleteProject}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleConfirmDeleteProject}
+            >
+              Delete Project
+            </Button>
           </div>
-      </SlideInModal>
+        </div>
+      </div>
+    )}
+    {/* --- END: INLINE PROJECT DELETE CONFIRMATION BOX --- */}
+
     </div>
   );
 };
 
 export default ShadcnProjectManagement;
+
+
+
+
+
+

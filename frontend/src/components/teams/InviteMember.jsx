@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { X, Send, AlertCircle, CheckCircle, UserPlus } from 'lucide-react';
 import api from '../../services/api';
@@ -104,7 +103,7 @@ const InviteMember = ({ teamId, onClose, onMemberInvited }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-gradient-to-br from-blue-800 to-blue-100 p-6 flex items-center justify-center z-50">
       <Card className="w-full max-w-md mx-4">
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -186,7 +185,7 @@ const InviteMember = ({ teamId, onClose, onMemberInvited }) => {
               <Button
                 type="submit"
                 disabled={loading || !formData.email.trim()}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 bg-blue-600 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
               >
                 {loading ? (
                   <>

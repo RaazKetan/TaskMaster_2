@@ -38,17 +38,15 @@ export const TaskProvider = ({ children }) => {
 
 
   // CRUD operations
-  const addTask = async (taskData) => {
-    try {
-      const userId = getCurrentUserId();
-      const response = await api.post('/tasks', { ...taskData, userId });
-      setTasks(prev => [...prev, response.data]);
-      return response.data;
-    } catch (err) {
-      setError('Failed to add task');
-      throw err;
-    }
-  };
+  // In your TaskContext.jsx file
+// ... (existing imports and other functions) ...
+
+const addTask = (newTask) => { // This function should NOT be async if it's not making an API call
+  console.log("TaskContext: Adding new task to state:", newTask); // Debugging line
+  setTasks(prev => [...prev, newTask]);
+};
+
+// ... (rest of your context code) ...
 
 
   const updateTask = async (taskId, updatedData) => {
@@ -68,10 +66,12 @@ export const TaskProvider = ({ children }) => {
     try {
       const userId = getCurrentUserId();
       await api.delete(`/tasks/${taskId}`, { params: { userId } });
+      // Only remove from state if API call was successful
       setTasks(prev => prev.filter(task => (task._id || task.id) !== taskId));
     } catch (err) {
       setError('Failed to delete task');
-      throw err;
+      console.error('Error in deleteTask context function:', err); // Add more specific logging
+      throw err; // <--- Crucial: Re-throw the error!
     }
   };
 

@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { User, Mail, Calendar, Settings, Bell, Lock, Eye, EyeOff, Trash2, Edit2 } from 'lucide-react';
-import ShadcnNavbar from '../layout/ShadcnNavbar';
+// import ShadcnNavbar from '../layout/ShadcnNavbar';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 
@@ -126,7 +126,7 @@ const UserProfile = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <ShadcnNavbar />
+      {/* <ShadcnNavbar /> */}
       
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}
@@ -351,7 +351,7 @@ const UserProfile = () => {
 
         {/* Delete Account Modal */}
         {showDeleteModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-gradient-to-br from-blue-800 to-blue-100 p-6 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Delete Account</h3>
               <p className="text-gray-600 mb-6">
