@@ -298,12 +298,12 @@ const AnimatedTeamDashboard = () => {
       {/* Header */}
       <div className="bg-white border-b border-slate-200">
         <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center space-x-2">
+          {/* <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
               <span className="text-white font-bold text-sm">T</span>
             </div>
             <span className="text-xl font-semibold text-slate-900">TaskMaster</span>
-          </div>
+          </div> */}
           <div className="flex items-center space-x-4">
             <RealTimeIndicator 
               isConnected={true} 

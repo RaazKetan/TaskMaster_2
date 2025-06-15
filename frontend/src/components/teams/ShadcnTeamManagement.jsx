@@ -28,9 +28,14 @@ const ShadcnTeamManagement = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [deletingItems, setDeletingItems] = useState(new Set());
-  const [animatingItems, setAnimatingItems] = useState(new Set());
+  const [animatingItems, setAnimatingItems] = useState(new Set()); // Fixed: Removed new after useState
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [pendingInvitations, setPendingInvitations] = useState([]);
+
+  // NEW STATE FOR INLINE CONFIRMATION BOX
+  const [showInlineConfirmBox, setShowInlineConfirmBox] = useState(false);
+  const [teamToDeleteId, setTeamToDeleteId] = useState(null);
+  const [teamToDeleteName, setTeamToDeleteName] = useState(''); // Store name for confirmation message
 
   useEffect(() => {
     if (userSpace) {
@@ -46,35 +51,36 @@ const ShadcnTeamManagement = () => {
     }
   }, [userSpace]);
 
-const fetchTeams = async () => {
+  const fetchTeams = async () => {
     try {
-        setLoading(true);
-        setError(null);
+      setLoading(true);
+      setError(null);
 
-        // Get current user ID from localStorage
-        const userData = localStorage.getItem('userData');
-        const currentUser = userData ? JSON.parse(userData) : null;
+      // Get current user ID from localStorage
+      const userData = localStorage.getItem('userData');
+      const currentUser = userData ? JSON.parse(userData) : null;
 
-        if (!currentUser || !currentUser.userId) {
-            setError('User not authenticated');
-            setTeams([]);
-            return;
-        }
+      if (!currentUser || !currentUser.userId) {
+        setError('User not authenticated');
+        setTeams([]);
+        return;
+      }
 
-        const response = await api.get('/teams', {
-            params: { userId: currentUser.userId }
-        });
-        const teams = response.data || [];
-        setTeams(teams);
-        setError(null);
+      const response = await api.get('/teams', {
+        params: { userId: currentUser.userId }
+      });
+      const teams = response.data || [];
+      setTeams(teams);
+      setError(null);
     } catch (err) {
-        console.error('Error fetching teams:', err);
-        setError('Failed to fetch teams: ' + (err.response?.data?.message || err.message));
-        // Don't clear teams on error - keep existing data
+      console.error('Error fetching teams:', err);
+      setError('Failed to fetch teams: ' + (err.response?.data?.message || err.message));
+      // Don't clear teams on error - keep existing data
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
-};
+  };
+
   const createTeam = async (e) => {
     e.preventDefault();
     setCreateLoading(true);
@@ -121,8 +127,20 @@ const fetchTeams = async () => {
     }
   };
 
-  const handleDeleteTeam = async (teamId) => {
-    if (!window.confirm('Are you sure you want to delete this team? This action cannot be undone.')) {
+  // NEW FUNCTION: Called when delete button is clicked to show inline confirmation
+  const handleDeleteTeamClick = (teamId, teamName) => {
+    setTeamToDeleteId(teamId); // Store the ID of the team to be deleted
+    setTeamToDeleteName(teamName || 'this team'); // Store the name for the message
+    setShowInlineConfirmBox(true); // Show the inline confirmation box
+  };
+
+  // MODIFIED FUNCTION: Now called when "Delete" is confirmed in the inline box
+  const handleConfirmDelete = async () => {
+    setShowInlineConfirmBox(false); // Hide the confirmation box immediately
+    setError(null); // Clear previous errors
+
+    if (!teamToDeleteId) {
+      setError('Invalid team ID for deletion confirmation.');
       return;
     }
 
@@ -136,34 +154,41 @@ const fetchTeams = async () => {
         return;
       }
 
-      if (!teamId) {
-        setError('Invalid team ID');
-        return;
-      }
-
-      await api.delete(`/teams/${teamId}`, {
+      await api.delete(`/teams/${teamToDeleteId}`, {
         params: { userId: currentUser.userId }
       });
 
       // Remove from local state with consistent ID handling
       setTeams(prev => prev.filter(team => {
         const currentTeamId = team._id || team.id;
-        return currentTeamId !== teamId;
+        return currentTeamId !== teamToDeleteId;
       }));
 
       // If this was the selected team, clear selection
       if (selectedTeam) {
         const selectedTeamId = selectedTeam._id || selectedTeam.id;
-        if (selectedTeamId === teamId) {
+        if (selectedTeamId === teamToDeleteId) {
           setSelectedTeam(null);
         }
       }
 
       setError(null);
+      setTeamToDeleteId(null); // Clear the stored ID after successful deletion
+      setTeamToDeleteName(''); // Clear the stored name
     } catch (error) {
       console.error('Error deleting team:', error);
       setError('Failed to delete team: ' + (error.response?.data?.message || error.message));
+      setTeamToDeleteId(null); // Clear the ID even on error
+      setTeamToDeleteName(''); // Clear the name
     }
+  };
+
+  // NEW FUNCTION: Called when user cancels deletion from the inline confirmation box
+  const handleCancelDelete = () => {
+    setShowInlineConfirmBox(false);
+    setTeamToDeleteId(null); // Clear the stored ID
+    setTeamToDeleteName(''); // Clear the stored name
+    setError(null); // Clear any pending errors related to deletion
   };
 
   const updateTeam = async (e) => {
@@ -213,11 +238,6 @@ const fetchTeams = async () => {
       setShowEditModal(false);
       setEditingTeam(null);
       setError(null);
-
-      // Refresh teams data to ensure consistency
-      setTimeout(() => {
-        fetchTeams();
-      }, 500);
     } catch (error) {
       console.error('Error updating team:', error);
       setError('Failed to update team: ' + (error.response?.data?.message || error.message));
@@ -253,6 +273,7 @@ const fetchTeams = async () => {
       setError('Failed to remove team member: ' + (error.response?.data?.message || error.message));
     }
   };
+
   const fetchPendingInvitations = async (teamId) => {
     try {
       const userData = localStorage.getItem('userData');
@@ -263,7 +284,7 @@ const fetchTeams = async () => {
       const response = await api.get(`/teams/${teamId}/pending-invitations`, {
         params: { userId: currentUser.userId }
       });
-      
+
       setPendingInvitations(response.data || []);
     } catch (error) {
       console.error('Error fetching pending invitations:', error);
@@ -277,7 +298,7 @@ const fetchTeams = async () => {
         email: email,
         invitationId: invitationId
       });
-      
+
       alert('Invitation resent successfully!');
       await fetchPendingInvitations(teamId);
     } catch (error) {
@@ -295,7 +316,7 @@ const fetchTeams = async () => {
       await api.delete(`/invitations/${invitationId}/cancel`, {
         params: { email: email }
       });
-      
+
       alert('Invitation cancelled successfully!');
       if (selectedTeam) {
         await fetchPendingInvitations(selectedTeam._id || selectedTeam.id);
@@ -328,8 +349,8 @@ const fetchTeams = async () => {
       <div className="min-h-screen bg-slate-50">
         <div className="p-8">
           <div className="max-w-6xl mx-auto">
-            <LoadingMascot 
-              message="Loading your teams..." 
+            <LoadingMascot
+              message="Loading your teams..."
               size="large"
             />
           </div>
@@ -425,9 +446,10 @@ const fetchTeams = async () => {
                                   size="sm"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    handleDeleteTeam(teamId);
+                                    // Call the new function for inline confirmation
+                                    handleDeleteTeamClick(teamId, team.name);
                                   }}
-                                  
+
                                   className="text-black-600 hover:bg-red-200 h-6 w-10 p-0"
                                   title="Delete team"
                                 >
@@ -519,8 +541,8 @@ const fetchTeams = async () => {
                         </div>
                       )}
                       <Button onClick={() => setShowInviteModal(true)}>
-                          <UserPlus className="w-4 h-4 mr-2" />
-                          Invite Member
+                        <UserPlus className="w-4 h-4 mr-2" />
+                        Invite Member
                       </Button>
                     </CardContent>
                   </Card>
@@ -547,7 +569,7 @@ const fetchTeams = async () => {
                                     {invitation.invitedUserEmail}
                                   </span>
                                   <div className="text-xs text-slate-500">
-                                    Role: {invitation.role} • Sent: {new Date(invitation.invitedAt).toLocaleDateString()}
+                                    Role: {invitation.role} â€¢ Sent: {new Date(invitation.invitedAt).toLocaleDateString()}
                                   </div>
                                 </div>
                                 <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded">
@@ -559,8 +581,8 @@ const fetchTeams = async () => {
                                   size="sm"
                                   variant="outline"
                                   onClick={() => resendInvitation(
-                                    selectedTeam._id || selectedTeam.id, 
-                                    invitation.id, 
+                                    selectedTeam._id || selectedTeam.id,
+                                    invitation.id,
                                     invitation.invitedUserEmail
                                   )}
                                   className="text-xs"
@@ -597,8 +619,6 @@ const fetchTeams = async () => {
                   </CardContent>
                 </Card>
               )}
-
-
             </div>
           </div>
 
@@ -612,7 +632,7 @@ const fetchTeams = async () => {
                     onClick={() => setShowCreateModal(false)}
                     className="text-slate-400 hover:text-slate-600"
                   >
-                    ×
+                    &times;
                   </button>
                 </div>
 
@@ -670,7 +690,7 @@ const fetchTeams = async () => {
                     }}
                     className="text-slate-400 hover:text-slate-600"
                   >
-                    ×
+                    &times;
                   </button>
                 </div>
 
@@ -725,6 +745,42 @@ const fetchTeams = async () => {
               onClose={() => setShowInviteModal(false)}
               onMemberInvited={handleMemberInvited}
             />
+          )}
+
+          {/* INLINE DELETE CONFIRMATION BOX */}
+          {showInlineConfirmBox && (
+            <div className="fixed inset-0 z-[999] flex items-center justify-center">
+              {/* Overlay for blurring background */}
+              {/* The backdrop-blur-sm is a Tailwind CSS utility */}
+              <div
+                className="absolute inset-0 backdrop-blur-sm"
+                onClick={handleCancelDelete} // Allows clicking outside to cancel
+              ></div>
+
+              {/* Confirmation Box */}
+              <div className="relative bg-white rounded-lg shadow-xl p-6 max-w-sm mx-auto z-10 animate-fade-in-up">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Confirm Deletion</h3>
+                <p className="text-gray-700 mb-6">
+                  Are you sure you want to delete **{teamToDeleteName}**? This action cannot be undone and will permanently remove all associated data.
+                </p>
+                <div className="flex justify-end space-x-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleCancelDelete}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={handleConfirmDelete}
+                  >
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       </div>

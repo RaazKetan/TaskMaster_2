@@ -198,8 +198,18 @@ const NotificationBell = () => {
               <h3 className="font-semibold text-slate-900">Notifications</h3>
               <span className="text-xs text-slate-500">
                 {pendingInvitations.length} pending
+              
               </span>
+
+              <button
+                onClick={() => setShowDropdown(false)} // Changed to update the state
+                className="h-8 w-8 flex items-center justify-center rounded-md text-slate-400 hover:text-black hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 text-xl"
+                title="Close"
+              >
+                ×
+              </button>
             </div>
+            
           </div>
 
           <div className="max-h-96 overflow-y-auto">

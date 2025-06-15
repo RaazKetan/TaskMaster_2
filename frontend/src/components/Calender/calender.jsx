@@ -248,6 +248,14 @@ const CalendarModal = ({
                 >
                   + Add Task
                 </Button>
+
+                <button
+                  onClick={onClose} 
+                  className="h-8 w-8 flex items-center justify-center rounded-md text-slate-400 hover:text-black hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 text-xl"
+                  title="Close"
+                >
+                  ×
+                </button>
               </div>
             </div>
 

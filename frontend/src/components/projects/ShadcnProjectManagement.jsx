@@ -12,6 +12,7 @@ import TaskLoadingCard from '../common/TaskLoadingCard';
 import { cn } from '../../lib/utils';
 import { getCurrentUserId } from '../../utils/auth.js';
 import toast from 'react-hot-toast';
+import { Progress } from '../ui/progress';
 import { 
   ScaleButton, 
   SlideInModal, 
@@ -37,7 +38,8 @@ const ShadcnProjectManagement = () => {
     teamId: '',
     priority: 'Medium',
     status: 'Planning',
-    deadline: ''
+    deadline: '',
+    
   });
   const [createLoading, setCreateLoading] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
@@ -46,6 +48,11 @@ const ShadcnProjectManagement = () => {
   const [deletingItems, setDeletingItems] = useState(new Set());
   const [successPulse, setSuccessPulse] = useState(false);
   const projectsPerPage = 10;
+
+  const [showProjectInlineConfirmBox, setShowProjectInlineConfirmBox] = useState(false);
+  const [projectToDeleteId, setProjectToDeleteId] = useState(null);
+  const [projectToDeleteName, setProjectToDeleteName] = useState('');
+  
 
   // Add missing showProgressTracker function
   const showProgressTracker = (project) => {
@@ -267,40 +274,73 @@ const ShadcnProjectManagement = () => {
     setShowCreateModal(true); // Use the same modal for editing
   };
 
-  const handleDeleteProject = async (projectId) => {
-    if (!window.confirm('Are you sure you want to delete this project?')) {
+
+  const handleDeleteProjectClick = (projectId, projectName) => {
+    setProjectToDeleteId(projectId);
+    setProjectToDeleteName(projectName || 'this project');
+    setShowProjectInlineConfirmBox(true);
+  };
+
+  // MODIFIED FUNCTION: Now called when "Delete" is confirmed in the inline box
+  const handleConfirmDeleteProject = async () => {
+    setShowProjectInlineConfirmBox(false); // Hide the confirmation box immediately
+    setError(null); // Clear previous errors
+
+    if (!projectToDeleteId) {
+      setError('Invalid project ID for deletion confirmation.');
       return;
     }
 
-    // Start delete animation
-    setDeletingItems(prev => new Set([...prev, projectId]));
+    // Start delete animation (optional, but good for feedback)
+    setDeletingItems(prev => new Set([...prev, projectToDeleteId]));
 
     try {
-      const userId = getCurrentUserId();
-      await api.delete(`/projects/${projectId}`, {
+      const userId = getCurrentUserId(); // Ensure this correctly gets the user ID
+      if (!userId) {
+        setError('User not authenticated for deletion.');
+        return;
+      }
+
+      await api.delete(`/projects/${projectToDeleteId}`, {
         params: { userId: userId }
       });
       
       // Complete animation and remove from list
       setTimeout(() => {
-        setProjects(prev => prev.filter(p => p.id !== projectId));
+        setProjects(prev => prev.filter(p => (p._id || p.id) !== projectToDeleteId));
         setDeletingItems(prev => {
           const newSet = new Set(prev);
-          newSet.delete(projectId);
+          newSet.delete(projectToDeleteId);
           return newSet;
         });
         toast.success('Project deleted successfully');
-        fetchData(); // Refresh the data
+        // A full re-fetch might be heavy; ensure your filter handles removed item
+        // If fetchData is crucial for other states, keep it, otherwise rely on local filter
+        // await fetchData(); 
       }, 600);
+
+      setProjectToDeleteId(null); // Clear the stored ID after successful deletion
+      setProjectToDeleteName(''); // Clear the stored name
     } catch (error) {
       console.error('Error deleting project:', error);
+      setError('Failed to delete project: ' + (error.response?.data?.message || error.message));
       setDeletingItems(prev => {
         const newSet = new Set(prev);
-        newSet.delete(projectId);
+        newSet.delete(projectToDeleteId);
         return newSet;
       });
       toast.error('Failed to delete project');
+      setProjectToDeleteId(null); // Clear the ID even on error
+      setProjectToDeleteName(''); // Clear the name
     }
+  };
+
+  // NEW FUNCTION: Called when user cancels project deletion from the inline confirmation box
+  const handleCancelDeleteProject = () => {
+    setShowProjectInlineConfirmBox(false);
+    setProjectToDeleteId(null);
+    setProjectToDeleteName('');
+    setError(null);
   };
 
   const deleteProject = async (projectId) => {
@@ -498,7 +538,7 @@ const ShadcnProjectManagement = () => {
                   <tbody className="bg-white divide-y divide-slate-200">
                     {currentProjects.map((project, index) => (
                       <tr key={project._id || project.id || index} className="hover:bg-slate-50 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-1 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-slate-900">
                             {project.name}
                           </div>
@@ -518,7 +558,7 @@ const ShadcnProjectManagement = () => {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="w-full bg-slate-200 rounded-full h-2">
                             <div
-                              className="bg-blue-600 h-2 rounded-full"
+                              className="bg-red-600 h-2 rounded-full"
                               style={{ width: `${project.progress || 0}%` }}
                             ></div>
                           </div>
@@ -536,7 +576,7 @@ const ShadcnProjectManagement = () => {
                               <Edit className="w-4 h-4" />
                             </ScaleButton>
                             <ScaleButton
-                              onClick={() => handleDeleteProject(project._id || project.id)}
+                              onClick={() => handleDeleteProjectClick(project._id || project.id, project.name)} // <--- CHANGE TO THIS
                               className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
                               title="Delete project"
                             >
@@ -624,7 +664,7 @@ const ShadcnProjectManagement = () => {
           placeholder="Enter project name"
         />
         {!createProjectForm.name && (
-          <p className="text-xs text-red-500 mt-1">Project name is required.</p>
+          <p className="text-xs text-red-500 mt-1"></p>
         )}
       </div>
 
@@ -659,7 +699,7 @@ const ShadcnProjectManagement = () => {
           ))}
         </select>
         {!createProjectForm.teamId && (
-          <p className="text-xs text-red-500 mt-1">Please select a team.</p>
+          <p className="text-xs text-red-500 mt-1">.</p>
         )}
       </div>
 
@@ -749,6 +789,42 @@ const ShadcnProjectManagement = () => {
     </form>
   </div>
 </SlideInModal>
+
+{showProjectInlineConfirmBox && (
+      <div className="fixed inset-0 z-[999] flex items-center justify-center">
+        {/* Overlay for blurring background - ONLY BLUR, NO COLOR */}
+        <div
+          className="absolute inset-0 backdrop-blur-md" // Changed to backdrop-blur-md for more blur
+          onClick={handleCancelDeleteProject} // Allows clicking outside to cancel
+        ></div>
+
+        {/* Confirmation Box */}
+        <div className="relative bg-white rounded-lg shadow-xl p-6 max-w-sm mx-auto z-10 animate-fade-in-up">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Confirm Project Deletion</h3>
+          <p className="text-gray-700 mb-6">
+            Are you sure you want to delete **{projectToDeleteName}**? This action cannot be undone and will permanently remove this project.
+          </p>
+          <div className="flex justify-end space-x-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCancelDeleteProject}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleConfirmDeleteProject}
+            >
+              Delete Project
+            </Button>
+          </div>
+        </div>
+      </div>
+    )}
+    {/* --- END: INLINE PROJECT DELETE CONFIRMATION BOX --- */}
+
     </div>
   );
 };

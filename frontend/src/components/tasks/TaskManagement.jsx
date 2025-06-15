@@ -17,7 +17,7 @@ import { motion } from 'framer-motion';
 import { useTasks } from '../../context/TaskContext';
 
 const TaskManagement = () => {
-  const { tasks, loading, error, fetchTasks, addTask, updateTask, deleteTask } = useTasks();
+  const { tasks, loading, error, fetchTasks, addTask, updateTask, deleteTask ,setError} = useTasks();
   const [projects, setProjects] = useState([]);
   const [selectedProject, setSelectedProject] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
@@ -28,6 +28,11 @@ const TaskManagement = () => {
   const [draggedTask, setDraggedTask] = useState(null);
   const [inlineEditingTask, setInlineEditingTask] = useState(null);
   const [inlineEditValue, setInlineEditValue] = useState('');
+
+  const [showTaskInlineConfirmBox, setShowTaskInlineConfirmBox] = useState(false);
+  const [taskToDeleteId, setTaskToDeleteId] = useState(null);
+  const [taskToDeleteTitle, setTaskToDeleteTitle] = useState('');
+  
 
   // Only fetch projects here, tasks come from context
   const fetchProjects = useCallback(async () => {
@@ -106,7 +111,7 @@ const TaskManagement = () => {
       // Update task in context
       await updateTask(taskId, { ...task, status: newStatus, updatedAt: currentDate, ...statusDates });
       
-      updateProjectStatus(taskId, newStatus);
+      // updateProjectStatus(taskId, newStatus); // <--- COMMENTED OUT FOR TESTING
     } catch (error) {
       console.error('Error updating task status:', error);
       // Revert the UI change if API call fails
@@ -153,13 +158,42 @@ const TaskManagement = () => {
     setShowEditModal(true);
   };
 
-  const handleDeleteTask = async (taskId) => {
-    if (!window.confirm('Are you sure you want to delete this task?')) return;
-    try {
-      await deleteTask(taskId);
-    } catch (error) {
-      console.error('Error deleting task:', error);
+  // NEW FUNCTION: Called when delete button is clicked to show inline confirmation for tasks
+  const handleDeleteTaskClick = (taskId, taskTitle) => {
+    setTaskToDeleteId(taskId);
+    setTaskToDeleteTitle(taskTitle || 'this task');
+
+    setShowTaskInlineConfirmBox(true);
+  };
+
+  // MODIFIED FUNCTION: Now called when "Delete" is confirmed in the inline box
+  // MODIFIED FUNCTION: Now called when "Delete" is confirmed in the inline box
+  const handleConfirmDeleteTask = async () => {
+    setShowTaskInlineConfirmBox(false); // Hide the confirmation box immediately
+    //setError(''); // Clear previous errors
+
+    if (!taskToDeleteId) {
+      setError('Invalid task ID for deletion confirmation.');
+      return;
     }
+
+    try {
+      await deleteTask(taskToDeleteId); // <--- This line
+      // ... success logic ...
+    } catch (error) { // <-- This catch block is never reached if deleteTask doesn't throw
+      console.error('Error deleting task:', error);
+      setError('Failed to delete task: ' + (error.message || ''));
+      setTaskToDeleteId(null);
+      setTaskToDeleteTitle('');
+    }
+  };
+
+  // NEW FUNCTION: Called when user cancels task deletion from the inline confirmation box
+  const handleCancelDeleteTask = () => {
+    setShowTaskInlineConfirmBox(false);
+    setTaskToDeleteId(null);
+    setTaskToDeleteTitle('');
+    setError(''); // Clear any pending errors related to deletion
   };
 
   const handleInlineEdit = (task) => {
@@ -383,7 +417,7 @@ const TaskManagement = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDeleteTask(task._id || task.id);
+                        handleDeleteTaskClick(task._id || task.id, task.title || task.name);
                       }}
                       className="text-red-500 hover:text-red-700 text-xs px-1 py-1 rounded hover:bg-red-100 transition-colors"
                       title="Delete task"
@@ -696,6 +730,41 @@ const TaskManagement = () => {
           onTaskUpdated={updateTask}
           projects={projects}
         />
+
+        {/* --- START: INLINE TASK DELETE CONFIRMATION BOX --- */}
+        {showTaskInlineConfirmBox && (
+          <div className="fixed inset-0 z-[999] flex items-center justify-center">
+            {/* Overlay for blurring background - ONLY BLUR, NO COLOR */}
+            <div
+              className="absolute inset-0 backdrop-blur-md" // Using 'md' for a noticeable blur
+              onClick={handleCancelDeleteTask} // Allows clicking outside to cancel
+            ></div>
+
+            {/* Confirmation Box */}
+            <div className="relative bg-white rounded-lg shadow-xl p-6 max-w-sm mx-auto z-10 animate-fade-in-up">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Confirm Task Deletion</h3>
+              <p className="text-gray-700 mb-6">
+                Are you sure you want to delete **{taskToDeleteTitle}**? This action cannot be undone and will permanently remove this task.
+              </p>
+              <div className="flex justify-end space-x-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCancelDeleteTask}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={handleConfirmDeleteTask}
+                >
+                  Delete Task
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </DndProvider>
   );
