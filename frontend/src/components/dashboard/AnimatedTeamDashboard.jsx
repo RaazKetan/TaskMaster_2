@@ -34,7 +34,7 @@ import TaskLoadingCard from '../common/TaskLoadingCard';
 // Removed collaboration components - not needed for core functionality
 import api from '../../services/api';
 
-const AnimatedTeamDashboard = () => {
+const AnimatedTeamDashboard = ({ publicData = null, isPublicView = false }) => {
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState({
     stats: {

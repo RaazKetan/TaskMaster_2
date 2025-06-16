@@ -31,14 +31,43 @@ const TaskMasterDashboard = () => {
     setRefreshTrigger(prev => prev + 1);
   };
 
+  const handleShareDashboard = async () => {
+    try {
+      const userId = getCurrentUserId();
+      const response = await api.post('/dashboard/share', { userId });
+      const shareId = response.data.shareId;
+      const shareUrl = `${window.location.origin}/public/dashboard/${shareId}`;
+      
+      // Copy to clipboard
+      await navigator.clipboard.writeText(shareUrl);
+      alert(`Dashboard link copied to clipboard!\n\n${shareUrl}\n\nAnyone with this link can view your dashboard.`);
+    } catch (error) {
+      console.error('Error sharing dashboard:', error);
+      alert('Failed to create shareable link. Please try again.');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-yellow-900">
-            Welcome back, {user?.userdata?.firstName || user?.email}!
-          </h1>
-          <p className="text-gray-600 mt-2">Here's what's happening with your projects today.</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-yellow-900">
+                Welcome back, {user?.userdata?.firstName || user?.email}!
+              </h1>
+              <p className="text-gray-600 mt-2">Here's what's happening with your projects today.</p>
+            </div>
+            <button
+              onClick={handleShareDashboard}
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
+              </svg>
+              Share Dashboard
+            </button>
+          </div>
         </div>
         <AnimatedTeamDashboard key={refreshTrigger} />
       </div>
