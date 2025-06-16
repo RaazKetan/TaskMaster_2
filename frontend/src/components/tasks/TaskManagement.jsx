@@ -178,6 +178,8 @@ const TaskManagement = () => {
     if (!taskToDelete) return;
     try {
       await deleteTask(taskToDelete);
+      // Refresh shared dashboards when task is deleted
+      refreshSharedDashboards();
       setShowDeleteDialog(false);
       setTaskToDelete(null);
     } catch (error) {
@@ -186,6 +188,7 @@ const TaskManagement = () => {
       setTaskToDelete(null);
     }
   };
+
   const cancelDeleteTask = () => {
     setShowDeleteDialog(false);
     setTaskToDelete(null);
@@ -563,16 +566,6 @@ const TaskManagement = () => {
       refreshSharedDashboards();
     } catch (error) {
       console.error("Error updating task", error);
-    }
-  };
-
-  const handleDeleteTask = async (taskId) => {
-    try {
-      await deleteTask(taskId);
-      // Refresh shared dashboards when task is deleted
-      refreshSharedDashboards();
-    } catch (error) {
-      console.error("Error deleting task:", error);
     }
   };
 
