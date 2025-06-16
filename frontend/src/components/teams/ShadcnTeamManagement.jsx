@@ -18,10 +18,6 @@ const ShadcnTeamManagement = () => {
   const [teams, setTeams] = useState([]);
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editingTeam, setEditingTeam] = useState(null);
-  const [createTeamForm, setCreateTeamForm] = useState({ name: '', description: '' });
-  const [createLoading, setCreateLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 

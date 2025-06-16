@@ -578,7 +578,8 @@ const TaskManagement = () => {
                   >
                     <Plus className="w-7 h-6 mr-2" />
                     Create task
-                  </Button>
+                 
+              </motion.button>
 
                 </div>
 
