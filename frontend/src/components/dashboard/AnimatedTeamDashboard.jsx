@@ -583,6 +583,12 @@ const AnimatedTeamDashboard = ({ publicData = null, isPublicView = false }) => {
           </div>
         </motion.div>
       </div>
+      
+      {/* Share Dashboard Modal */}
+      <ShareDashboardModal 
+        isOpen={showShareModal} 
+        onClose={() => setShowShareModal(false)} 
+      />
     </div>
   );
 };

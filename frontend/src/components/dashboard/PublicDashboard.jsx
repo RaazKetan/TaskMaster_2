@@ -16,21 +16,11 @@ const PublicDashboard = () => {
       try {
         setLoading(true);
         // Fetch public dashboard data using shareId
-        const response = await fetch(`/api/public/dashboard/${shareId}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
+        const response = await api.get(`/public/dashboard/${shareId}`);
         
-        if (!response.ok) {
-          throw new Error('Dashboard not found or access denied');
-        }
-        
-        const data = await response.json();
-        console.log('Public dashboard data received:', data);
-        setDashboardData(data.dashboardData);
-        setDashboardInfo(data.dashboardInfo);
+        console.log('Public dashboard data received:', response.data);
+        setDashboardData(response.data.dashboardData);
+        setDashboardInfo(response.data.dashboardInfo);
       } catch (error) {
         console.error('Error fetching public dashboard:', error);
         setError(error.message || 'Failed to load dashboard data');
