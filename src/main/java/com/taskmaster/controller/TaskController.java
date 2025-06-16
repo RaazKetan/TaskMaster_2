@@ -1,12 +1,27 @@
 package com.taskmaster.controller;
 
-import com.taskmaster.model.User;
-import com.taskmaster.repository.UserRepository;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.*;
+import com.taskmaster.model.User;
+import com.taskmaster.repository.UserRepository;
 
 @RestController
 @RequestMapping("/api")
@@ -31,7 +46,7 @@ public class TaskController {
             // Get tasks from all user projects
             List<Map<String, Object>> projects = user.getProjects();
             List<Map<String, Object>> allTasks = new ArrayList<>();
-            
+
             if (projects != null) {
                 for (Map<String, Object> project : projects) {
                     List<Map<String, Object>> projectTasks = (List<Map<String, Object>>) project.get("tasks");
@@ -48,7 +63,7 @@ public class TaskController {
             return ResponseEntity.ok(allTasks);
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(Map.of("error", "Failed to fetch tasks: " + e.getMessage()));
+                    .body(Map.of("error", "Failed to fetch tasks: " + e.getMessage()));
         }
     }
 
@@ -57,11 +72,11 @@ public class TaskController {
         try {
             String userId = (String) taskData.get("userId");
             String projectId = (String) taskData.get("projectId");
-            
+
             if (userId == null || userId.isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "User ID is required"));
             }
-            
+
             if (projectId == null || projectId.isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Project ID is required"));
             }
@@ -79,7 +94,7 @@ public class TaskController {
 
             Map<String, Object> targetProject = null;
             String teamId = null;
-            
+
             for (Map<String, Object> project : projects) {
                 if (projectId.equals(project.get("_id"))) {
                     // Create new task
@@ -104,7 +119,7 @@ public class TaskController {
 
                     targetProject = project;
                     teamId = (String) project.get("teamId");
-                    
+
                     user.setProjects(projects);
                     userRepository.save(user);
 
@@ -124,7 +139,7 @@ public class TaskController {
             return ResponseEntity.badRequest().body(Map.of("error", "Project not found"));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(Map.of("error", "Failed to create task: " + e.getMessage()));
+                    .body(Map.of("error", "Failed to create task: " + e.getMessage()));
         }
     }
 
@@ -132,13 +147,13 @@ public class TaskController {
         try {
             // Find all users who are members of this team
             List<User> allUsers = userRepository.findAll();
-            
+
             for (User user : allUsers) {
                 List<Map<String, Object>> userTeams = user.getTeams();
                 if (userTeams != null) {
                     boolean isMember = userTeams.stream()
-                        .anyMatch(team -> teamId.equals(team.get("_id")) || teamId.equals(team.get("id")));
-                    
+                            .anyMatch(team -> teamId.equals(team.get("_id")) || teamId.equals(team.get("id")));
+
                     if (isMember) {
                         List<Map<String, Object>> userProjects = user.getProjects();
                         if (userProjects != null) {
@@ -150,12 +165,12 @@ public class TaskController {
                                         tasks = new ArrayList<>();
                                         project.put("tasks", tasks);
                                     }
-                                    
+
                                     // Check if task already exists
                                     String taskId = (String) task.get("_id");
                                     boolean taskExists = tasks.stream()
-                                        .anyMatch(t -> taskId.equals(t.get("_id")));
-                                    
+                                            .anyMatch(t -> taskId.equals(t.get("_id")));
+
                                     if (!taskExists) {
                                         Map<String, Object> taskCopy = new HashMap<>();
                                         taskCopy.putAll(task);
@@ -233,7 +248,7 @@ public class TaskController {
             return ResponseEntity.notFound().build();
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(Map.of("error", "Failed to update task: " + e.getMessage()));
+                    .body(Map.of("error", "Failed to update task: " + e.getMessage()));
         }
     }
 
@@ -266,7 +281,7 @@ public class TaskController {
             return ResponseEntity.notFound().build();
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(Map.of("error", "Failed to delete task: " + e.getMessage()));
+                    .body(Map.of("error", "Failed to delete task: " + e.getMessage()));
         }
     }
 }

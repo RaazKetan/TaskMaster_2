@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
+
 const Login = () => {
   const [formData, setFormData] = useState({
     email: '',
@@ -19,12 +20,14 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+
   useEffect(() => {
     const savedEmail = localStorage.getItem('rememberedEmail');
     if (savedEmail) {
       setFormData(prev => ({ ...prev, email: savedEmail, rememberMe: true }));
     }
   }, []);
+
 
   useEffect(() => {
     if (attempts >= 3) {
@@ -36,6 +39,7 @@ const Login = () => {
       return () => clearTimeout(timer);
     }
   }, [attempts]);
+
 
   const validateForm = () => {
     if (!formData.email || !formData.password) {
@@ -53,6 +57,7 @@ const Login = () => {
     return true;
   };
 
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
@@ -62,13 +67,16 @@ const Login = () => {
     setError('');
   };
 
+
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
 
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
 
     if (!validateForm()) return;
     if (isRateLimited) {
@@ -76,10 +84,13 @@ const Login = () => {
       return;
     }
 
+
     setLoading(true);
+
 
     try {
       const result = await login(formData.email, formData.password);
+
 
       if (result && result.success) {
         if (formData.rememberMe) {
@@ -88,6 +99,7 @@ const Login = () => {
           localStorage.removeItem('rememberedEmail');
         }
       }
+
 
       if (result.success && result.user) {
         toast.success('Login successful!');
@@ -105,23 +117,27 @@ const Login = () => {
     }
   };
 
+
   return (
+
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-800 to-blue-100 p-6">
+
       <div className="w-full max-w-md space-y-8">
         <div className="text-center animate-fade-in">
           <div className="mx-auto h-12 w-12 bg-[#0051d4] rounded-xl flex items-center justify-center mb-4 shadow-md">
-            <span className="text-white text-xl font-bold">T</span>
+            <span className="text-xl font-bold text-white">T</span>
           </div>
           <h1 className="text-3xl font-extrabold text-gray-800">Welcome to TaskMaster</h1>
           <p className="mt-2 text-gray-600">Sign in to your account</p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-xl border border-gray-200 animate-slide-up p-8">
+
+        <div className="p-8 bg-white border border-gray-200 shadow-xl rounded-xl animate-slide-up">
           <form onSubmit={handleSubmit} className="space-y-6" noValidate>
             {error && (
-              <div className="bg-red-100 border border-red-300 text-red-700 rounded-lg p-3 animate-slide-up" role="alert">
+              <div className="p-3 text-red-700 bg-red-100 border border-red-300 rounded-lg animate-slide-up" role="alert">
                 <div className="flex items-center">
-                  <svg className="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                   </svg>
                   <span>{error}</span>
@@ -129,8 +145,9 @@ const Login = () => {
               </div>
             )}
 
+
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="email" className="block mb-2 text-sm font-medium text-gray-700">
                 Email address
               </label>
               <input
@@ -147,8 +164,9 @@ const Login = () => {
               />
             </div>
 
+
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="password" className="block mb-2 text-sm font-medium text-gray-700">
                 Password
               </label>
               <div className="relative">
@@ -167,13 +185,14 @@ const Login = () => {
                 <button
                   type="button"
                   onClick={togglePasswordVisibility}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? <FaEyeSlash /> : <FaEye />}
                 </button>
               </div>
             </div>
+
 
             <div className="flex items-center justify-between">
               <div className="flex items-center">
@@ -185,7 +204,7 @@ const Login = () => {
                   onChange={handleChange}
                   className="h-4 w-4 text-[#0051d4] focus:ring-[#0051d4] border-gray-300 rounded"
                 />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
+                <label htmlFor="remember-me" className="block ml-2 text-sm text-gray-700">
                   Remember me
                 </label>
               </div>
@@ -196,6 +215,7 @@ const Login = () => {
               </div>
             </div>
 
+
             <button
               type="submit"
               disabled={loading || isRateLimited}
@@ -204,19 +224,30 @@ const Login = () => {
             >
               {loading ? (
                 <div className="flex items-center">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                  <div className="w-5 h-5 mr-3 border-b-2 border-white rounded-full animate-spin"></div>
                   Signing in...
                 </div>
               ) : (
                 <>
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                  </svg>
                   Sign In
+                <svg
+                  className="w-5 h-5 ml-2 rotate-180"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
+                  />
+                </svg>
                 </>
               )}
             </button>
           </form>
+
 
           <div className="mt-8 text-center">
             <p className="text-gray-600">
@@ -231,5 +262,6 @@ const Login = () => {
     </div>
   );
 };
+
 
 export default Login;

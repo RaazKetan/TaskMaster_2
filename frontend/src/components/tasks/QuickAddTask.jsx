@@ -4,6 +4,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import api from '../../services/api';
 import { getCurrentUserId } from '../../utils/auth';
+import {motion} from 'framer-motion';
 
 const QuickAddTask = ({ projects = [], onTaskCreated }) => {
   const [loading, setLoading] = useState(false);
@@ -61,7 +62,12 @@ const QuickAddTask = ({ projects = [], onTaskCreated }) => {
   };
 
   return (
-    <div className="mb-4 p-4 border border-gray-200 rounded-lg bg-white shadow-sm">
+    <motion.div
+      whileHover={{ y: -5, boxShadow: "0 10px 25px rgba(0,0,0,0.10)"}}
+      transition={{ duration: 0.2}}
+      className="mb-4"
+    >
+      <div className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
       <form onSubmit={handleSubmit} className="space-y-3">
         <div className="flex items-center gap-2 mb-3">
           <Plus className="h-4 w-4 text-blue-600" />
@@ -132,6 +138,7 @@ const QuickAddTask = ({ projects = [], onTaskCreated }) => {
         💡 Tip: Task will be created with medium priority and "To Do" status. You can edit details later.
       </div>
     </div>
+    </motion.div>
   );
 };
 
