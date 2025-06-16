@@ -89,14 +89,16 @@ public class DashboardController {
             response.put("dashboardData", sharedDashboard.dashboardData);
             response.put("dashboardInfo", Map.of(
                 "ownerName", sharedDashboard.ownerName,
-                "projectCount", ((Map<String, Object>) sharedDashboard.dashboardData).getOrDefault("projects", 0),
-                "createdAt", sharedDashboard.createdAt
+                "projectCount", sharedDashboard.dashboardData.getOrDefault("projects", 0),
+                "createdAt", sharedDashboard.createdAt,
+                "shareId", shareId
             ));
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
+            System.err.println("Error fetching public dashboard for shareId: " + shareId);
             e.printStackTrace();
-            return ResponseEntity.badRequest().body(Map.of("error", "Failed to fetch dashboard"));
+            return ResponseEntity.badRequest().body(Map.of("error", "Failed to fetch dashboard", "shareId", shareId));
         }
     }
 

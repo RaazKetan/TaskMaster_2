@@ -36,18 +36,19 @@ import api from '../../services/api';
 
 const AnimatedTeamDashboard = ({ publicData = null, isPublicView = false }) => {
   const [loading, setLoading] = useState(true);
-  const [dashboardData, setDashboardData] = useState({
-    stats: {
-      totalTeams: 0,
-      totalProjects: 0,
-      completedTasks: 0,
-      activeUsers: 0
-    },
-    teamPerformance: [],
-    projectStatus: [],
-    activityData: [],
-    priorityDistribution: []
+  // Use publicData if provided (for public view), otherwise fetch from API
+  const [dashboardData, setDashboardData] = useState(publicData || {
+    teams: 0,
+    projects: 0,
+    tasks: 0
   });
+
+  // Update dashboard data when publicData changes
+  useEffect(() => {
+    if (publicData && isPublicView) {
+      setDashboardData(publicData);
+    }
+  }, [publicData, isPublicView]);
 
   const fadeInUp = {
     initial: { opacity: 0, y: 60 },
