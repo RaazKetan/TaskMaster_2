@@ -40,15 +40,24 @@ const AnimatedTeamDashboard = ({ publicData = null, isPublicView = false }) => {
   const [showShareModal, setShowShareModal] = useState(false);
   // Use publicData if provided (for public view), otherwise fetch from API
   const [dashboardData, setDashboardData] = useState(publicData || {
-    teams: 0,
-    projects: 0,
-    tasks: 0
+    stats: {
+      totalTeams: 0,
+      totalProjects: 0,
+      completedTasks: 0,
+      activeUsers: 0
+    },
+    teamPerformance: [],
+    projectStatus: [],
+    activityData: [],
+    priorityDistribution: []
   });
 
   // Update dashboard data when publicData changes
   useEffect(() => {
     if (publicData && isPublicView) {
       setDashboardData(publicData);
+      setLoading(false);
+      return; // Skip the normal data fetching for public view
     }
   }, [publicData, isPublicView]);
 
@@ -67,6 +76,11 @@ const AnimatedTeamDashboard = ({ publicData = null, isPublicView = false }) => {
   };
 
   useEffect(() => {
+    // Skip fetching if this is a public view with data already provided
+    if (isPublicView && publicData) {
+      return;
+    }
+    
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
@@ -253,7 +267,7 @@ const AnimatedTeamDashboard = ({ publicData = null, isPublicView = false }) => {
     };
 
     fetchDashboardData();
-  }, []);
+  }, [isPublicView, publicData]);
 
   if (loading) {
     return (

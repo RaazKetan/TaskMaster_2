@@ -15,12 +15,39 @@ const PublicDashboard = () => {
     const fetchPublicDashboard = async () => {
       try {
         setLoading(true);
-        // Fetch public dashboard data using shareId
-        const response = await api.get(`/public/dashboard/${shareId}`);
+        setError(null);
         
-        console.log('Public dashboard data received:', response.data);
-        setDashboardData(response.data.dashboardData);
-        setDashboardInfo(response.data.dashboardInfo);
+        // Fetch public dashboard data using shareId directly
+        const response = await fetch(`/api/public/dashboard/${shareId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Public dashboard data received:', data);
+        
+        // Transform the data to match what AnimatedTeamDashboard expects
+        const transformedData = {
+          stats: {
+            totalTeams: data.dashboardData.teams || 0,
+            totalProjects: data.dashboardData.projects || 0,
+            completedTasks: data.dashboardData.tasks || 0,
+            activeUsers: 1 // Default for public view
+          },
+          teamPerformance: [],
+          projectStatus: [],
+          activityData: [],
+          priorityDistribution: []
+        };
+        
+        setDashboardData(transformedData);
+        setDashboardInfo(data.dashboardInfo);
       } catch (error) {
         console.error('Error fetching public dashboard:', error);
         setError(error.message || 'Failed to load dashboard data');
