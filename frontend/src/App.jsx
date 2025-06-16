@@ -21,6 +21,7 @@ import LandingPage from './components/LandingPage.jsx';
 import UserProfile from './components/profile/UserProfile.jsx';
 import NotFound from './components/common/NotFound.jsx';
 import './App.css'
+import PublicDashboard from './components/dashboard/PublicDashboard';
 
 
 function AppContent() {
@@ -99,12 +100,15 @@ function AppContent() {
               <ShadcnProjectManagement />
             </PrivateRoute>
           } />
-         
+
           <Route path="/profile" element={
             <PrivateRoute>
               <UserProfile />
             </PrivateRoute>
           } />
+
+          {/* Public Routes - No authentication required */}
+          <Route path="/public/dashboard/:shareId" element={<PublicDashboard />} />
 
 
           <Route path="/projects-old" element={
@@ -129,7 +133,7 @@ function AppContent() {
 
 
           <Route path="/loading-demo" element={<LoadingDemo />} />
-          
+
           {/* 404 Route - Must be last */}
           <Route path="*" element={<NotFound />} />
         </Routes>

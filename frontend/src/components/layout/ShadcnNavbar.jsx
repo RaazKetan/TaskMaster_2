@@ -88,6 +88,9 @@ const ShadcnNavbar = () => {
                   setNotifications={setNotifications}
                   setHasUnseenNotifications={setHasUnseenNotifications}
                 />
+
+                
+
                 <div className="relative">
                   <NotificationBell
                     notifications={notifications}
@@ -119,6 +122,7 @@ const ShadcnNavbar = () => {
                     </div>
                   )}
                 </div>
+                
                 <div className="relative">
                   <Button
                     variant="ghost"
