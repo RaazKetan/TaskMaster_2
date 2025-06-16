@@ -97,91 +97,133 @@ const AnimatedTeamDashboard = () => {
         });
 
         // Calculate dashboard statistics from real MongoDB data
-        const completedTasks = allTasks.filter(task => 
-          task.status === 'COMPLETED' || task.status === 'Done' || task.status === 'completed'
-        ).length;
+        // --- Completed Tasks This Month ---
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const completedTasksThisMonth = allTasks.filter(task => {
+          const isCompleted = ['COMPLETED', 'Done', 'completed', 'DONE'].includes((task.status || '').toUpperCase());
+          const completedAt = task.completedAt ? new Date(task.completedAt) : (task.updatedAt ? new Date(task.updatedAt) : null);
+          return isCompleted && completedAt && completedAt >= startOfMonth && completedAt <= now;
+        }).length;
 
         const stats = {
           totalTeams: teams.length,
           totalProjects: allProjects.length,
-          completedTasks: completedTasks,
+          completedTasks: completedTasksThisMonth, // Show only this month's completed tasks
           activeUsers: teams.reduce((acc, team) => acc + (Array.isArray(team.members) ? team.members.length : 0), 0)
         };
 
-        // Generate team performance data based on actual projects
-        const teamPerformance = teams.map(team => {
-          const teamProjects = allProjects.filter(p => p.teamId === team._id);
-          const completedProjects = teamProjects.filter(p => 
-            p.status === 'COMPLETED' || p.status === 'Done' || p.status === 'completed'
-          );
-          const inProgressProjects = teamProjects.filter(p => 
-            p.status === 'IN_PROGRESS' || p.status === 'In Progress' || p.status === 'ACTIVE' || p.status === 'active'
-          );
-          
-          // Calculate efficiency based on project completion rate and average progress
+        // --- Team Performance ---
+        // Build a map of teamId to teamName for quick lookup
+        const teamIdToName = {};
+        teams.forEach(team => {
+          const id = (team._id || team.id || '').toString();
+          if (id) teamIdToName[id] = team.name || team.teamName || 'Unknown Team';
+        });
+        // Collect all unique teamIds from projects (in case some teams are missing)
+        const allTeamIds = new Set([
+          ...teams.map(t => (t._id || t.id || '').toString()),
+          ...allProjects.map(p => (p.teamId || '').toString())
+        ]);
+        const teamPerformance = Array.from(allTeamIds).map(teamId => {
+          const teamName = teamIdToName[teamId] || 'Unknown Team';
+          const teamProjects = allProjects.filter(p => (p.teamId || '').toString() === teamId);
+          const completedProjects = teamProjects.filter(p => (p.status || '').toLowerCase() === 'completed' || (p.status || '').toLowerCase() === 'done');
+          const inProgressProjects = teamProjects.filter(p => {
+            const status = (p.status || '').toLowerCase();
+            return status === 'in_progress' || status === 'in progress' || status === 'active';
+          });
+          const completionRate = teamProjects.length > 0 ? Math.round((completedProjects.length / teamProjects.length) * 100) : 0;
           let efficiency = 0;
           if (teamProjects.length > 0) {
-            const completionRate = (completedProjects.length / teamProjects.length) * 100;
-            const avgProgress = teamProjects.reduce((sum, project) => {
-              return sum + (project.progress || 0);
-            }, 0) / teamProjects.length;
-            
-            // Efficiency is a combination of completion rate and average progress
+            const avgProgress = teamProjects.reduce((sum, project) => sum + (project.progress || 0), 0) / teamProjects.length;
             efficiency = Math.round((completionRate * 0.6) + (avgProgress * 0.4));
           }
-          
           return {
-            name: team.name.length > 12 ? team.name.substring(0, 12) + '...' : team.name,
+            name: teamName.length > 12 ? teamName.substring(0, 12) + '...' : teamName,
             projects: teamProjects.length,
             completed: completedProjects.length,
             inProgress: inProgressProjects.length,
-            efficiency: Math.max(efficiency, 0) // Ensure non-negative
+            efficiency: Math.max(efficiency, 0),
+            completionRate
           };
         });
 
-        // Generate project status distribution
+        // --- Completed Progress (overall) ---
+        const totalProjects = allProjects.length;
+        const totalCompletedProjects = allProjects.filter(p => (p.status || '').toLowerCase() === 'completed' || (p.status || '').toLowerCase() === 'done').length;
+        const completedProgressPercent = totalProjects > 0 ? Math.round((totalCompletedProjects / totalProjects) * 100) : 0;
+
+        // --- Weekly Activity ---
+        // For each of the last 7 days, count tasks and projects created/updated
+        const today = new Date();
+        const activityData = Array.from({ length: 7 }, (_, i) => {
+          const date = new Date(today);
+          date.setDate(today.getDate() - (6 - i));
+          const dayStr = date.toLocaleDateString('en-US', { weekday: 'short' });
+          // Tasks created/updated on this day
+          const tasksOnDay = allTasks.filter(task => {
+            const created = task.createdAt ? new Date(task.createdAt) : null;
+            const updated = task.updatedAt ? new Date(task.updatedAt) : null;
+            return (created && created.toDateString() === date.toDateString()) ||
+                   (updated && updated.toDateString() === date.toDateString());
+          });
+          // Projects created/updated on this day
+          const projectsOnDay = allProjects.filter(project => {
+            const created = project.createdAt ? new Date(project.createdAt) : null;
+            const updated = project.updatedAt ? new Date(project.updatedAt) : null;
+            return (created && created.toDateString() === date.toDateString()) ||
+                   (updated && updated.toDateString() === date.toDateString());
+          });
+          return {
+            date: dayStr,
+            tasks: tasksOnDay.length,
+            projects: projectsOnDay.length
+          };
+        });
+
+        // --- Team Efficiency ---
+        // Already calculated as 'efficiency' in teamPerformance, used in LineChart
+
+        // --- Project Status Distribution ---
         const statusCounts = {
           'In Progress': 0,
           'Planning': 0,
           'Completed': 0,
           'On Hold': 0
         };
-
         allProjects.forEach(project => {
-          if (statusCounts.hasOwnProperty(project.status)) {
-            statusCounts[project.status]++;
-          } else {
-            statusCounts['In Progress']++; // Default fallback
-          }
+          const status = (project.status || '').toLowerCase();
+          if (status === 'completed' || status === 'done') statusCounts['Completed']++;
+          else if (status === 'planning') statusCounts['Planning']++;
+          else if (status === 'on hold') statusCounts['On Hold']++;
+          else statusCounts['In Progress']++;
         });
-
         const projectStatus = Object.entries(statusCounts).map(([status, count]) => ({
           name: status,
           value: count,
-          percentage: Math.round((count / allProjects.length) * 100)
+          percentage: allProjects.length > 0 ? Math.round((count / allProjects.length) * 100) : 0
         }));
 
-        // Generate activity data for the last 7 days
-        const activityData = Array.from({ length: 7 }, (_, i) => {
-          const date = new Date();
-          date.setDate(date.getDate() - (6 - i));
-          return {
-            date: date.toLocaleDateString('en-US', { weekday: 'short' }),
-            tasks: Math.floor(5 + Math.random() * 20),
-            projects: Math.floor(1 + Math.random() * 5),
-            meetings: Math.floor(Math.random() * 8)
-          };
+        // --- Priority Distribution ---
+        const priorityCounts = { High: 0, Medium: 0, Low: 0 };
+        allProjects.forEach(project => {
+          const priority = (project.priority || '').toLowerCase();
+          if (priority === 'high') priorityCounts.High++;
+          else if (priority === 'low') priorityCounts.Low++;
+          else priorityCounts.Medium++;
         });
-
-        // Generate priority distribution
         const priorityDistribution = [
-          { name: 'High', value: Math.floor(allProjects.length * 0.25), color: '#ef4444' },
-          { name: 'Medium', value: Math.floor(allProjects.length * 0.45), color: '#f59e0b' },
-          { name: 'Low', value: Math.floor(allProjects.length * 0.30), color: '#10b981' }
+          { name: 'High', value: priorityCounts.High, color: '#ef4444' },
+          { name: 'Medium', value: priorityCounts.Medium, color: '#f59e0b' },
+          { name: 'Low', value: priorityCounts.Low, color: '#10b981' }
         ];
 
         setDashboardData({
-          stats,
+          stats: {
+            ...stats,
+            completedProgressPercent // add this for use in UI if needed
+          },
           teamPerformance,
           projectStatus,
           activityData,
@@ -190,32 +232,17 @@ const AnimatedTeamDashboard = () => {
 
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
-        // Set fallback data in case of API errors
         setDashboardData({
           stats: {
-            totalTeams: 2,
-            totalProjects: 3,
-            completedTasks: 12,
-            activeUsers: 6
+            totalTeams: 0,
+            totalProjects: 0,
+            completedTasks: 0,
+            activeUsers: 0
           },
-          teamPerformance: [
-            { name: 'Dev Team', completed: 8, pending: 4 },
-            { name: 'Design', completed: 6, pending: 2 }
-          ],
-          projectStatus: [
-            { name: 'Active', value: 2, color: '#3B82F6' },
-            { name: 'Completed', value: 1, color: '#10B981' }
-          ],
-          activityData: [
-            { day: 'Mon', tasks: 5 },
-            { day: 'Tue', tasks: 8 },
-            { day: 'Wed', tasks: 6 }
-          ],
-          priorityDistribution: [
-            { priority: 'High', count: 3 },
-            { priority: 'Medium', count: 5 },
-            { priority: 'Low', count: 2 }
-          ]
+          teamPerformance: [],
+          projectStatus: [],
+          activityData: [],
+          priorityDistribution: []
         });
       } finally {
         setLoading(false);
@@ -376,22 +403,26 @@ const AnimatedTeamDashboard = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={dashboardData.teamPerformance}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip formatter={(value, name) => {
-                        if (name === 'Total Projects') return [`${value}`, 'Total Projects'];
-                        if (name === 'Completed Projects') return [`${value}`, 'Completed Projects'];
-                        if (name === 'In Progress Projects') return [`${value}`, 'In Progress Projects'];
-                        return [`${value}`, name];
-                      }} />
-                      <Bar dataKey="projects" fill="#3b82f6" name="Total Projects" />
-                      <Bar dataKey="completed" fill="#10b981" name="Completed Projects" />
-                      <Bar dataKey="inProgress" fill="#f59e0b" name="In Progress Projects" />
-                    </BarChart>
-                  </ResponsiveContainer>
+                  {dashboardData.teamPerformance.length === 0 ? (
+                    <div className="text-center text-slate-500 py-12">No team performance data available.</div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={dashboardData.teamPerformance}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis allowDecimals={false} />
+                        <Tooltip formatter={(value, name, props) => {
+                          if (props.dataKey === 'projects') return [`${value}`, 'Total Projects'];
+                          if (props.dataKey === 'completed') return [`${value}`, 'Completed Projects'];
+                          if (props.dataKey === 'inProgress') return [`${value}`, 'In Progress Projects'];
+                          return [`${value}`, name];
+                        }} />
+                        <Bar dataKey="projects" fill="#3b82f6" name="Total Projects" />
+                        <Bar dataKey="completed" fill="#10b981" name="Completed Projects" />
+                        <Bar dataKey="inProgress" fill="#f59e0b" name="In Progress Projects" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>
@@ -448,7 +479,6 @@ const AnimatedTeamDashboard = () => {
                     <Tooltip formatter={(value, name) => {
                         if (name === 'Tasks') return [`${value}`, 'Tasks Created/Updated'];
                         if (name === 'Projects') return [`${value}`, 'Projects Created/Updated'];
-                        if (name === 'Meetings') return [`${value}`, 'Estimated Meetings'];
                         return [`${value}`, name];
                       }} />
                     <Area 
@@ -468,15 +498,6 @@ const AnimatedTeamDashboard = () => {
                       fill="#10b981" 
                       fillOpacity={0.6}
                       name="Projects"
-                    />
-                    <Area 
-                      type="monotone" 
-                      dataKey="meetings" 
-                      stackId="1" 
-                      stroke="#f59e0b" 
-                      fill="#f59e0b" 
-                      fillOpacity={0.6}
-                      name="Meetings"
                     />
                   </AreaChart>
                 </ResponsiveContainer>

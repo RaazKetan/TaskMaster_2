@@ -99,19 +99,69 @@ const TaskManagement = () => {
         title: task.title,
         description: task.description || '',
         priority: task.priority,
-        assignedTo: task.assignedTo || '',
-        dueDate: task.dueDate || '',
-        projectId: task.projectId,
-        updatedAt: currentDate,
-        ...statusDates
+
+        assignedTo: task.assignedTo,
+        dueDate: task.dueDate
       };
 
-      await api.put(`/tasks/${taskId}`, updateData);
-      
-      // Update task in context
-      await updateTask(taskId, { ...task, status: newStatus, updatedAt: currentDate, ...statusDates });
-      
-      // updateProjectStatus(taskId, newStatus); // <--- COMMENTED OUT FOR TESTING
+      setTasks(prevTasks => 
+        prevTasks.map(task => 
+          (task._id || task.id) === taskId 
+            ? { ...task, status: newStatus } 
+            : task
+        )
+      );
+
+      // After updating a task status, also update the project progress in the local state
+      const updateProjectProgressInState = (projectId, progress, status) => {
+        setProjects(prevProjects => prevProjects.map(project => {
+          if ((project._id || project.id) === projectId) {
+            return { ...project, progress, status };
+          }
+          return project;
+        }));
+      };
+
+
+      const updateProjectStatus = async (taskId, newTaskStatus) => {
+        try {
+          const task = tasks.find(t => (t._id || t.id) === taskId);
+          if (!task || !task.projectId) return;
+
+
+          const projectTasks = tasks.filter(t => t.projectId === task.projectId);
+          let completedTasksCount = projectTasks.filter(t =>
+            t.status === 'COMPLETED' || t.status === 'Done'
+          ).length;
+
+          if (newTaskStatus === 'COMPLETED' || newTaskStatus === 'Done') {
+            completedTasksCount += 1;
+          }
+
+          const totalTasks = projectTasks.length;
+          const progress = totalTasks > 0 ? Math.round((completedTasksCount / totalTasks) * 100) : 0;
+
+          let projectStatus = 'Planning';
+          if (progress === 100) {
+            projectStatus = 'COMPLETED';
+          } else if (progress > 0) {
+            projectStatus = 'ACTIVE';
+          }
+
+          await api.put(`/projects/${task.projectId}`, {
+            status: projectStatus,
+            progress: progress,
+            userId: getCurrentUserId()
+          });
+          // Update local state immediately
+          updateProjectProgressInState(task.projectId, progress, projectStatus);
+        } catch (error) {
+          console.error('Error updating project status:', error);
+        }
+      };
+
+
+      updateProjectStatus(taskId, newStatus);
     } catch (error) {
       console.error('Error updating task status:', error);
       // Revert the UI change if API call fails
@@ -119,39 +169,6 @@ const TaskManagement = () => {
     }
   };
 
-  const updateProjectStatus = async (taskId, newTaskStatus) => {
-    try {
-      const task = tasks.find(t => (t._id || t.id) === taskId);
-      if (!task || !task.projectId) return;
-
-      const projectTasks = tasks.filter(t => t.projectId === task.projectId);
-      let completedTasksCount = projectTasks.filter(t =>
-        t.status === 'COMPLETED' || t.status === 'Done'
-      ).length;
-
-      if (newTaskStatus === 'COMPLETED' || newTaskStatus === 'Done') {
-        completedTasksCount += 1;
-      }
-
-      const totalTasks = projectTasks.length;
-      const progress = totalTasks > 0 ? Math.round((completedTasksCount / totalTasks) * 100) : 0;
-
-      let projectStatus = 'Planning';
-      if (progress === 100) {
-        projectStatus = 'COMPLETED';
-      } else if (progress > 0) {
-        projectStatus = 'ACTIVE';
-      }
-
-      await api.put(`/projects/${task.projectId}`, {
-        status: projectStatus,
-        progress: progress,
-        userId: getCurrentUserId()
-      });
-    } catch (error) {
-      console.error('Error updating project status:', error);
-    }
-  };
 
   const handleEditTask = (task) => {
     setEditingTask(task);
