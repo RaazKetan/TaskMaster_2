@@ -148,7 +148,7 @@ const ShadcnTeamManagement = () => {
       });
 
       // Remove from local state with consistent ID handling
-      setTeams(prev => prev.filter(team => {
+      setTeams(prev => prev.filter((team) => {
         const currentTeamId = team._id || team.id;
         return currentTeamId !== teamToDeleteId;
       }));
@@ -196,7 +196,7 @@ const ShadcnTeamManagement = () => {
       const teamId = editingTeam._id || editingTeam.id;
       const teamData = { ...editingTeam, userId: currentUser.userId };
       const response = await api.put(`/teams/${teamId}`, teamData);
-      setTeams(prev => prev.map(team => (team._id || team.id) === teamId ? response.data : team));
+      setTeams(prev => prev.map((team) => (team._id || team.id) === teamId ? response.data : team));
       if (selectedTeam && (selectedTeam._id || selectedTeam.id) === teamId) {
         setSelectedTeam(response.data);
       }
@@ -223,7 +223,7 @@ const ShadcnTeamManagement = () => {
         return;
       }
       await api.delete(`/teams/${teamId}`, { params: { userId: currentUser.userId } });
-      setTeams(prev => prev.filter(team => (team._id || team.id) !== teamId));
+      setTeams(prev => prev.filter((team) => (team._id || team.id) !== teamId));
       if (selectedTeam && (selectedTeam._id || selectedTeam.id) === teamId) setSelectedTeam(null);
       setError(null);
     } catch (error) {
@@ -524,6 +524,9 @@ const ShadcnTeamManagement = () => {
                                     </span>
                                     <div className="text-xs text-slate-500">
                                       Role: {invitation.role} • Sent: {new Date(invitation.invitedAt).toLocaleDateString()}
+                                    </div>
+                                    <div className="text-xs text-slate-500 mt-1">
+                                      Invited by: {invitation.invitedByName || invitation.invitedByEmail || 'Unknown'}
                                     </div>
                                   </div>
                                   <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded">
