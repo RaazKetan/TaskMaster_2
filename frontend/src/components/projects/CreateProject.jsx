@@ -74,190 +74,66 @@ const CreateProject = ({ teams, onClose, onProjectCreated }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-card border border-border rounded-lg max-w-2xl w-full m-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b border-border">
-          <h2 className="text-xl font-semibold text-foreground">Create New Project</h2>
-          <button
-            onClick={onClose}
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <i className="fas fa-times"></i>
-          </button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="mx-auto max-w-2xl rounded-xl border border-slate-200 bg-white shadow-sm w-full m-4 max-h-[90vh] overflow-y-auto">
+        <div className="border-b border-slate-200 px-6 py-5">
+          <h1 className="text-2xl font-semibold text-slate-800">Create New Project</h1>
+          <p className="text-sm text-slate-500 mt-1">Fill in the details below to get started.</p>
         </div>
-
-        <form onSubmit={handleSubmit} className="p-6">
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {error && (
-            <div className="bg-destructive/10 border border-destructive/20 text-destructive rounded-md p-3 mb-4">
+            <div className="bg-red-100 border border-red-200 text-red-700 rounded-md p-3 mb-4">
               {error}
             </div>
           )}
-
-          <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5" htmlFor="project-name">Project Name</label>
+            <input className="form-input block w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 placeholder:text-slate-400 py-3 px-4 text-sm" id="project-name" name="name" placeholder="e.g., Website Redesign" type="text" value={formData.name} onChange={handleChange} required />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5" htmlFor="description">Description</label>
+            <textarea className="form-textarea block w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 placeholder:text-slate-400 min-h-28 py-3 px-4 text-sm" id="description" name="description" placeholder="Provide a brief overview of the project..." value={formData.description} onChange={handleChange} />
+          </div>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-foreground mb-2">
-                Project Name *
-              </label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                required
-                className="input"
-                placeholder="Enter project name"
-                value={formData.name}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="teamId" className="block text-sm font-medium text-foreground mb-2">
-                Team *
-              </label>
-              <select
-                id="teamId"
-                name="teamId"
-                required
-                className="input"
-                value={formData.teamId}
-                onChange={handleChange}
-              >
-                <option value="">Select a team</option>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5" htmlFor="team">Team</label>
+              <select className="form-select block w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-[image:--select-button-svg] py-3 px-4 text-sm text-slate-700" id="team" name="teamId" value={formData.teamId} onChange={handleChange} required>
+                <option disabled value="">Select a team</option>
                 {teams.map((team) => (
-                  <option key={team.id} value={team.id}>
-                    {team.name}
-                  </option>
+                  <option key={team.id} value={team.id}>{team.name}</option>
                 ))}
               </select>
             </div>
-
             <div>
-              <label htmlFor="description" className="block text-sm font-medium text-foreground mb-2">
-                Description
-              </label>
-              <textarea
-                id="description"
-                name="description"
-                rows={3}
-                className="input resize-none"
-                placeholder="Describe your project..."
-                value={formData.description}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="priority" className="block text-sm font-medium text-foreground mb-2">
-                  Priority
-                </label>
-                <select
-                  id="priority"
-                  name="priority"
-                  className="input"
-                  value={formData.priority}
-                  onChange={handleChange}
-                >
-                  <option value={PRIORITY_LEVELS.LOW}>Low</option>
-                  <option value={PRIORITY_LEVELS.MEDIUM}>Medium</option>
-                  <option value={PRIORITY_LEVELS.HIGH}>High</option>
-                  <option value={PRIORITY_LEVELS.URGENT}>Urgent</option>
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="status" className="block text-sm font-medium text-foreground mb-2">
-                  Status
-                </label>
-                <select
-                  id="status"
-                  name="status"
-                  className="input"
-                  value={formData.status}
-                  onChange={handleChange}
-                >
-                  <option value={PROJECT_STATUS.ACTIVE}>Active</option>
-                  <option value={PROJECT_STATUS.ON_HOLD}>On Hold</option>
-                  <option value={PROJECT_STATUS.COMPLETED}>Completed</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="deadline" className="block text-sm font-medium text-foreground mb-2">
-                Deadline
-              </label>
-              <input
-                id="deadline"
-                name="deadline"
-                type="datetime-local"
-                className="input"
-                value={formData.deadline}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Tags
-              </label>
-              <div className="flex space-x-2 mb-2">
-                <input
-                  type="text"
-                  className="input flex-1"
-                  placeholder="Add a tag"
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleAddTag(e)}
-                />
-                <button
-                  type="button"
-                  onClick={handleAddTag}
-                  className="btn btn-outline btn-md"
-                >
-                  Add
-                </button>
-              </div>
-              {formData.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {formData.tags.map((tag, index) => (
-                    <span
-                      key={index}
-                      className="inline-flex items-center px-2 py-1 text-xs bg-primary/10 text-primary rounded-full"
-                    >
-                      {tag}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveTag(tag)}
-                        className="ml-1 text-primary hover:text-primary/80"
-                      >
-                        <i className="fas fa-times"></i>
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
+              <label className="block text-sm font-medium text-slate-700 mb-1.5" htmlFor="priority">Priority</label>
+              <select className="form-select block w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-[image:--select-button-svg] py-3 px-4 text-sm text-slate-700" id="priority" name="priority" value={formData.priority} onChange={handleChange}>
+                <option disabled value="">Set priority</option>
+                <option value={PRIORITY_LEVELS.HIGH}>High</option>
+                <option value={PRIORITY_LEVELS.MEDIUM}>Medium</option>
+                <option value={PRIORITY_LEVELS.LOW}>Low</option>
+              </select>
             </div>
           </div>
-
-          <div className="flex justify-end space-x-3 mt-6">
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn btn-outline btn-md"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn btn-primary btn-md"
-            >
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5" htmlFor="status">Status</label>
+              <select className="form-select block w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-[image:--select-button-svg] py-3 px-4 text-sm text-slate-700" id="status" name="status" value={formData.status} onChange={handleChange}>
+                <option disabled value="">Set status</option>
+                <option value={PROJECT_STATUS.ACTIVE}>Planning</option>
+                <option value={PROJECT_STATUS.ON_HOLD}>On Hold</option>
+                <option value={PROJECT_STATUS.COMPLETED}>Completed</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5" htmlFor="deadline">Deadline</label>
+              <input className="form-input block w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 placeholder:text-slate-400 py-3 px-4 text-sm text-slate-700" id="deadline" name="deadline" type="date" value={formData.deadline} onChange={handleChange} />
+            </div>
+          </div>
+          <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 mt-8">
+            <button className="rounded-lg h-10 px-4 text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-300 focus:ring-offset-2" type="button" onClick={onClose}>Cancel</button>
+            <button className="rounded-lg h-10 px-5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" type="submit" disabled={loading}>
               {loading ? (
-                <div className="flex items-center">
-                  <i className="fas fa-spinner fa-spin mr-2"></i>
-                  Creating...
-                </div>
+                <span className="flex items-center"><span className="material-icons animate-spin mr-2">autorenew</span>Creating...</span>
               ) : (
                 'Create Project'
               )}

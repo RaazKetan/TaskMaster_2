@@ -30,11 +30,19 @@
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.1.10",
+
+    "@tailwindcss/postcss": "^4.1.8",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.21",
-    "postcss": "^8.5.5",
-    "tailwindcss": "^4.1.10",
-    "vite": "^5.0.8"
+
+    "command": "^1.1.1",
+    "is": "^3.3.0",
+    "postcss": "^8.5.4",
+    "single": "^0.1.2",
+    "tailwindcss": "^4.1.8",
+    "this": "^1.1.0",
+    "vite": "^6.3.5"
+
+
   }
 }
