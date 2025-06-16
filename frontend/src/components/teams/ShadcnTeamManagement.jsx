@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Plus, Settings, Trash2, Edit, UserPlus } from 'lucide-react';
+import { Users, Plus, Settings, Trash2, Edit, UserPlus, Send, X } from 'lucide-react';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../ui/button';
@@ -33,7 +33,7 @@ const ShadcnTeamManagement = () => {
   const [animatingItems, setAnimatingItems] = useState(new Set()); // Fixed: Removed new after useState
 
   const [showInviteModal, setShowInviteModal] = useState(false);
-
+  const [pendingInvitations, setPendingInvitations] = useState([]);
 
   // NEW STATE FOR INLINE CONFIRMATION BOX
   const [showInlineConfirmBox, setShowInlineConfirmBox] = useState(false);
@@ -380,55 +380,52 @@ const ShadcnTeamManagement = () => {
                         const selectedTeamId = selectedTeam?._id || selectedTeam?.id;
                         return (
 
-                          <div
-                            key={teamId}
-                            className={cn(
-                              'p-4 border rounded-lg cursor-pointer transition-colors',
-                              selectedTeamId === teamId
-                                ? 'border-blue-500 bg-blue-50'
-                                : 'border-slate-200 hover:border-slate-300'
-                            )}
-                            onClick={() => setSelectedTeam(team)}
-                          >
-                            <h3 className="font-medium text-slate-900">{team.name || 'Unnamed Team'}</h3>
-                            <p className="text-sm text-slate-600 mt-1">{team.description || 'No description'}</p>
-                            <div className="flex items-center justify-between mt-3">
-                              <span className="text-xs text-slate-500">
-                                {Array.isArray(team.members) ? team.members.length : 0} members
-                              </span>
-                              <div className="flex items-center gap-6">
-                                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
-                                  {team.role || 'Member'}
+                          <FadeInItem key={teamId}>
+                            <div
+                              className={cn(
+                                'p-4 border rounded-lg cursor-pointer transition-colors',
+                                selectedTeamId === teamId
+                                  ? 'border-blue-500 bg-blue-50'
+                                  : 'border-slate-200 hover:border-slate-300'
+                              )}
+                              onClick={() => setSelectedTeam(team)}
+                            >
+                              <h3 className="font-medium text-slate-900">{team.name || 'Unnamed Team'}</h3>
+                              <p className="text-sm text-slate-600 mt-1">{team.description || 'No description'}</p>
+                              <div className="flex items-center justify-between mt-3">
+                                <span className="text-xs text-slate-500">
+                                  {Array.isArray(team.members) ? team.members.length : 0} members
                                 </span>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleEditTeam(team);
-                                  }}
-                                  className="text-black-600 hover:bg-green-200 h-6 w-8 p-0"
-                                  title="Edit team"
-                                >
-                                  <Edit className="w-3 h-3" />Edit
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    // Call the new function for inline confirmation
-                                    handleDeleteTeamClick(teamId, team.name);
-                                  }}
-
-                                  className="text-black-600 hover:bg-red-200 h-6 w-10 p-0"
-                                  title="Delete team"
-                                >
-                                  <Trash2 className="w-3 h-3" />Delete
-                                </Button>
-
+                                <div className="flex items-center gap-6">
+                                  <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                                    {team.role || 'Member'}
+                                  </span>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleEditTeam(team);
+                                    }}
+                                    className="text-black-600 hover:bg-green-200 h-6 w-8 p-0"
+                                    title="Edit team"
+                                  >
+                                    <Edit className="w-3 h-3" />Edit
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteTeamClick(teamId, team.name);
+                                    }}
+                                    className="text-black-600 hover:bg-red-200 h-6 w-10 p-0"
+                                    title="Delete team"
+                                  >
+                                    <Trash2 className="w-3 h-3" />Delete
+                                  </Button>
+                                </div>
                               </div>
-                              <p className="mt-1 text-sm text-slate-600">{team.description || 'No description'}</p>
                             </div>
                           </FadeInItem>
                         );
@@ -472,87 +469,98 @@ const ShadcnTeamManagement = () => {
                           </div>
                         </div>
 
-                      )}
-                      <Button onClick={() => setShowInviteModal(true)}>
-                        <UserPlus className="w-4 h-4 mr-2" />
-                        Invite Member
-                      </Button>
+                        <Button onClick={() => setShowInviteModal(true)}>
+                          <UserPlus className="w-4 h-4 mr-2" />
+                          Invite Member
+                        </Button>
                     </CardContent>
                   </Card>
 
-                  {/* Pending Invitations */}
-                  {pendingInvitations.length > 0 && (
-                    <Card>
-
-                      <CardHeader>
-                        <CardTitle className="text-lg font-semibold">Team Members</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-
+                  {/* Team Members */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg font-semibold">Team Members</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {Array.isArray(selectedTeam.members) && selectedTeam.members.length > 0 ? (
                         <div className="space-y-3">
-                          {pendingInvitations.map((invitation) => (
-                            <div key={invitation.id} className="flex items-center justify-between p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                          {selectedTeam.members.map((member, idx) => (
+                            <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg">
                               <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                                  <Send className="w-4 h-4 text-yellow-600" />
+                                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                  <Users className="w-4 h-4 text-blue-600" />
                                 </div>
                                 <div>
-                                  <span className="text-sm font-medium">
-                                    {invitation.invitedUserEmail}
-                                  </span>
-                                  <div className="text-xs text-slate-500">
-                                    Role: {invitation.role} â€¢ Sent: {new Date(invitation.invitedAt).toLocaleDateString()}
-
+                                  <div className="text-sm font-medium text-slate-900">
+                                    {member.firstName} {member.lastName}
                                   </div>
-                                  <div>
-                                    <div className="text-sm font-medium text-slate-900">
-                                      {member.user?.firstName} {member.user?.lastName}
-                                    </div>
-                                    <div className="text-xs text-slate-500">{member.user?.email || member.email}</div>
-                                  </div>
-                                  <span className={`ml-auto text-xs px-2 py-1 rounded-full border ${
-                                    member.role === 'ADMIN' ? 'bg-blue-100 text-blue-800 border-blue-200' :
-                                    member.role === 'MEMBER' ? 'bg-green-100 text-green-800 border-green-200' :
-                                    'bg-gray-100 text-gray-800 border-gray-200'
-                                  }`}>
-                                    {member.role}
-                                  </span>
+                                  <div className="text-xs text-slate-500">{member.email}</div>
                                 </div>
-
-                                <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded">
-                                  Pending
-                                </span>
                               </div>
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => resendInvitation(
-                                    selectedTeam._id || selectedTeam.id,
-                                    invitation.id,
-                                    invitation.invitedUserEmail
-                                  )}
-                                  className="text-xs"
-                                  title="Resend invitation"
-                                >
-                                  <Send className="w-3 h-3" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => cancelInvitation(invitation.id, invitation.invitedUserEmail)}
-                                  className="text-xs text-red-600 hover:bg-red-50"
-                                  title="Cancel invitation"
-                                >
-                                  <X className="w-3 h-3" />
-                                </Button>
-                              </div>
+                              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                                {member.role || 'Member'}
+                              </span>
                             </div>
                           ))}
                         </div>
+                      ) : (
+                        <p className="text-slate-500 text-sm">No members yet</p>
+                      )}
 
-                      </CardContent>
-                    </Card>
+                      {/* Pending Invitations */}
+                      {pendingInvitations.length > 0 && (
+                        <div className="mt-6">
+                          <h4 className="text-sm font-medium text-slate-900 mb-3">Pending Invitations</h4>
+                          <div className="space-y-3">
+                            {pendingInvitations.map((invitation) => (
+                              <div key={invitation.id} className="flex items-center justify-between p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                                    <Send className="w-4 h-4 text-yellow-600" />
+                                  </div>
+                                  <div>
+                                    <span className="text-sm font-medium">
+                                      {invitation.invitedUserEmail}
+                                    </span>
+                                    <div className="text-xs text-slate-500">
+                                      Role: {invitation.role} • Sent: {new Date(invitation.invitedAt).toLocaleDateString()}
+                                    </div>
+                                  </div>
+                                  <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded">
+                                    Pending
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => resendInvitation(
+                                      selectedTeam._id || selectedTeam.id,
+                                      invitation.id,
+                                      invitation.invitedUserEmail
+                                    )}
+                                    className="text-xs"
+                                    title="Resend invitation"
+                                  >
+                                    <Send className="w-3 h-3" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => cancelInvitation(invitation.id, invitation.invitedUserEmail)}
+                                    className="text-xs text-red-600 hover:bg-red-50"
+                                    title="Cancel invitation"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
                   </div>
                 </FadeInItem>
               ) : (
