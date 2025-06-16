@@ -45,7 +45,10 @@ function AppContent() {
           <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
           <Route path="/register" element={!user ? <Register /> : <Navigate to="/dashboard" />} />
 
+          {/* Public Dashboard Route - Must come before protected routes */}
+          <Route path="/public/dashboard/:shareId" element={<PublicDashboard />} />
 
+          {/* Protected Routes */}
           <Route path="/dashboard" element={
             <PrivateRoute>
               <AnimatedTeamDashboard />
@@ -106,9 +109,6 @@ function AppContent() {
               <UserProfile />
             </PrivateRoute>
           } />
-
-          {/* Public Routes - No authentication required */}
-          <Route path="/public/dashboard/:shareId" element={<PublicDashboard />} />
 
 
           <Route path="/projects-old" element={

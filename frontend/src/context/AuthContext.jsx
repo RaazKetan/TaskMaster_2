@@ -37,12 +37,12 @@ export function AuthProvider({ children }) {
         } else {
           console.log('Invalid user data structure, missing userId. User data:', userData);
           localStorage.removeItem('sessionToken');
-          localStorage.removeItem('user');
+          localStorage.removeItem('userData');
         }
       } catch (error) {
         console.error('Error parsing stored user data:', error);
         localStorage.removeItem('sessionToken');
-        localStorage.removeItem('user');
+        localStorage.removeItem('userData');
       }
     } else {
       console.log('No valid session found - sessionToken:', !!sessionToken, 'userData:', !!userDataString);
@@ -128,7 +128,7 @@ export function AuthProvider({ children }) {
     console.log('Logging out - clearing localStorage');
     setUser(null);
     localStorage.removeItem('sessionToken');
-    localStorage.removeItem('user');
+    localStorage.removeItem('userData');
   };
 
   const updateUser = (updatedUser) => {

@@ -34,3 +34,9 @@ export const isAuthenticated = () => {
   const token = getSessionToken();
   return !!(user && token);
 };
+
+export const refreshSharedDashboards = async () => {
+  // Placeholder function for shared dashboard refresh
+  // This can be expanded later if needed
+  return Promise.resolve();
+};
