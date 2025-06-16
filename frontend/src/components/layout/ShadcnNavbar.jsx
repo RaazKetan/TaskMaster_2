@@ -6,24 +6,20 @@ import { LogOut, Settings, User, ChevronDown } from 'lucide-react';
 import NotificationBell from '../ui/NotificationBell';
 import TeamCalendar from '../Calender/calender';
 
-
 const ShadcnNavbar = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-
 
   // Notification state
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [hasUnseenNotifications, setHasUnseenNotifications] = useState(false);
 
-
   const handleLogout = () => {
     logout();
     setIsDropdownOpen(false);
   };
-
 
   const navigationItems = [
     { href: '/dashboard', label: 'Dashboard' },
@@ -32,9 +28,7 @@ const ShadcnNavbar = () => {
     { href: '/teams', label: 'Teams' },
   ];
 
-
   const isActive = (path) => location.pathname === path;
-
 
   // Mark notifications as seen
   const handleNotificationsSeen = () => {
@@ -44,7 +38,6 @@ const ShadcnNavbar = () => {
     );
     setHasUnseenNotifications(false);
   };
-
 
   return (
     <>
@@ -57,7 +50,6 @@ const ShadcnNavbar = () => {
             </div>
             <span className="hidden text-xl font-bold text-gray-900 sm:inline-block">TaskMaster</span>
           </Link>
-
 
           {/* Navigation */}
           <nav className="items-center hidden space-x-6 md:flex">
@@ -75,7 +67,6 @@ const ShadcnNavbar = () => {
               </Link>
             ))}
           </nav>
-
 
           {/* User menu */}
           <div className="flex items-center gap-4">
@@ -132,39 +123,47 @@ const ShadcnNavbar = () => {
                     <ChevronDown className="w-4 h-4 text-gray-500" />
                   </Button>
 
-
                   {/* Dropdown Menu */}
                   {isDropdownOpen && (
                     <div className="absolute right-0 z-50 w-56 py-1 mt-2 bg-white border border-gray-200 rounded-md shadow-lg animate-fade-in">
-                      <div className="px-4 py-2 border-b border-gray-100">
+                      {/* MODIFIED SECTION: Dropdown Header */}
+                      <div className="px-3 py-2 border-b border-gray-100">
                         <p className="text-sm font-semibold text-gray-900">
                           {user.firstName} {user.lastName}
                         </p>
-                        <p className="text-xs text-gray-500 truncate">
-                          {user.email}
-                        </p>
+                        <div className="flex items-center justify-between mt-1">
+                          <p className="text-xs text-gray-500 truncate">
+                            {user.email}
+                          </p>
+                          <button
+                            onClick={() => setIsDropdownOpen(false)}
+                            className="flex items-center justify-center w-6 h-6 rounded-full text-slate-500 hover:text-black hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            title="Close"
+                          >
+                            {/* Using the HTML entity for 'times' is common for close icons */}
+                            <span className="text-xl leading-none">×</span>
+                          </button>
+                        </div>
                       </div>
-
+                      {/* END OF MODIFIED SECTION */}
 
                       <Link
                         to="/profile"
-                        className="flex items-center px-4 py-2 text-sm text-gray-700 transition hover:bg-blue-50"
+                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 transition hover:bg-blue-50"
                         onClick={() => setIsDropdownOpen(false)}
                       >
                         <User className="w-4 h-4 mr-2 text-blue-600" />
                         Profile
                       </Link>
 
-
-                      <Link
+                      {/* <Link
                         to="/settings"
-                        className="flex items-center px-4 py-2 text-sm text-gray-700 transition hover:bg-blue-50"
+                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 transition hover:bg-blue-50"
                         onClick={() => setIsDropdownOpen(false)}
                       >
                         <Settings className="w-4 h-4 mr-2 text-blue-600" />
                         Settings
-                      </Link>
-
+                      </Link> */}
 
                       <div className="mt-1 border-t border-gray-100">
                         <button
@@ -184,7 +183,6 @@ const ShadcnNavbar = () => {
         </div>
       </header>
 
-
       {/* Click outside to close dropdown */}
       {isDropdownOpen && (
         <div
@@ -195,6 +193,5 @@ const ShadcnNavbar = () => {
     </>
   );
 };
-
 
 export default ShadcnNavbar;
