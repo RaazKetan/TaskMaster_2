@@ -35,7 +35,7 @@ public class DashboardController {
             String shareId = "share_" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
             
             // Get user data
-            User user = userService.findById(userId);
+            User user = userService.findByUserId(userId);
             if (user == null) {
                 return ResponseEntity.badRequest().body(Map.of("error", "User not found"));
             }
@@ -47,7 +47,12 @@ public class DashboardController {
             SharedDashboard sharedDashboard = new SharedDashboard();
             sharedDashboard.shareId = shareId;
             sharedDashboard.userId = userId;
-            sharedDashboard.ownerName = user.getUserdata().getFirstName() + " " + user.getUserdata().getLastName();
+            
+            // Extract first and last name from userdata map
+            Map<String, Object> userdata = user.getUserdata();
+            String firstName = userdata != null ? (String) userdata.get("firstName") : "";
+            String lastName = userdata != null ? (String) userdata.get("lastName") : "";
+            sharedDashboard.ownerName = firstName + " " + lastName;
             sharedDashboard.dashboardData = dashboardData;
             sharedDashboard.createdAt = new Date();
             sharedDashboard.expiresAt = new Date(System.currentTimeMillis() + (30L * 24 * 60 * 60 * 1000)); // 30 days
