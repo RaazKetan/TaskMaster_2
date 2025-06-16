@@ -1,195 +1,380 @@
+
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../ui/button';
-import { User, Mail, Calendar, Settings, Bell, Lock } from 'lucide-react';
+import { Input } from '../ui/input';
+import { User, Mail, Calendar, Settings, Bell, Lock, Eye, EyeOff, Trash2, Edit2 } from 'lucide-react';
+import ShadcnNavbar from '../layout/ShadcnNavbar';
+import api from '../../services/api';
+import toast from 'react-hot-toast';
 
 const UserProfile = () => {
-  const { user, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState('profile');
+  const { user, logout, updateUser } = useAuth();
+  const navigate = useNavigate();
+  const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  const tabs = [
-    { id: 'profile', label: 'Profile', icon: User },
-    { id: 'settings', label: 'Settings', icon: Settings },
-    { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'security', label: 'Security', icon: Lock }
-  ];
+  const [formData, setFormData] = useState({
+    firstName: user?.userdata?.firstName || '',
+    lastName: user?.userdata?.lastName || '',
+    jobTitle: user?.userdata?.jobTitle || '',
+    company: user?.userdata?.company || '',
+    location: user?.userdata?.location || '',
+    bio: user?.userdata?.bio || '',
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
 
-  const ProfileTab = () => (
-    <div className="space-y-6">
-      <div className="bg-white p-6 rounded-lg shadow-sm">
-        <h3 className="text-lg font-semibold mb-4">Personal Information</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-            <input
-              type="text"
-              value={user?.userdata?.firstName || ''}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              readOnly
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-            <input
-              type="text"
-              value={user?.userdata?.lastName || ''}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              readOnly
-            />
-          </div>
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input
-              type="email"
-              value={user?.email || ''}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              readOnly
-            />
-          </div>
-        </div>
-      </div>
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
-      <div className="bg-white p-6 rounded-lg shadow-sm">
-        <h3 className="text-lg font-semibold mb-4">Account Statistics</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">5</div>
-            <div className="text-sm text-gray-600">Teams Joined</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">12</div>
-            <div className="text-sm text-gray-600">Projects</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-orange-600">48</div>
-            <div className="text-sm text-gray-600">Tasks Completed</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-purple-600">3</div>
-            <div className="text-sm text-gray-600">Active Sprints</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  const handleUpdateProfile = async () => {
+    setLoading(true);
+    try {
+      const updateData = {
+        userdata: {
+          ...user.userdata,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          displayName: `${formData.firstName} ${formData.lastName}`,
+          jobTitle: formData.jobTitle,
+          company: formData.company,
+          location: formData.location,
+          bio: formData.bio
+        }
+      };
 
-  const SettingsTab = () => (
-    <div className="bg-white p-6 rounded-lg shadow-sm">
-      <h3 className="text-lg font-semibold mb-4">Preferences</h3>
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="font-medium">Email Notifications</div>
-            <div className="text-sm text-gray-600">Receive email updates about your projects</div>
-          </div>
-          <input type="checkbox" defaultChecked className="h-4 w-4 text-blue-600" />
-        </div>
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="font-medium">Dark Mode</div>
-            <div className="text-sm text-gray-600">Switch to dark theme</div>
-          </div>
-          <input type="checkbox" className="h-4 w-4 text-blue-600" />
-        </div>
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="font-medium">Auto-save</div>
-            <div className="text-sm text-gray-600">Automatically save your work</div>
-          </div>
-          <input type="checkbox" defaultChecked className="h-4 w-4 text-blue-600" />
-        </div>
-      </div>
-    </div>
-  );
+      // If password fields are filled, include password update
+      if (formData.currentPassword && formData.newPassword) {
+        if (formData.newPassword !== formData.confirmPassword) {
+          toast.error('New passwords do not match');
+          return;
+        }
+        updateData.currentPassword = formData.currentPassword;
+        updateData.newPassword = formData.newPassword;
+      }
 
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'profile':
-        return <ProfileTab />;
-      case 'settings':
-        return <SettingsTab />;
-      case 'notifications':
-        return (
-          <div className="bg-white p-6 rounded-lg shadow-sm">
-            <h3 className="text-lg font-semibold mb-4">Notification Preferences</h3>
-            <p className="text-gray-600">Manage your notification settings here.</p>
-          </div>
-        );
-      case 'security':
-        return (
-          <div className="bg-white p-6 rounded-lg shadow-sm">
-            <h3 className="text-lg font-semibold mb-4">Security Settings</h3>
-            <p className="text-gray-600">Update your security preferences and password.</p>
-          </div>
-        );
-      default:
-        return <ProfileTab />;
+      const response = await api.put(`/api/public/user/${user.userId}`, updateData, {
+        headers: {
+          'Session-Token': user.sessionToken
+        }
+      });
+
+      // Update user context
+      updateUser({
+        ...user,
+        userdata: updateData.userdata
+      });
+
+      toast.success('Profile updated successfully!');
+      setIsEditing(false);
+      setFormData(prev => ({
+        ...prev,
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      }));
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Failed to update profile');
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleDeleteAccount = async () => {
+    setLoading(true);
+    try {
+      await api.delete(`/api/public/user/${user.userId}`, {
+        headers: {
+          'Session-Token': user.sessionToken
+        }
+      });
+
+      toast.success('Account deleted successfully');
+      logout();
+      navigate('/');
+    } catch (error) {
+      toast.error('Failed to delete account');
+    } finally {
+      setLoading(false);
+      setShowDeleteModal(false);
+    }
+  };
+
+  const getJoinedDate = () => {
+    if (user?.createdAt) {
+      const date = new Date(user.createdAt);
+      return date.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+    }
+    return 'Recently';
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <ShadcnNavbar />
+      
+      <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Profile</h1>
+          <p className="text-gray-600 mt-2">Manage your account settings and preferences.</p>
+        </div>
+
+        {/* Profile Header */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <div className="flex items-center space-x-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-              <span className="text-white font-bold text-xl">
-                {user?.userdata?.firstName?.charAt(0) || user?.email?.charAt(0) || 'U'}
-              </span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-6">
+              <div className="relative">
+                <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                  <span className="text-white font-bold text-2xl">
+                    {user?.userdata?.firstName?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                  </span>
+                </div>
+                <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                  <User className="w-4 h-4 text-white" />
+                </div>
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">
+                  {user?.userdata?.displayName || `${user?.userdata?.firstName} ${user?.userdata?.lastName}` || user?.email}
+                </h2>
+                <p className="text-gray-600">{formData.jobTitle || 'TaskMaster User'}</p>
+                <p className="text-sm text-gray-500 mt-1">Joined {getJoinedDate()}</p>
+              </div>
             </div>
+            <Button
+              onClick={() => setIsEditing(!isEditing)}
+              variant={isEditing ? "outline" : "default"}
+              className="flex items-center gap-2"
+            >
+              <Edit2 className="w-4 h-4" />
+              {isEditing ? 'Cancel' : 'Edit Profile'}
+            </Button>
+          </div>
+        </div>
+
+        {/* Account Information */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-6">Account Information</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                {user?.userdata?.displayName || `${user?.userdata?.firstName} ${user?.userdata?.lastName}` || user?.email}
-              </h1>
-              <div className="flex items-center text-gray-600 mt-1">
-                <Mail className="w-4 h-4 mr-2" />
-                {user?.email}
+              <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+              <Input
+                value={`${formData.firstName} ${formData.lastName}`}
+                disabled={!isEditing}
+                onChange={(e) => {
+                  const names = e.target.value.split(' ');
+                  setFormData(prev => ({
+                    ...prev,
+                    firstName: names[0] || '',
+                    lastName: names.slice(1).join(' ') || ''
+                  }));
+                }}
+                className={!isEditing ? 'bg-gray-50' : ''}
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+              <Input
+                value={user?.email || ''}
+                disabled
+                className="bg-gray-50"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Job Title</label>
+              <Input
+                name="jobTitle"
+                value={formData.jobTitle}
+                disabled={!isEditing}
+                onChange={handleInputChange}
+                placeholder="Product Manager"
+                className={!isEditing ? 'bg-gray-50' : ''}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Company</label>
+              <Input
+                name="company"
+                value={formData.company}
+                disabled={!isEditing}
+                onChange={handleInputChange}
+                placeholder="Innovatech Solutions"
+                className={!isEditing ? 'bg-gray-50' : ''}
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+              <Input
+                name="location"
+                value={formData.location}
+                disabled={!isEditing}
+                onChange={handleInputChange}
+                placeholder="San Francisco, CA"
+                className={!isEditing ? 'bg-gray-50' : ''}
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
+              <textarea
+                name="bio"
+                value={formData.bio}
+                disabled={!isEditing}
+                onChange={handleInputChange}
+                placeholder="Tell us a bit about yourself..."
+                rows={4}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${!isEditing ? 'bg-gray-50' : ''}`}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Security Section */}
+        {isEditing && (
+          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">Security</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
+                <div className="relative">
+                  <Input
+                    type={showCurrentPassword ? "text" : "password"}
+                    name="currentPassword"
+                    value={formData.currentPassword}
+                    onChange={handleInputChange}
+                    placeholder="Enter current password"
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  >
+                    {showCurrentPassword ? <EyeOff className="h-4 w-4 text-gray-400" /> : <Eye className="h-4 w-4 text-gray-400" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
+                <div className="relative">
+                  <Input
+                    type={showNewPassword ? "text" : "password"}
+                    name="newPassword"
+                    value={formData.newPassword}
+                    onChange={handleInputChange}
+                    placeholder="Enter new password"
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                  >
+                    {showNewPassword ? <EyeOff className="h-4 w-4 text-gray-400" /> : <Eye className="h-4 w-4 text-gray-400" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
+                <div className="relative">
+                  <Input
+                    type={showConfirmPassword ? "text" : "password"}
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleInputChange}
+                    placeholder="Confirm new password"
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4 text-gray-400" /> : <Eye className="h-4 w-4 text-gray-400" />}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-sm p-4">
-              <nav className="space-y-2">
-                {tabs.map((tab) => {
-                  const Icon = tab.icon;
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`w-full flex items-center space-x-3 px-3 py-2 rounded-md text-left transition-colors ${
-                        activeTab === tab.id
-                          ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-700'
-                          : 'text-gray-600 hover:bg-gray-50'
-                      }`}
-                    >
-                      <Icon className="w-5 h-5" />
-                      <span>{tab.label}</span>
-                    </button>
-                  );
-                })}
-                <div className="pt-4 border-t">
-                  <Button 
-                    onClick={logout}
-                    variant="outline" 
-                    className="w-full"
-                  >
-                    Sign Out
-                  </Button>
-                </div>
-              </nav>
+        {/* Action Buttons */}
+        {isEditing && (
+          <div className="flex justify-between items-center">
+            <Button
+              variant="destructive"
+              onClick={() => setShowDeleteModal(true)}
+              className="flex items-center gap-2"
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete Account
+            </Button>
+
+            <div className="flex gap-4">
+              <Button
+                variant="outline"
+                onClick={() => setIsEditing(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleUpdateProfile}
+                disabled={loading}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {loading ? 'Updating...' : 'Update Profile'}
+              </Button>
             </div>
           </div>
+        )}
 
-          {/* Main Content */}
-          <div className="lg:col-span-3">
-            {renderTabContent()}
+        {/* Delete Account Modal */}
+        {showDeleteModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Delete Account</h3>
+              <p className="text-gray-600 mb-6">
+                Are you sure you want to delete your account? This action cannot be undone and will permanently remove all your data.
+              </p>
+              <div className="flex justify-end gap-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowDeleteModal(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteAccount}
+                  disabled={loading}
+                >
+                  {loading ? 'Deleting...' : 'Delete Account'}
+                </Button>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

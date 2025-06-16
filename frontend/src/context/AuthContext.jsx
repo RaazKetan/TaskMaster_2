@@ -15,23 +15,23 @@ export function AuthProvider({ children }) {
     // Check for existing session on app load
     const sessionToken = localStorage.getItem('sessionToken');
     const userDataString = localStorage.getItem('userData');
-    
+
     // Check stored session
-    
+
     if (sessionToken && userDataString) {
       try {
         const userData = JSON.parse(userDataString);
         console.log('Raw user data from localStorage:', userDataString);
         console.log('Parsed user data from localStorage:', userData);
         console.log('SessionToken from localStorage:', sessionToken);
-        
+
         if (userData && userData.userId) {
           // Add the session token from localStorage to user data if it's not already there
           if (!userData.sessionToken) {
             userData.sessionToken = sessionToken;
             console.log('Added sessionToken to user data:', userData);
           }
-          
+
           setUser(userData);
           console.log('Session restored for user:', userData.email, 'with token:', sessionToken);
         } else {
@@ -55,7 +55,7 @@ export function AuthProvider({ children }) {
   const login = async (email, password) => {
     try {
       const response = await axios.post('/api/public/login', { email, password });
-      
+
       if (response.data.userId && response.data.sessionToken) {
         const userData = {
           userId: response.data.userId,
@@ -65,20 +65,20 @@ export function AuthProvider({ children }) {
         };
         console.log('Login successful - storing user data:', userData);
         console.log('Session token from backend:', response.data.sessionToken);
-        
+
         // Clear any existing storage first
         localStorage.removeItem('sessionToken');
         localStorage.removeItem('userData');
-        
+
         // Store the exact session token from MongoDB
         localStorage.setItem('sessionToken', response.data.sessionToken);
         localStorage.setItem('userData', JSON.stringify(userData));
-        
+
         console.log('Data stored in localStorage - sessionToken:', localStorage.getItem('sessionToken'));
         console.log('Data stored in localStorage - userData:', localStorage.getItem('userData'));
-        
+
         setUser(userData);
-        
+
         return { success: true, user: userData };
       }
       throw new Error('Invalid response from server');
@@ -95,7 +95,7 @@ export function AuthProvider({ children }) {
         firstName: userData.firstName, 
         lastName: userData.lastName 
       });
-      
+
       if (response.data.userId && response.data.sessionToken) {
         const newUserData = {
           userId: response.data.userId,
@@ -107,15 +107,15 @@ export function AuthProvider({ children }) {
           },
           sessionToken: response.data.sessionToken
         };
-        
+
         console.log('Registration successful - storing user data:', newUserData);
         console.log('Session token from backend:', response.data.sessionToken);
-        
+
         // Store the exact session token from MongoDB
         localStorage.setItem('sessionToken', response.data.sessionToken);
         localStorage.setItem('userData', JSON.stringify(newUserData));
         setUser(newUserData);
-        
+
         return { success: true, user: newUserData };
       }
       throw new Error('Invalid response from server');
@@ -131,11 +131,17 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('user');
   };
 
+  const updateUser = (updatedUser) => {
+    setUser(updatedUser);
+    localStorage.setItem('userData', JSON.stringify(updatedUser));
+  };
+
   const value = {
     user,
     login,
     register,
     logout,
+    updateUser,
     loading
   };
 
