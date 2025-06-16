@@ -80,7 +80,7 @@ const AnimatedTeamDashboard = ({ publicData = null, isPublicView = false }) => {
     if (isPublicView && publicData) {
       return;
     }
-    
+
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
@@ -597,7 +597,7 @@ const AnimatedTeamDashboard = ({ publicData = null, isPublicView = false }) => {
           </div>
         </motion.div>
       </div>
-      
+
       {/* Share Dashboard Modal */}
       <ShareDashboardModal 
         isOpen={showShareModal} 

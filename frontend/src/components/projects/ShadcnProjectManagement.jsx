@@ -515,7 +515,7 @@ const ShadcnProjectManagement = () => {
             <CardContent className="p-0">
               {error && (
                 <div className="p-4 bg-red-50 border-l-4 border-red-400 text-red-700">
-                  {error}
+                  {typeof error === 'string' ? error : error?.message || 'An error occurred'}
                 </div>
               )}
 
