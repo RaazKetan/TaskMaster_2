@@ -79,7 +79,7 @@ const ShadcnNavbar = () => {
                   setNotifications={setNotifications}
                   setHasUnseenNotifications={setHasUnseenNotifications}
                 />
-                
+
                 {/* Share icon - only visible on dashboard */}
                 {isActive('/dashboard') && (
                   <button
@@ -102,8 +102,8 @@ const ShadcnNavbar = () => {
                     </svg>
                   </button>
                 )}
-                
-                <div className="relative"></div>
+
+                <div className="relative">
                   <NotificationBell
                     notifications={notifications}
                     onSeen={handleNotificationsSeen}

@@ -104,15 +104,10 @@ const TaskManagement = () => {
         dueDate: task.dueDate
       };
 
-      setTasks(prevTasks => 
-        prevTasks.map(task => 
-          (task._id || task.id) === taskId 
-            ? { ...task, status: newStatus } 
-            : task
-        )
-      );
+      // Update task in context immediately for better UX
+      await updateTask(taskId, { ...task, status: newStatus });
 
-      // After updating a task status, also update the project progress in the local state
+      // Update project progress in local state
       const updateProjectProgressInState = (projectId, progress, status) => {
         setProjects(prevProjects => prevProjects.map(project => {
           if ((project._id || project.id) === projectId) {
