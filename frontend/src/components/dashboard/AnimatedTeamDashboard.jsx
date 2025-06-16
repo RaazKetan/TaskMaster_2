@@ -33,9 +33,11 @@ import LoadingMascot from '../common/LoadingMascot';
 import TaskLoadingCard from '../common/TaskLoadingCard';
 // Removed collaboration components - not needed for core functionality
 import api from '../../services/api';
+import ShareDashboardModal from '../modals/ShareDashboardModal';
 
 const AnimatedTeamDashboard = ({ publicData = null, isPublicView = false }) => {
   const [loading, setLoading] = useState(true);
+  const [showShareModal, setShowShareModal] = useState(false);
   // Use publicData if provided (for public view), otherwise fetch from API
   const [dashboardData, setDashboardData] = useState(publicData || {
     teams: 0,
@@ -361,30 +363,7 @@ const AnimatedTeamDashboard = ({ publicData = null, isPublicView = false }) => {
               {!isPublicView && (
                 <div className="flex gap-3">
                   <button
-                    onClick={async () => {
-                      try {
-                        const userData = localStorage.getItem('userData');
-                        const currentUser = userData ? JSON.parse(userData) : null;
-
-                        if (!currentUser || !currentUser.userId) {
-                          alert('Please log in to share your dashboard');
-                          return;
-                        }
-
-                        const response = await api.post('/dashboard/share', { userId: currentUser.userId });
-                        const shareId = response.data.shareId;
-
-                        // Create universal URL
-                        const currentOrigin = window.location.origin;
-                        const universalShareUrl = `${currentOrigin}/public/dashboard/${shareId}`;
-
-                        await navigator.clipboard.writeText(universalShareUrl);
-                        alert(`Dashboard link copied to clipboard!\n\n${universalShareUrl}\n\nAnyone with this link can view your dashboard for 30 days.`);
-                      } catch (error) {
-                        console.error('Error sharing dashboard:', error);
-                        alert('Failed to create shareable link. Please try again.');
-                      }
-                    }}
+                    onClick={() => setShowShareModal(true)}
                     className="flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-lg hover:shadow-xl"
                   >
                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
