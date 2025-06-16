@@ -711,9 +711,9 @@ const TaskManagement = () => {
               </motion.div>
             )}
 
-            {/* Real-time indicator */}
+            {/* Real-time indicator and Share button */}
             <motion.div 
-              className="fixed bottom-4 left-4"
+              className="fixed bottom-4 left-4 flex items-center gap-3"
               initial={{ opacity: 0, x: -100 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.5 }}
@@ -726,6 +726,34 @@ const TaskManagement = () => {
                 />
                 <span>Live sync</span>
               </div>
+              
+              {/* Share Tasks Button */}
+              <motion.button
+                onClick={async () => {
+                  try {
+                    const userId = getCurrentUserId();
+                    const response = await api.post('/dashboard/share', { userId });
+                    const shareId = response.data.shareId;
+                    const shareUrl = `${window.location.origin}/public/dashboard/${shareId}`;
+                    
+                    // Copy to clipboard
+                    await navigator.clipboard.writeText(shareUrl);
+                    alert(`Task board link copied to clipboard!\n\n${shareUrl}\n\nAnyone with this link can view your tasks and projects.`);
+                  } catch (error) {
+                    console.error('Error sharing task board:', error);
+                    alert('Failed to create shareable link. Please try again.');
+                  }
+                }}
+                className="flex items-center px-3 py-2 space-x-2 text-sm text-blue-700 bg-blue-100 rounded-full shadow-lg hover:bg-blue-200 transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                title="Share task board"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
+                </svg>
+                <span>Share</span>
+              </motion.button>
             </motion.div>
           </div>
         </div>
