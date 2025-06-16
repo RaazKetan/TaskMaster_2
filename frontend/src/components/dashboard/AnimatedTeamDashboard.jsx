@@ -178,8 +178,7 @@ const AnimatedTeamDashboard = () => {
           return {
             date: dayStr,
             tasks: tasksOnDay.length,
-            projects: projectsOnDay.length,
-            meetings: 0 // If you have meetings, integrate here
+            projects: projectsOnDay.length
           };
         });
 
@@ -480,7 +479,6 @@ const AnimatedTeamDashboard = () => {
                     <Tooltip formatter={(value, name) => {
                         if (name === 'Tasks') return [`${value}`, 'Tasks Created/Updated'];
                         if (name === 'Projects') return [`${value}`, 'Projects Created/Updated'];
-                        if (name === 'Meetings') return [`${value}`, 'Estimated Meetings'];
                         return [`${value}`, name];
                       }} />
                     <Area 
@@ -500,15 +498,6 @@ const AnimatedTeamDashboard = () => {
                       fill="#10b981" 
                       fillOpacity={0.6}
                       name="Projects"
-                    />
-                    <Area 
-                      type="monotone" 
-                      dataKey="meetings" 
-                      stackId="1" 
-                      stroke="#f59e0b" 
-                      fill="#f59e0b" 
-                      fillOpacity={0.6}
-                      name="Meetings"
                     />
                   </AreaChart>
                 </ResponsiveContainer>

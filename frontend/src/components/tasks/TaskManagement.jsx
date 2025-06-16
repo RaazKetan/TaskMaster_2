@@ -97,7 +97,7 @@ const TaskManagement = () => {
 
         assignedTo: task.assignedTo,
         dueDate: task.dueDate
-      });
+      };
 
       setTasks(prevTasks => 
         prevTasks.map(task => 
