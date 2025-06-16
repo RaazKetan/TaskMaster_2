@@ -32,18 +32,20 @@ const PublicDashboard = () => {
         const data = await response.json();
         console.log('Public dashboard data received:', data);
         
-        // Transform the data to match what AnimatedTeamDashboard expects
+        // Transform the snapshot data to match what AnimatedTeamDashboard expects
+        const dashboardData = data.dashboardData || {};
         const transformedData = {
           stats: {
-            totalTeams: data.dashboardData.teams || 0,
-            totalProjects: data.dashboardData.projects || 0,
-            completedTasks: data.dashboardData.tasks || 0,
+            totalTeams: dashboardData.teams || 0,
+            totalProjects: dashboardData.projects || 0,
+            completedTasks: dashboardData.tasks || 0,
             activeUsers: 1 // Default for public view
           },
-          teamPerformance: [],
-          projectStatus: [],
-          activityData: [],
-          priorityDistribution: []
+          teamPerformance: dashboardData.teamPerformance || [],
+          projectStatus: dashboardData.projectStatusDistribution?.data || [],
+          activityData: dashboardData.weeklyActivity || [],
+          priorityDistribution: [],
+          completionProgress: dashboardData.completionProgress || 0
         };
         
         setDashboardData(transformedData);
@@ -68,17 +70,19 @@ const PublicDashboard = () => {
         
         if (response.ok) {
           const data = await response.json();
+          const dashboardData = data.dashboardData || {};
           const transformedData = {
             stats: {
-              totalTeams: data.dashboardData.teams || 0,
-              totalProjects: data.dashboardData.projects || 0,
-              completedTasks: data.dashboardData.tasks || 0,
+              totalTeams: dashboardData.teams || 0,
+              totalProjects: dashboardData.projects || 0,
+              completedTasks: dashboardData.tasks || 0,
               activeUsers: 1
             },
-            teamPerformance: [],
-            projectStatus: [],
-            activityData: [],
-            priorityDistribution: []
+            teamPerformance: dashboardData.teamPerformance || [],
+            projectStatus: dashboardData.projectStatusDistribution?.data || [],
+            activityData: dashboardData.weeklyActivity || [],
+            priorityDistribution: [],
+            completionProgress: dashboardData.completionProgress || 0
           };
           
           setDashboardData(transformedData);

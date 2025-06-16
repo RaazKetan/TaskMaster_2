@@ -25,6 +25,9 @@ public class DashboardController {
 
     // Store shared dashboards in memory (in production, use Redis or database)
     private static final Map<String, SharedDashboard> sharedDashboards = new HashMap<>();
+    
+    // Track last update times for users to know when to refresh shared data
+    private static final Map<String, Date> userLastUpdated = new HashMap<>();
 
     @PostMapping("/dashboard/share")
     public ResponseEntity<Map<String, String>> shareDashboard(@RequestBody Map<String, String> request) {
@@ -40,10 +43,10 @@ public class DashboardController {
                 return ResponseEntity.badRequest().body(Map.of("error", "User not found"));
             }
 
-            // Get dashboard data
-            Map<String, Object> dashboardData = getDashboardData(userId);
+            // Get current dashboard data as snapshot
+            Map<String, Object> dashboardSnapshot = getDashboardData(userId);
             
-            // Create shared dashboard entry
+            // Create shared dashboard entry with data snapshot
             SharedDashboard sharedDashboard = new SharedDashboard();
             sharedDashboard.shareId = shareId;
             sharedDashboard.userId = userId;
@@ -53,11 +56,21 @@ public class DashboardController {
             String firstName = userdata != null ? (String) userdata.get("firstName") : "";
             String lastName = userdata != null ? (String) userdata.get("lastName") : "";
             sharedDashboard.ownerName = firstName + " " + lastName;
-            sharedDashboard.dashboardData = dashboardData;
+            sharedDashboard.dashboardData = dashboardSnapshot;
             sharedDashboard.createdAt = new Date();
+            sharedDashboard.lastUpdated = new Date();
             sharedDashboard.expiresAt = new Date(System.currentTimeMillis() + (30L * 24 * 60 * 60 * 1000)); // 30 days
             
+            // Store the snapshot
             sharedDashboards.put(shareId, sharedDashboard);
+            
+            // Update user's last updated time
+            userLastUpdated.put(userId, new Date());
+            
+            System.out.println("Created shared dashboard snapshot for user: " + userId + " with shareId: " + shareId);
+            System.out.println("Snapshot contains: Teams=" + dashboardSnapshot.get("teams") + 
+                             ", Projects=" + dashboardSnapshot.get("projects") + 
+                             ", Tasks=" + dashboardSnapshot.get("tasks"));
             
             return ResponseEntity.ok(Map.of("shareId", shareId));
         } catch (Exception e) {
@@ -72,32 +85,58 @@ public class DashboardController {
             SharedDashboard sharedDashboard = sharedDashboards.get(shareId);
             
             if (sharedDashboard == null) {
+                System.out.println("Shared dashboard not found for shareId: " + shareId);
                 return ResponseEntity.notFound().build();
             }
 
             // Check if expired
             if (sharedDashboard.expiresAt.before(new Date())) {
                 sharedDashboards.remove(shareId);
+                System.out.println("Shared dashboard expired for shareId: " + shareId);
                 return ResponseEntity.notFound().build();
             }
 
-            // Always fetch fresh data for public dashboard access
-            System.out.println("Fetching fresh dashboard data for shareId: " + shareId + " and userId: " + sharedDashboard.userId);
-            Map<String, Object> freshData = getDashboardData(sharedDashboard.userId);
-            System.out.println("Fresh dashboard data: " + freshData);
+            // Check if we need to refresh the snapshot (if user data was updated recently)
+            Date userLastUpdate = userLastUpdated.get(sharedDashboard.userId);
+            boolean needsRefresh = userLastUpdate != null && 
+                                 userLastUpdate.after(sharedDashboard.lastUpdated);
             
-            // Update the cached data with fresh data
-            sharedDashboard.dashboardData = freshData;
+            // Also refresh if snapshot is older than 5 minutes
+            long fiveMinutesAgo = System.currentTimeMillis() - (5 * 60 * 1000);
+            if (sharedDashboard.lastUpdated.getTime() < fiveMinutesAgo) {
+                needsRefresh = true;
+            }
+            
+            if (needsRefresh) {
+                System.out.println("Refreshing dashboard snapshot for shareId: " + shareId);
+                try {
+                    Map<String, Object> freshData = getDashboardData(sharedDashboard.userId);
+                    sharedDashboard.dashboardData = freshData;
+                    sharedDashboard.lastUpdated = new Date();
+                    System.out.println("Refreshed snapshot: Teams=" + freshData.get("teams") + 
+                                     ", Projects=" + freshData.get("projects") + 
+                                     ", Tasks=" + freshData.get("tasks"));
+                } catch (Exception refreshError) {
+                    System.err.println("Failed to refresh snapshot, using cached data: " + refreshError.getMessage());
+                }
+            }
 
+            // Return the snapshot data
             Map<String, Object> response = new HashMap<>();
-            response.put("dashboardData", freshData);
+            response.put("dashboardData", sharedDashboard.dashboardData);
             response.put("dashboardInfo", Map.of(
                 "ownerName", sharedDashboard.ownerName,
-                "projectCount", freshData.getOrDefault("projects", 0),
+                "projectCount", sharedDashboard.dashboardData.getOrDefault("projects", 0),
                 "createdAt", sharedDashboard.createdAt,
                 "shareId", shareId,
-                "lastUpdated", new Date()
+                "lastUpdated", sharedDashboard.lastUpdated,
+                "isSnapshot", true
             ));
+
+            System.out.println("Serving dashboard snapshot for shareId: " + shareId + 
+                             " with data: Teams=" + sharedDashboard.dashboardData.get("teams") + 
+                             ", Projects=" + sharedDashboard.dashboardData.get("projects") + 
+                             ", Tasks=" + sharedDashboard.dashboardData.get("tasks"));
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
@@ -213,6 +252,41 @@ public class DashboardController {
         }
     }
 
+    // Method to trigger data refresh for shared dashboards when user data changes
+    @PostMapping("/dashboard/refresh-shared")
+    public ResponseEntity<Map<String, String>> refreshSharedDashboards(@RequestBody Map<String, String> request) {
+        try {
+            String userId = request.get("userId");
+            
+            // Update the user's last updated timestamp
+            userLastUpdated.put(userId, new Date());
+            
+            // Find and refresh all shared dashboards for this user
+            int refreshedCount = 0;
+            for (SharedDashboard dashboard : sharedDashboards.values()) {
+                if (dashboard.userId.equals(userId)) {
+                    try {
+                        Map<String, Object> freshData = getDashboardData(userId);
+                        dashboard.dashboardData = freshData;
+                        dashboard.lastUpdated = new Date();
+                        refreshedCount++;
+                        System.out.println("Refreshed shared dashboard: " + dashboard.shareId);
+                    } catch (Exception e) {
+                        System.err.println("Failed to refresh dashboard " + dashboard.shareId + ": " + e.getMessage());
+                    }
+                }
+            }
+            
+            return ResponseEntity.ok(Map.of(
+                "message", "Refreshed " + refreshedCount + " shared dashboards",
+                "userId", userId
+            ));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("error", "Failed to refresh shared dashboards"));
+        }
+    }
+
     // Inner class for shared dashboard data
     private static class SharedDashboard {
         String shareId;
@@ -220,6 +294,7 @@ public class DashboardController {
         String ownerName;
         Map<String, Object> dashboardData;
         Date createdAt;
+        Date lastUpdated;
         Date expiresAt;
     }
 }

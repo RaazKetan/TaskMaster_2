@@ -12,7 +12,7 @@ import EditTaskModal from './EditTaskModal';
 import QuickAddTask from './QuickAddTask';
 import FloatingQuickAdd from './FloatingQuickAdd';
 import api from '../../services/api';
-import { getCurrentUserId } from '../../utils/auth';
+import { getCurrentUserId, refreshSharedDashboards } from '../../utils/auth';
 import { motion } from 'framer-motion';
 import { useTasks } from '../../context/TaskContext';
 
@@ -32,7 +32,7 @@ const TaskManagement = () => {
   const [showTaskInlineConfirmBox, setShowTaskInlineConfirmBox] = useState(false);
   const [taskToDeleteId, setTaskToDeleteId] = useState(null);
   const [taskToDeleteTitle, setTaskToDeleteTitle] = useState('');
-  
+
 
   // Only fetch projects here, tasks come from context
   const fetchProjects = useCallback(async () => {
@@ -67,7 +67,7 @@ const TaskManagement = () => {
       };
 
       await api.put(`/tasks/${taskId}`, updateData);
-      
+
       // Update task in context
       await updateTask(taskId, { ...task, priority: newPriority });
     } catch (error) {
@@ -218,7 +218,7 @@ const TaskManagement = () => {
     try {
       const task = tasks.find(t => (t._id || t.id) === taskId);
       const userId = getCurrentUserId();
-      
+
       const updateData = {
         userId: userId,
         title: inlineEditValue.trim(),
@@ -232,10 +232,10 @@ const TaskManagement = () => {
 
       // Update in context first
       await updateTask(taskId, { ...task, title: inlineEditValue.trim() });
-      
+
       // Then sync with backend
       await api.put(`/tasks/${taskId}`, updateData);
-      
+
       setInlineEditingTask(null);
       setInlineEditValue('');
     } catch (error) {
@@ -294,7 +294,7 @@ const TaskManagement = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
         whileHover={{  y: -5, boxShadow: "0 10px 25px rgba(0,0,0,0.10)" }}
-       
+
       >
         <Card
           className={`cursor-move transition-all duration-200 hover:shadow-lg mb-3 ${
@@ -381,7 +381,7 @@ const TaskManagement = () => {
                     </span>
                   )}
                 </div>
-                
+
                 {/* Status Date Information */}
                 {(task.startedAt || task.reviewedAt || task.completedAt) && (
                   <div className="mb-2 text-xs text-slate-400 ">
@@ -454,7 +454,7 @@ const TaskManagement = () => {
           try {
             const currentDate = new Date().toISOString();
             let statusDates = {};
-            
+
             // Determine which date field to update based on status
             if (status === 'IN_PROGRESS') {
               statusDates.startedAt = currentDate;
@@ -566,6 +566,44 @@ const TaskManagement = () => {
   const reviewTasks = filteredTasks.filter(task => task.status === 'REVIEW');
   const completedTasks = filteredTasks.filter(task => task.status === 'COMPLETED');
 
+  const handleTaskCreated = (newTask) => {
+    addTask(newTask);
+    setShowCreateTask(false);
+
+    // Refresh shared dashboards when new task is created
+    refreshSharedDashboards();
+  };
+
+  const handleTaskUpdated = async (updatedTask) => {
+    try {
+      await updateTask(updatedTask._id, updatedTask);
+      // Refresh shared dashboards when task is updated
+      refreshSharedDashboards();
+
+    } catch (error) {
+      console.error("Error updating task", error);
+    }
+  };
+
+  const handleDeleteTask = async (taskId) => {
+    try {
+      await deleteTask(taskId);
+      // Refresh shared dashboards when task is deleted
+      refreshSharedDashboards();
+    } catch (error) {
+      console.error("Error deleting task:", error);
+    }
+  };
+
+  const handleTaskStatusUpdated = async (taskId, status) => {
+    try {
+      await updateTask(taskId, { status });
+      refreshSharedDashboards();
+    } catch (error) {
+      console.error("Error updating task status", error);
+    }
+  };
+
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 p-6">
@@ -590,7 +628,7 @@ const TaskManagement = () => {
                   >
                     <Plus className="w-7 h-6 mr-2" />
                     Create task
-                 
+
               </motion.button>
 
                 </div>
@@ -611,7 +649,7 @@ const TaskManagement = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="mb-6"
-              
+
             >
               <Card>
                 <CardContent className="flex-items-center justify-center px-4 py-0">
@@ -726,7 +764,7 @@ const TaskManagement = () => {
                 />
                 <span>Live sync</span>
               </div>
-              
+
               {/* Share Tasks Button */}
               <motion.button
                 onClick={async () => {
@@ -735,7 +773,7 @@ const TaskManagement = () => {
                     const response = await api.post('/dashboard/share', { userId });
                     const shareId = response.data.shareId;
                     const shareUrl = `${window.location.origin}/public/dashboard/${shareId}`;
-                    
+
                     // Copy to clipboard
                     await navigator.clipboard.writeText(shareUrl);
                     alert(`Task board link copied to clipboard!\n\n${shareUrl}\n\nAnyone with this link can view your tasks and projects.`);
@@ -762,7 +800,7 @@ const TaskManagement = () => {
         <CreateTaskModal
           isOpen={showCreateTask}
           onClose={() => setShowCreateTask(false)}
-          onTaskCreated={addTask}
+          onTaskCreated={handleTaskCreated}
           projects={projects}
         />
 
@@ -774,13 +812,12 @@ const TaskManagement = () => {
             setEditingTask(null);
           }}
           task={editingTask}
-          onTaskUpdated={updateTask}
+          onTaskUpdated={handleTaskUpdated}
           projects={projects}
         />
 
         {/* --- START: INLINE TASK DELETE CONFIRMATION BOX --- */}
-        {showTaskInlineConfirmBox && (
-          <div className="fixed inset-0 z-[999] flex items-center justify-center">
+        {showTaskInlineConfirmBox && (          <div className="fixed inset-0 z-[999] flex items-center justify-center">
             {/* Overlay for blurring background - ONLY BLUR, NO COLOR */}
             <div
               className="absolute inset-0 backdrop-blur-md" // Using 'md' for a noticeable blur

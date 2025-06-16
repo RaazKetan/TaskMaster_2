@@ -35,4 +35,32 @@ api.interceptors.response.use(
   }
 );
 
+// Function to get current user ID
+export const getCurrentUserId = () => {
+  const userData = localStorage.getItem('userData');
+  if (userData) {
+    try {
+      const parsedData = JSON.parse(userData);
+      return parsedData.userId;
+    } catch (error) {
+      console.error('Error parsing user data:', error);
+      return null;
+    }
+  }
+  return null;
+};
+
+// Function to refresh shared dashboards when user data changes
+export const refreshSharedDashboards = async () => {
+  try {
+    const userId = getCurrentUserId();
+    if (userId) {
+      await api.post('/dashboard/refresh-shared', { userId });
+      console.log('Triggered shared dashboard refresh for user:', userId);
+    }
+  } catch (error) {
+    console.error('Failed to refresh shared dashboards:', error);
+  }
+};
+
 export default api;
