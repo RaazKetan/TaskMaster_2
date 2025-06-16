@@ -30,6 +30,8 @@ const ShadcnNavbar = () => {
     { href: '/projects', label: 'Projects' },
     { href: '/tasks', label: 'Tasks' },
     { href: '/teams', label: 'Teams' },
+    { href: '/test-data', label: 'Test Data' },
+    { href: '/testing', label: 'Testing' },
   ];
 
 

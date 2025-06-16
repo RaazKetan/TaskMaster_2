@@ -552,7 +552,6 @@ const TaskManagement = () => {
   const handleTaskCreated = (newTask) => {
     addTask(newTask);
     setShowCreateTask(false);
-
     // Refresh shared dashboards when new task is created
     refreshSharedDashboards();
   };
@@ -562,7 +561,6 @@ const TaskManagement = () => {
       await updateTask(updatedTask._id, updatedTask);
       // Refresh shared dashboards when task is updated
       refreshSharedDashboards();
-
     } catch (error) {
       console.error("Error updating task", error);
     }

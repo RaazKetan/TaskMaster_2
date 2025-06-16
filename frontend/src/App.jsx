@@ -22,6 +22,8 @@ import UserProfile from './components/profile/UserProfile.jsx';
 import NotFound from './components/common/NotFound.jsx';
 import './App.css'
 import PublicDashboard from './components/dashboard/PublicDashboard';
+import TestDataGenerator from './components/TestDataGenerator';
+import TestingSuite from './components/TestingSuite';
 
 
 function AppContent() {
@@ -109,6 +111,8 @@ function AppContent() {
               <UserProfile />
             </PrivateRoute>
           } />
+          <Route path="/test-data" element={<PrivateRoute><TestDataGenerator /></PrivateRoute>} />
+          <Route path="/testing" element={<PrivateRoute><TestingSuite /></PrivateRoute>} />
 
 
           <Route path="/projects-old" element={
