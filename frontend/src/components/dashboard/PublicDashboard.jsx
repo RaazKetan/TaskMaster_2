@@ -56,8 +56,47 @@ const PublicDashboard = () => {
       }
     };
 
+    const refreshData = async () => {
+      try {
+        // Fetch fresh data without showing loading state
+        const response = await fetch(`/api/public/dashboard/${shareId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          const transformedData = {
+            stats: {
+              totalTeams: data.dashboardData.teams || 0,
+              totalProjects: data.dashboardData.projects || 0,
+              completedTasks: data.dashboardData.tasks || 0,
+              activeUsers: 1
+            },
+            teamPerformance: [],
+            projectStatus: [],
+            activityData: [],
+            priorityDistribution: []
+          };
+          
+          setDashboardData(transformedData);
+          setDashboardInfo(data.dashboardInfo);
+        }
+      } catch (error) {
+        console.error('Error refreshing dashboard data:', error);
+      }
+    };
+
     if (shareId) {
       fetchPublicDashboard();
+      
+      // Set up auto-refresh every 30 seconds to keep data current
+      const refreshInterval = setInterval(refreshData, 30000);
+      
+      // Cleanup interval on component unmount
+      return () => clearInterval(refreshInterval);
     }
   }, [shareId]);
 
@@ -107,12 +146,23 @@ const PublicDashboard = () => {
                 {dashboardInfo && (
                   <p className="text-sm text-gray-500">
                     Shared by {dashboardInfo.ownerName} • {dashboardInfo.projectCount} Projects
+                    {dashboardInfo.lastUpdated && (
+                      <span className="ml-2">
+                        • Updated {new Date(dashboardInfo.lastUpdated).toLocaleTimeString()}
+                      </span>
+                    )}
                   </p>
                 )}
               </div>
             </div>
-            <div className="text-sm text-gray-500">
-              📊 Public View • Read Only
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-xs text-gray-500">Live Data</span>
+              </div>
+              <div className="text-sm text-gray-500">
+                📊 Public View • Read Only
+              </div>
             </div>
           </div>
         </div>

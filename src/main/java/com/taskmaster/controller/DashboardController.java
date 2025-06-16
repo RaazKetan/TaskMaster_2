@@ -81,17 +81,22 @@ public class DashboardController {
                 return ResponseEntity.notFound().build();
             }
 
-            // Refresh dashboard data
+            // Always fetch fresh data for public dashboard access
+            System.out.println("Fetching fresh dashboard data for shareId: " + shareId + " and userId: " + sharedDashboard.userId);
             Map<String, Object> freshData = getDashboardData(sharedDashboard.userId);
+            System.out.println("Fresh dashboard data: " + freshData);
+            
+            // Update the cached data with fresh data
             sharedDashboard.dashboardData = freshData;
 
             Map<String, Object> response = new HashMap<>();
-            response.put("dashboardData", sharedDashboard.dashboardData);
+            response.put("dashboardData", freshData);
             response.put("dashboardInfo", Map.of(
                 "ownerName", sharedDashboard.ownerName,
-                "projectCount", sharedDashboard.dashboardData.getOrDefault("projects", 0),
+                "projectCount", freshData.getOrDefault("projects", 0),
                 "createdAt", sharedDashboard.createdAt,
-                "shareId", shareId
+                "shareId", shareId,
+                "lastUpdated", new Date()
             ));
 
             return ResponseEntity.ok(response);
