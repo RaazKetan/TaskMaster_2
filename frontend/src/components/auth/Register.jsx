@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 
+
 const Register = () => {
   const [formData, setFormData] = useState({
     firstName: '',
@@ -12,31 +13,38 @@ const Register = () => {
     confirmPassword: ''
   });
 
+
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
 
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       return;
     }
 
+
     if (formData.password.length < 6) {
       setError('Password must be at least 6 characters long');
       return;
     }
 
+
     setLoading(true);
+
 
     try {
       const userData = {
@@ -46,12 +54,15 @@ const Register = () => {
         password: formData.password
       };
 
+
       const registeredUser = await register(userData);
+
 
       if (registeredUser) {
         localStorage.setItem('userData', JSON.stringify(registeredUser));
         localStorage.setItem('sessionToken', registeredUser.sessionToken);
       }
+
 
       toast.success('Account created successfully!');
       navigate('/dashboard');
@@ -62,6 +73,7 @@ const Register = () => {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-white">
@@ -176,7 +188,22 @@ const Register = () => {
                     Creating account...
                   </div>
                 ) : (
-                  'Create account'
+                  <>
+                    Create account
+                    <svg
+                      className="w-5 h-5 ml-2 rotate-180"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
+                      />
+                    </svg>
+                  </>
                 )}
               </button>
             </form>
@@ -195,4 +222,6 @@ const Register = () => {
   );
 };
 
+
 export default Register;
+

@@ -1,13 +1,31 @@
 package com.taskmaster.controller;
 
-import com.taskmaster.model.User;
-import com.taskmaster.repository.UserRepository;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import com.taskmaster.model.User;
+import com.taskmaster.repository.UserRepository;
 
 @RestController
 @RequestMapping("/api")
@@ -20,10 +38,6 @@ public class TeamController {
     @GetMapping("/teams")
     public ResponseEntity<?> getTeams(@RequestParam(required = false) String userId) {
         try {
-            if (userId == null || userId.isEmpty()) {
-                return ResponseEntity.badRequest().body(Map.of("error", "User ID is required"));
-            }
-
             User user = userRepository.findByUserId(userId);
             if (user == null) {
                 return ResponseEntity.notFound().build();
@@ -31,13 +45,40 @@ public class TeamController {
 
             List<Map<String, Object>> teams = user.getTeams();
             if (teams == null) {
-                teams = new ArrayList<>();
+                return ResponseEntity.ok(Collections.emptyList());
             }
 
-            return ResponseEntity.ok(teams);
+            // For each team, attach the owner info
+            List<Map<String, Object>> teamsWithOwner = new ArrayList<>();
+            for (Map<String, Object> team : teams) {
+                Map<String, Object> teamCopy = new HashMap<>(team);
+
+                // Find the owner user by ownerId
+                String ownerId = (String) team.get("ownerId");
+                if (ownerId == null) {
+                    // fallback: use the current user as owner
+                    ownerId = user.getUserId();
+                }
+                User owner = userRepository.findByUserId(ownerId);
+                if (owner != null) {
+                    Map<String, Object> ownerInfo = new HashMap<>();
+                    Map<String, Object> ownerUserdata = owner.getUserdata();
+                    ownerInfo.put("firstName", ownerUserdata != null ? ownerUserdata.getOrDefault("firstName", "") : "");
+                    ownerInfo.put("lastName", ownerUserdata != null ? ownerUserdata.getOrDefault("lastName", "") : "");
+                    ownerInfo.put("email", owner.getEmail());
+                    teamCopy.put("owner", ownerInfo);
+                } else {
+                    // fallback: just put ownerId
+                    teamCopy.put("owner", Map.of("firstName", "", "lastName", "", "email", "", "ownerId", ownerId));
+                }
+
+                teamsWithOwner.add(teamCopy);
+            }
+
+            return ResponseEntity.ok(teamsWithOwner);
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(Map.of("error", "Failed to fetch teams: " + e.getMessage()));
+                    .body(Map.of("error", "Failed to fetch teams: " + e.getMessage()));
         }
     }
 
@@ -62,9 +103,9 @@ public class TeamController {
             newTeam.put("createdBy", userId);
             newTeam.put("createdAt", new Date());
             newTeam.put("members", Arrays.asList(Map.of(
-                "userId", userId,
-                "role", "owner",
-                "joinedAt", new Date()
+                    "userId", userId,
+                    "role", "owner",
+                    "joinedAt", new Date()
             )));
 
             // Add team to user's teams list
@@ -80,7 +121,7 @@ public class TeamController {
             return ResponseEntity.ok(newTeam);
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(Map.of("error", "Failed to create team: " + e.getMessage()));
+                    .body(Map.of("error", "Failed to create team: " + e.getMessage()));
         }
     }
 
@@ -98,8 +139,8 @@ public class TeamController {
             }
 
             Optional<Map<String, Object>> team = teams.stream()
-                .filter(t -> teamId.equals(t.get("_id")))
-                .findFirst();
+                    .filter(t -> teamId.equals(t.get("_id")))
+                    .findFirst();
 
             if (team.isPresent()) {
                 return ResponseEntity.ok(team.get());
@@ -108,7 +149,7 @@ public class TeamController {
             }
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(Map.of("error", "Failed to fetch team: " + e.getMessage()));
+                    .body(Map.of("error", "Failed to fetch team: " + e.getMessage()));
         }
     }
 
@@ -181,11 +222,11 @@ public class TeamController {
 
             user.setTeams(teams);
             userRepository.save(user);
-            
+
             return ResponseEntity.ok(updatedTeam);
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(Map.of("error", "Failed to update team: " + e.getMessage()));
+                    .body(Map.of("error", "Failed to update team: " + e.getMessage()));
         }
     }
 
@@ -202,9 +243,9 @@ public class TeamController {
                 return ResponseEntity.notFound().build();
             }
 
-            boolean removed = teams.removeIf(team -> 
-                teamId.equals(team.get("_id")) || teamId.equals(team.get("id")));
-            
+            boolean removed = teams.removeIf(team
+                    -> teamId.equals(team.get("_id")) || teamId.equals(team.get("id")));
+
             if (removed) {
                 user.setTeams(teams);
                 userRepository.save(user);
@@ -214,22 +255,22 @@ public class TeamController {
             }
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(Map.of("error", "Failed to delete team: " + e.getMessage()));
+                    .body(Map.of("error", "Failed to delete team: " + e.getMessage()));
         }
     }
 
     @PostMapping("/teams/{teamId}/invite")
     public ResponseEntity<?> inviteTeamMember(
-            @PathVariable String teamId, 
+            @PathVariable String teamId,
             @RequestBody Map<String, Object> inviteData) {
         try {
             String email = (String) inviteData.get("email");
             String role = (String) inviteData.get("role");
-            
+
             if (email == null || email.isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Email is required"));
             }
-            
+
             if (role == null || role.isEmpty()) {
                 role = "MEMBER"; // Default role
             }
@@ -242,19 +283,19 @@ public class TeamController {
 
             // Find the team to get team details
             User teamOwner = userRepository.findAll().stream()
-                .filter(user -> user.getTeams() != null && user.getTeams().stream()
+                    .filter(user -> user.getTeams() != null && user.getTeams().stream()
                     .anyMatch(team -> teamId.equals(team.get("_id")) || teamId.equals(team.get("id"))))
-                .findFirst()
-                .orElse(null);
+                    .findFirst()
+                    .orElse(null);
 
             if (teamOwner == null) {
                 return ResponseEntity.notFound().build();
             }
 
             Map<String, Object> team = teamOwner.getTeams().stream()
-                .filter(t -> teamId.equals(t.get("_id")) || teamId.equals(t.get("id")))
-                .findFirst()
-                .orElse(null);
+                    .filter(t -> teamId.equals(t.get("_id")) || teamId.equals(t.get("id")))
+                    .findFirst()
+                    .orElse(null);
 
             if (team == null) {
                 return ResponseEntity.notFound().build();
@@ -278,32 +319,32 @@ public class TeamController {
             if (userdata == null) {
                 userdata = new HashMap<>();
             }
-            
+
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> notifications = (List<Map<String, Object>>) userdata.get("notifications");
             if (notifications == null) {
                 notifications = new ArrayList<>();
             }
-            
+
             notifications.add(invitation);
             userdata.put("notifications", notifications);
             invitedUser.setUserdata(userdata);
-            
+
             userRepository.save(invitedUser);
-            
+
             return ResponseEntity.ok(Map.of(
-                "message", "Invitation sent successfully",
-                "invitation", invitation
+                    "message", "Invitation sent successfully",
+                    "invitation", invitation
             ));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(Map.of("error", "Failed to send invitation: " + e.getMessage()));
+                    .body(Map.of("error", "Failed to send invitation: " + e.getMessage()));
         }
     }
 
     @DeleteMapping("/teams/{teamId}/members/{userId}")
     public ResponseEntity<?> removeTeamMember(
-            @PathVariable String teamId, 
+            @PathVariable String teamId,
             @PathVariable String userId,
             @RequestParam String removedBy) {
         try {
@@ -333,11 +374,11 @@ public class TeamController {
 
             user.setTeams(teams);
             userRepository.save(user);
-            
+
             return ResponseEntity.ok(Map.of("message", "Member removed successfully"));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(Map.of("error", "Failed to remove member: " + e.getMessage()));
+                    .body(Map.of("error", "Failed to remove member: " + e.getMessage()));
         }
     }
 
@@ -362,13 +403,13 @@ public class TeamController {
 
             // Filter only team invitations
             List<Map<String, Object>> invitations = notifications.stream()
-                .filter(notif -> "team_invitation".equals(notif.get("type")))
-                .collect(Collectors.toList());
+                    .filter(notif -> "team_invitation".equals(notif.get("type")))
+                    .collect(Collectors.toList());
 
             return ResponseEntity.ok(invitations);
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(Map.of("error", "Failed to fetch invitations: " + e.getMessage()));
+                    .body(Map.of("error", "Failed to fetch invitations: " + e.getMessage()));
         }
     }
 
@@ -395,9 +436,9 @@ public class TeamController {
 
             // Find the invitation
             Map<String, Object> invitation = notifications.stream()
-                .filter(notif -> invitationId.equals(notif.get("id")))
-                .findFirst()
-                .orElse(null);
+                    .filter(notif -> invitationId.equals(notif.get("id")))
+                    .findFirst()
+                    .orElse(null);
 
             if (invitation == null) {
                 return ResponseEntity.notFound().build();
@@ -408,15 +449,15 @@ public class TeamController {
 
             // Find team owner and add user to team
             User teamOwner = userRepository.findAll().stream()
-                .filter(u -> u.getTeams() != null && u.getTeams().stream()
+                    .filter(u -> u.getTeams() != null && u.getTeams().stream()
                     .anyMatch(team -> teamId.equals(team.get("_id")) || teamId.equals(team.get("id"))))
-                .findFirst()
-                .orElse(null);
+                    .findFirst()
+                    .orElse(null);
 
             if (teamOwner != null) {
                 List<Map<String, Object>> teams = teamOwner.getTeams();
                 Map<String, Object> targetTeam = null;
-                
+
                 for (Map<String, Object> team : teams) {
                     if (teamId.equals(team.get("_id")) || teamId.equals(team.get("id"))) {
                         @SuppressWarnings("unchecked")
@@ -427,7 +468,7 @@ public class TeamController {
 
                         // Check if user is already a member
                         boolean alreadyMember = members.stream()
-                            .anyMatch(member -> userId.equals(member.get("userId")));
+                                .anyMatch(member -> userId.equals(member.get("userId")));
 
                         if (!alreadyMember) {
                             Map<String, Object> newMember = new HashMap<>();
@@ -451,7 +492,7 @@ public class TeamController {
 
                 // Check if team is already in user's list
                 boolean teamExists = userTeams.stream()
-                    .anyMatch(team -> teamId.equals(team.get("_id")) || teamId.equals(team.get("id")));
+                        .anyMatch(team -> teamId.equals(team.get("_id")) || teamId.equals(team.get("id")));
 
                 if (!teamExists && targetTeam != null) {
                     Map<String, Object> teamCopy = new HashMap<>();
@@ -472,19 +513,19 @@ public class TeamController {
                     // Filter projects that belong to this team
                     final List<Map<String, Object>> finalUserProjects = userProjects;
                     List<Map<String, Object>> teamProjects = teamOwnerProjects.stream()
-                        .filter(project -> teamId.equals(project.get("teamId")))
-                        .collect(ArrayList::new, (list, item) -> {
-                            // Check if project already exists in user's projects
-                            String projectId = (String) item.get("_id");
-                            boolean projectExists = finalUserProjects.stream()
-                                .anyMatch(p -> projectId.equals(p.get("_id")));
-                            
-                            if (!projectExists) {
-                                Map<String, Object> projectCopy = new HashMap<>();
-                                projectCopy.putAll(item);
-                                list.add(projectCopy);
-                            }
-                        }, ArrayList::addAll);
+                            .filter(project -> teamId.equals(project.get("teamId")))
+                            .collect(ArrayList::new, (list, item) -> {
+                                // Check if project already exists in user's projects
+                                String projectId = (String) item.get("_id");
+                                boolean projectExists = finalUserProjects.stream()
+                                        .anyMatch(p -> projectId.equals(p.get("_id")));
+
+                                if (!projectExists) {
+                                    Map<String, Object> projectCopy = new HashMap<>();
+                                    projectCopy.putAll(item);
+                                    list.add(projectCopy);
+                                }
+                            }, ArrayList::addAll);
 
                     userProjects.addAll(teamProjects);
                     user.setProjects(userProjects);
@@ -506,13 +547,13 @@ public class TeamController {
             invitation.put("acceptedAt", new Date());
             userdata.put("notifications", notifications);
             user.setUserdata(userdata);
-            
+
             userRepository.save(user);
 
             return ResponseEntity.ok(Map.of("message", "Invitation accepted successfully"));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(Map.of("error", "Failed to accept invitation: " + e.getMessage()));
+                    .body(Map.of("error", "Failed to accept invitation: " + e.getMessage()));
         }
     }
 
@@ -541,19 +582,19 @@ public class TeamController {
             notifications.removeIf(notif -> invitationId.equals(notif.get("id")));
             userdata.put("notifications", notifications);
             user.setUserdata(userdata);
-            
+
             userRepository.save(user);
 
             return ResponseEntity.ok(Map.of("message", "Invitation declined"));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(Map.of("error", "Failed to decline invitation: " + e.getMessage()));
+                    .body(Map.of("error", "Failed to decline invitation: " + e.getMessage()));
         }
     }
 
     @GetMapping("/teams/{teamId}/pending-invitations")
     public ResponseEntity<?> getPendingInvitations(
-            @PathVariable String teamId, 
+            @PathVariable String teamId,
             @RequestParam String userId) {
         try {
             // Find all users and check their notifications for pending invitations to this team
@@ -567,10 +608,10 @@ public class TeamController {
                     List<Map<String, Object>> notifications = (List<Map<String, Object>>) userdata.get("notifications");
                     if (notifications != null) {
                         for (Map<String, Object> notif : notifications) {
-                            if ("team_invitation".equals(notif.get("type")) && 
-                                teamId.equals(notif.get("teamId")) && 
-                                "pending".equals(notif.get("status"))) {
-                                
+                            if ("team_invitation".equals(notif.get("type"))
+                                    && teamId.equals(notif.get("teamId"))
+                                    && "pending".equals(notif.get("status"))) {
+
                                 Map<String, Object> invitation = new HashMap<>(notif);
                                 invitation.put("invitedUserEmail", user.getUserEmail());
                                 invitation.put("invitedUserId", user.getUserId());
@@ -584,7 +625,7 @@ public class TeamController {
             return ResponseEntity.ok(pendingInvitations);
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(Map.of("error", "Failed to fetch pending invitations: " + e.getMessage()));
+                    .body(Map.of("error", "Failed to fetch pending invitations: " + e.getMessage()));
         }
     }
 
@@ -595,7 +636,7 @@ public class TeamController {
         try {
             String email = (String) requestData.get("email");
             String invitationId = (String) requestData.get("invitationId");
-            
+
             if (email == null || email.isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Email is required"));
             }
@@ -632,7 +673,7 @@ public class TeamController {
             return ResponseEntity.ok(Map.of("message", "Invitation resent successfully"));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(Map.of("error", "Failed to resend invitation: " + e.getMessage()));
+                    .body(Map.of("error", "Failed to resend invitation: " + e.getMessage()));
         }
     }
 
@@ -666,7 +707,7 @@ public class TeamController {
             return ResponseEntity.ok(Map.of("message", "Invitation cancelled successfully"));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(Map.of("error", "Failed to cancel invitation: " + e.getMessage()));
+                    .body(Map.of("error", "Failed to cancel invitation: " + e.getMessage()));
         }
     }
 
@@ -674,14 +715,18 @@ public class TeamController {
     public String getTeamNameById(String teamId, String userId) {
         try {
             User user = userRepository.findByUserId(userId);
-            if (user == null) return "Unknown Team";
+            if (user == null) {
+                return "Unknown Team";
+            }
 
             List<Map<String, Object>> teams = user.getTeams();
-            if (teams == null) return "Unknown Team";
+            if (teams == null) {
+                return "Unknown Team";
+            }
 
             Optional<Map<String, Object>> team = teams.stream()
-                .filter(t -> teamId.equals(t.get("_id")) || teamId.equals(t.get("id")))
-                .findFirst();
+                    .filter(t -> teamId.equals(t.get("_id")) || teamId.equals(t.get("id")))
+                    .findFirst();
 
             if (team.isPresent()) {
                 return (String) team.get().get("name");
