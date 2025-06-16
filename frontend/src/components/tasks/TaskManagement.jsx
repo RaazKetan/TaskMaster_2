@@ -818,7 +818,8 @@ const TaskManagement = () => {
         />
 
         {/* --- START: INLINE TASK DELETE CONFIRMATION BOX --- */}
-        {showTaskInlineConfirmBox && (          <div className=`fixed inset-0 z-[999] flex items-center justify-center">
+        {showTaskInlineConfirmBox && (
+          <div className="fixed inset-0 z-[999] flex items-center justify-center">
             {/* Overlay for blurring background - ONLY BLUR, NO COLOR */}
             <div
               className="absolute inset-0 backdrop-blur-md" // Using 'md' for a noticeable blur
