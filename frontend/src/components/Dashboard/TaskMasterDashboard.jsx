@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import AnimatedTeamDashboard from '../dashboard/AnimatedTeamDashboard';
 import FloatingQuickAdd from '../tasks/FloatingQuickAdd';
+import ShareModal from '../ui/ShareModal';
 import api from '../../services/api';
 import { getCurrentUserId } from '../../utils/auth';
 
@@ -9,6 +10,8 @@ const TaskMasterDashboard = () => {
   const { user } = useAuth();
   const [projects, setProjects] = useState([]);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [shareUrl, setShareUrl] = useState('');
 
   // Fetch projects for quick add task
   useEffect(() => {
@@ -36,11 +39,25 @@ const TaskMasterDashboard = () => {
       const userId = getCurrentUserId();
       const response = await api.post('/dashboard/share', { userId });
       const shareId = response.data.shareId;
-      const shareUrl = `${window.location.origin}/public/dashboard/${shareId}`;
       
-      // Copy to clipboard
-      await navigator.clipboard.writeText(shareUrl);
-      alert(`Dashboard link copied to clipboard!\n\n${shareUrl}\n\nAnyone with this link can view your dashboard.`);
+      // Create universal URL that works regardless of hosting environment
+      const currentOrigin = window.location.origin;
+      // Handle different hosting environments (Replit, localhost, deployed domains)
+      let baseUrl = currentOrigin;
+      
+      // If it's a Replit environment, ensure the URL is properly formatted
+      if (currentOrigin.includes('.replit.dev') || currentOrigin.includes('replit.app')) {
+        baseUrl = currentOrigin;
+      } else if (currentOrigin.includes('localhost')) {
+        baseUrl = currentOrigin;
+      } else {
+        // For deployed applications, use the current domain
+        baseUrl = currentOrigin;
+      }
+      
+      const universalShareUrl = `${baseUrl}/public/dashboard/${shareId}`;
+      setShareUrl(universalShareUrl);
+      setShareModalOpen(true);
     } catch (error) {
       console.error('Error sharing dashboard:', error);
       alert('Failed to create shareable link. Please try again.');
@@ -85,6 +102,14 @@ const TaskMasterDashboard = () => {
       <FloatingQuickAdd 
         projects={projects} 
         onTaskCreated={handleTaskCreated}
+      />
+
+      {/* Share Modal */}
+      <ShareModal
+        isOpen={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        shareUrl={shareUrl}
+        title="Share Dashboard"
       />
     </div>
   );

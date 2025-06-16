@@ -364,7 +364,7 @@ const AnimatedTeamDashboard = ({ publicData = null, isPublicView = false }) => {
                       try {
                         const userData = localStorage.getItem('userData');
                         const currentUser = userData ? JSON.parse(userData) : null;
-                        
+
                         if (!currentUser || !currentUser.userId) {
                           alert('Please log in to share your dashboard');
                           return;
@@ -372,10 +372,13 @@ const AnimatedTeamDashboard = ({ publicData = null, isPublicView = false }) => {
 
                         const response = await api.post('/dashboard/share', { userId: currentUser.userId });
                         const shareId = response.data.shareId;
-                        const shareUrl = `${window.location.origin}/public/dashboard/${shareId}`;
-                        
-                        await navigator.clipboard.writeText(shareUrl);
-                        alert(`Dashboard link copied to clipboard!\n\n${shareUrl}\n\nAnyone with this link can view your dashboard for 30 days.`);
+
+                        // Create universal URL
+                        const currentOrigin = window.location.origin;
+                        const universalShareUrl = `${currentOrigin}/public/dashboard/${shareId}`;
+
+                        await navigator.clipboard.writeText(universalShareUrl);
+                        alert(`Dashboard link copied to clipboard!\n\n${universalShareUrl}\n\nAnyone with this link can view your dashboard for 30 days.`);
                       } catch (error) {
                         console.error('Error sharing dashboard:', error);
                         alert('Failed to create shareable link. Please try again.');
