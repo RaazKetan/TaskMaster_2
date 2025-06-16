@@ -12,6 +12,7 @@ import TaskLoadingCard from '../common/TaskLoadingCard';
 import { cn } from '../../lib/utils';
 import { getCurrentUserId } from '../../utils/auth.js';
 import toast from 'react-hot-toast';
+import { Progress } from '../ui/progress';
 import { 
   ScaleButton, 
   SlideInModal, 
@@ -37,7 +38,8 @@ const ShadcnProjectManagement = () => {
     teamId: '',
     priority: 'Medium',
     status: 'Planning',
-    deadline: ''
+    deadline: '',
+    
   });
   const [createLoading, setCreateLoading] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
@@ -46,6 +48,11 @@ const ShadcnProjectManagement = () => {
   const [deletingItems, setDeletingItems] = useState(new Set());
   const [successPulse, setSuccessPulse] = useState(false);
   const projectsPerPage = 10;
+
+  const [showProjectInlineConfirmBox, setShowProjectInlineConfirmBox] = useState(false);
+  const [projectToDeleteId, setProjectToDeleteId] = useState(null);
+  const [projectToDeleteName, setProjectToDeleteName] = useState('');
+  
 
   // Add missing showProgressTracker function
   const showProgressTracker = (project) => {
@@ -251,7 +258,7 @@ const ShadcnProjectManagement = () => {
         name: '',
         description: '',
         teamId: '',
-        priority: 'Medium',
+        priority: 'medium',
         status: 'Planning',
         deadline: ''
       });
@@ -279,16 +286,36 @@ const ShadcnProjectManagement = () => {
     setShowCreateModal(true); // Use the same modal for editing
   };
 
-  const handleDeleteProject = async (projectId) => {
-    if (!window.confirm('Are you sure you want to delete this project?')) {
+
+  const handleDeleteProjectClick = (projectId, projectName) => {
+    setProjectToDeleteId(projectId);
+    setProjectToDeleteName(projectName || 'this project');
+    setShowProjectInlineConfirmBox(true);
+  };
+
+  // MODIFIED FUNCTION: Now called when "Delete" is confirmed in the inline box
+  const handleConfirmDeleteProject = async () => {
+    setShowProjectInlineConfirmBox(false); // Hide the confirmation box immediately
+    setError(null); // Clear previous errors
+
+    if (!projectToDeleteId) {
+      setError('Invalid project ID for deletion confirmation.');
       return;
     }
+
     setDeletingItems(prev => new Set([...prev, projectId]));
+
     try {
-      const userId = getCurrentUserId();
-      await api.delete(`/projects/${projectId}`, {
+      const userId = getCurrentUserId(); // Ensure this correctly gets the user ID
+      if (!userId) {
+        setError('User not authenticated for deletion.');
+        return;
+      }
+
+      await api.delete(`/projects/${projectToDeleteId}`, {
         params: { userId: userId }
       });
+
       // Always re-fetch after delete to avoid stale/duplicate data
       await fetchData();
       setDeletingItems(prev => {
@@ -297,15 +324,27 @@ const ShadcnProjectManagement = () => {
         return newSet;
       });
       toast.success('Project deleted successfully');
+
     } catch (error) {
       console.error('Error deleting project:', error);
+      setError('Failed to delete project: ' + (error.response?.data?.message || error.message));
       setDeletingItems(prev => {
         const newSet = new Set(prev);
-        newSet.delete(projectId);
+        newSet.delete(projectToDeleteId);
         return newSet;
       });
       toast.error('Failed to delete project');
+      setProjectToDeleteId(null); // Clear the ID even on error
+      setProjectToDeleteName(''); // Clear the name
     }
+  };
+
+  // NEW FUNCTION: Called when user cancels project deletion from the inline confirmation box
+  const handleCancelDeleteProject = () => {
+    setShowProjectInlineConfirmBox(false);
+    setProjectToDeleteId(null);
+    setProjectToDeleteName('');
+    setError(null);
   };
 
   const deleteProject = async (projectId) => {
@@ -369,7 +408,7 @@ const ShadcnProjectManagement = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
       {/* Main Content */}
       <div className="p-8">
         <div className="max-w-6xl mx-auto">
@@ -503,7 +542,7 @@ const ShadcnProjectManagement = () => {
                   <tbody className="bg-white divide-y divide-slate-200">
                     {currentProjects.map((project, index) => (
                       <tr key={project._id || project.id || index} className="hover:bg-slate-50 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-1 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-slate-900">
                             {project.name}
                           </div>
@@ -523,7 +562,7 @@ const ShadcnProjectManagement = () => {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="w-full bg-slate-200 rounded-full h-2">
                             <div
-                              className="bg-blue-600 h-2 rounded-full"
+                              className="bg-red-600 h-2 rounded-full"
                               style={{ width: `${project.progress || 0}%` }}
                             ></div>
                           </div>
@@ -541,7 +580,7 @@ const ShadcnProjectManagement = () => {
                               <Edit className="w-4 h-4" />
                             </ScaleButton>
                             <ScaleButton
-                              onClick={() => handleDeleteProject(project._id || project.id)}
+                              onClick={() => handleDeleteProjectClick(project._id || project.id, project.name)} // <--- CHANGE TO THIS
                               className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
                               title="Delete project"
                             >
@@ -585,6 +624,7 @@ const ShadcnProjectManagement = () => {
           </Card>
         </div>
       </div>
+
 
       {/* Create Project Modal */}
       <SlideInModal isOpen={showCreateModal}>
@@ -739,9 +779,19 @@ const ShadcnProjectManagement = () => {
               </div>
             </form>
           </div>
-      </SlideInModal>
+        </div>
+      </div>
+    )}
+    {/* --- END: INLINE PROJECT DELETE CONFIRMATION BOX --- */}
+
     </div>
   );
 };
 
 export default ShadcnProjectManagement;
+
+
+
+
+
+
