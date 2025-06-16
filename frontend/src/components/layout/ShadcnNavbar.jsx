@@ -133,7 +133,6 @@ const ShadcnNavbar = () => {
                       </div>
                     </div>
                   )}
-                </div>
                 <div className="relative">
                   <Button
                     variant="ghost"
