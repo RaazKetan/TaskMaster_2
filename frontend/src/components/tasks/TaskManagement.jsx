@@ -810,8 +810,7 @@ const TaskManagement = () => {
                   Cancel
                 </Button>
                 <Button
-This change ensures that the error message displayed in the UI is a string, either the error message itself or a generic message if the error object is not well-formed.
-```                  type="button"
+                  type="button"
                   variant="destructive"
                   onClick={confirmDeleteTask}
                   className="w-1/2 max-w-[120px] py-2 font-medium rounded-md"
