@@ -22,6 +22,8 @@ import UserProfile from './components/profile/UserProfile.jsx';
 import NotFound from './components/common/NotFound.jsx';
 import './App.css'
 import PublicDashboard from './components/dashboard/PublicDashboard';
+import TestDataGenerator from './components/TestDataGenerator';
+import TestingSuite from './components/TestingSuite';
 
 
 function AppContent() {
@@ -45,7 +47,10 @@ function AppContent() {
           <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
           <Route path="/register" element={!user ? <Register /> : <Navigate to="/dashboard" />} />
 
+          {/* Public Dashboard Route - Must come before protected routes */}
+          <Route path="/public/dashboard/:shareId" element={<PublicDashboard />} />
 
+          {/* Protected Routes */}
           <Route path="/dashboard" element={
             <PrivateRoute>
               <AnimatedTeamDashboard />
@@ -106,9 +111,8 @@ function AppContent() {
               <UserProfile />
             </PrivateRoute>
           } />
-
-          {/* Public Routes - No authentication required */}
-          <Route path="/public/dashboard/:shareId" element={<PublicDashboard />} />
+          <Route path="/test-data" element={<PrivateRoute><TestDataGenerator /></PrivateRoute>} />
+          <Route path="/testing" element={<PrivateRoute><TestingSuite /></PrivateRoute>} />
 
 
           <Route path="/projects-old" element={

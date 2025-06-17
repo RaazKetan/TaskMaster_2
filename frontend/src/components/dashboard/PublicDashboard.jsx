@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import AnimatedTeamDashboard from './AnimatedTeamDashboard';
@@ -15,26 +14,92 @@ const PublicDashboard = () => {
     const fetchPublicDashboard = async () => {
       try {
         setLoading(true);
-        // Fetch public dashboard data using shareId
-        const response = await fetch(`/api/public/dashboard/${shareId}`);
-        
+        setError(null);
+
+        // Fetch public dashboard data using shareId directly
+        const response = await fetch(`/api/public/dashboard/${shareId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
         if (!response.ok) {
-          throw new Error('Dashboard not found or access denied');
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         const data = await response.json();
-        setDashboardData(data.dashboardData);
+        console.log('Public dashboard data received:', data);
+
+        // Transform the snapshot data to match what AnimatedTeamDashboard expects
+        const dashboardData = data.dashboardData || {};
+        const transformedData = {
+          stats: {
+            totalTeams: dashboardData.teams || 0,
+            totalProjects: dashboardData.projects || 0,
+            completedTasks: dashboardData.tasks || 0,
+            activeUsers: 1 // Default for public view
+          },
+          teamPerformance: dashboardData.teamPerformance || [],
+          projectStatus: dashboardData.projectStatusDistribution?.data || [],
+          activityData: dashboardData.weeklyActivity || [],
+          priorityDistribution: [],
+          completionProgress: dashboardData.completionProgress || 0
+        };
+
+        setDashboardData(transformedData);
         setDashboardInfo(data.dashboardInfo);
       } catch (error) {
         console.error('Error fetching public dashboard:', error);
-        setError(error.message);
+        setError(error.message || 'Failed to load dashboard data');
       } finally {
         setLoading(false);
       }
     };
 
+    const refreshData = async () => {
+      try {
+        // Fetch fresh data without showing loading state
+        const response = await fetch(`/api/public/dashboard/${shareId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const dashboardData = data.dashboardData || {};
+          const transformedData = {
+            stats: {
+              totalTeams: dashboardData.teams || 0,
+              totalProjects: dashboardData.projects || 0,
+              completedTasks: dashboardData.tasks || 0,
+              activeUsers: 1
+            },
+            teamPerformance: dashboardData.teamPerformance || [],
+            projectStatus: dashboardData.projectStatusDistribution?.data || [],
+            activityData: dashboardData.weeklyActivity || [],
+            priorityDistribution: [],
+            completionProgress: dashboardData.completionProgress || 0
+          };
+
+          setDashboardData(transformedData);
+          setDashboardInfo(data.dashboardInfo);
+        }
+      } catch (error) {
+        console.error('Error refreshing dashboard data:', error);
+      }
+    };
+
     if (shareId) {
       fetchPublicDashboard();
+
+      // Set up auto-refresh every 30 seconds to keep data current
+      const refreshInterval = setInterval(refreshData, 30000);
+
+      // Cleanup interval on component unmount
+      return () => clearInterval(refreshInterval);
     }
   }, [shareId]);
 
@@ -60,7 +125,9 @@ const PublicDashboard = () => {
             </svg>
           </div>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Dashboard Not Found</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
+          <p className="text-gray-600 mb-4">
+            {typeof error === 'string' ? error : error?.message || 'Failed to load dashboard data'}
+          </p>
           <p className="text-sm text-gray-500">
             This dashboard may have been removed or the link may be invalid.
           </p>
@@ -84,12 +151,23 @@ const PublicDashboard = () => {
                 {dashboardInfo && (
                   <p className="text-sm text-gray-500">
                     Shared by {dashboardInfo.ownerName} • {dashboardInfo.projectCount} Projects
+                    {dashboardInfo.lastUpdated && (
+                      <span className="ml-2">
+                        • Updated {new Date(dashboardInfo.lastUpdated).toLocaleTimeString()}
+                      </span>
+                    )}
                   </p>
                 )}
               </div>
             </div>
-            <div className="text-sm text-gray-500">
-              📊 Public View • Read Only
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-xs text-gray-500">Live Data</span>
+              </div>
+              <div className="text-sm text-gray-500">
+                📊 Public View • Read Only
+              </div>
             </div>
           </div>
         </div>
@@ -105,7 +183,7 @@ const PublicDashboard = () => {
             Real-time insights and analytics for ongoing projects
           </p>
         </div>
-        
+
         {/* Render the animated dashboard with public data */}
         <AnimatedTeamDashboard 
           publicData={dashboardData}

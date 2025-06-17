@@ -303,7 +303,7 @@ const ShadcnProjectManagement = () => {
       return;
     }
 
-    setDeletingItems(prev => new Set([...prev, projectId]));
+    setDeletingItems(prev => new Set([...prev, projectToDeleteId]));
 
     try {
       const userId = getCurrentUserId(); // Ensure this correctly gets the user ID
@@ -320,7 +320,7 @@ const ShadcnProjectManagement = () => {
       await fetchData();
       setDeletingItems(prev => {
         const newSet = new Set(prev);
-        newSet.delete(projectId);
+        newSet.delete(projectToDeleteId);
         return newSet;
       });
       toast.success('Project deleted successfully');
@@ -353,16 +353,21 @@ const ShadcnProjectManagement = () => {
     }
 
     try {
-      const currentUserId = 'user_123';
+      const userId = getCurrentUserId();
+      if (!userId) {
+        setError('User not authenticated for deletion.');
+        return;
+      }
       await api.delete(`/projects/${projectId}`, {
-        params: { userId: currentUserId }
+        params: { userId }
       });
-      
-      // Remove from local state
-      setProjects(prev => prev.filter(project => project.id !== projectId && project._id !== projectId));
+      // Always re-fetch after delete to avoid stale/duplicate data
+      await fetchData();
+      toast.success('Project deleted successfully');
     } catch (error) {
       console.error('Error deleting project:', error);
       setError('Failed to delete project. Please try again.');
+      toast.error('Failed to delete project');
     }
   };
 
@@ -510,7 +515,7 @@ const ShadcnProjectManagement = () => {
             <CardContent className="p-0">
               {error && (
                 <div className="p-4 bg-red-50 border-l-4 border-red-400 text-red-700">
-                  {error}
+                  {typeof error === 'string' ? error : error?.message || 'An error occurred'}
                 </div>
               )}
 
@@ -780,6 +785,44 @@ const ShadcnProjectManagement = () => {
       </form>
     </div>
 </SlideInModal>
+
+
+{/* INLINE DELETE CONFIRMATION BOX */}
+{showProjectInlineConfirmBox && (
+  <div className="fixed inset-0 z-[999] flex items-center justify-center">
+    {/* Overlay for blurring background */}
+    <div
+      className="absolute inset-0 backdrop-blur-sm"
+      onClick={handleCancelDeleteProject}
+    ></div>
+    {/* Confirmation Box */}
+    <div className="relative bg-white rounded-lg shadow-xl p-8 max-w-sm w-full mx-auto z-10 animate-fade-in-up flex flex-col items-center">
+      <h3 className="text-xl font-semibold text-gray-900 mb-3 text-center">Confirm Project Deletion</h3>
+      <p className="text-gray-700 mb-7 text-center leading-relaxed">
+        Are you sure you want to delete <b>{projectToDeleteName}</b>?<br />
+        <span className="text-red-600 font-medium">This action cannot be undone and will permanently remove all associated data.</span>
+      </p>
+      <div className="flex w-full justify-center gap-2 mt-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleCancelDeleteProject}
+          className="w-1/2 max-w-[120px] py-2 font-medium rounded-md"
+        >
+          Cancel
+        </Button>
+        <Button
+          type="button"
+          variant="destructive"
+          onClick={handleConfirmDeleteProject}
+          className="w-1/2 max-w-[120px] py-2 font-medium rounded-md"
+        >
+          Delete
+        </Button>
+      </div>
+    </div>
+  </div>
+)}
 </div>
   );
 }

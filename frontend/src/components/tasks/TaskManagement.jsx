@@ -13,11 +13,12 @@ import QuickAddTask from './QuickAddTask';
 import FloatingQuickAdd from './FloatingQuickAdd';
 import api from '../../services/api';
 import { getCurrentUserId } from '../../utils/auth';
+import { refreshSharedDashboards } from '../../services/api';
 import { motion } from 'framer-motion';
 import { useTasks } from '../../context/TaskContext';
 
 const TaskManagement = () => {
-  const { tasks, loading, error, fetchTasks, addTask, updateTask, deleteTask ,setError} = useTasks();
+  const { tasks, loading, error, fetchTasks, addTask, updateTask, deleteTask } = useTasks();
   const [projects, setProjects] = useState([]);
   const [selectedProject, setSelectedProject] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
@@ -29,10 +30,9 @@ const TaskManagement = () => {
   const [inlineEditingTask, setInlineEditingTask] = useState(null);
   const [inlineEditValue, setInlineEditValue] = useState('');
 
-  const [showTaskInlineConfirmBox, setShowTaskInlineConfirmBox] = useState(false);
-  const [taskToDeleteId, setTaskToDeleteId] = useState(null);
-  const [taskToDeleteTitle, setTaskToDeleteTitle] = useState('');
-  
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState(null);
+
 
   // Only fetch projects here, tasks come from context
   const fetchProjects = useCallback(async () => {
@@ -67,7 +67,7 @@ const TaskManagement = () => {
       };
 
       await api.put(`/tasks/${taskId}`, updateData);
-      
+
       // Update task in context
       await updateTask(taskId, { ...task, priority: newPriority });
     } catch (error) {
@@ -99,15 +99,17 @@ const TaskManagement = () => {
         title: task.title,
         description: task.description || '',
         priority: task.priority,
-
         assignedTo: task.assignedTo,
-        dueDate: task.dueDate
+        dueDate: task.dueDate,
+        ...statusDates
       };
 
-      // Update task in context immediately for better UX
-      await updateTask(taskId, { ...task, status: newStatus });
 
-      // Update project progress in local state
+      // Update in context and backend
+      await updateTask(taskId, { ...task, ...updateData });
+
+      // After updating a task status, also update the project progress in the local state
+
       const updateProjectProgressInState = (projectId, progress, status) => {
         setProjects(prevProjects => prevProjects.map(project => {
           if ((project._id || project.id) === projectId) {
@@ -117,12 +119,10 @@ const TaskManagement = () => {
         }));
       };
 
-
       const updateProjectStatus = async (taskId, newTaskStatus) => {
         try {
           const task = tasks.find(t => (t._id || t.id) === taskId);
           if (!task || !task.projectId) return;
-
 
           const projectTasks = tasks.filter(t => t.projectId === task.projectId);
           let completedTasksCount = projectTasks.filter(t =>
@@ -155,7 +155,6 @@ const TaskManagement = () => {
         }
       };
 
-
       updateProjectStatus(taskId, newStatus);
     } catch (error) {
       console.error('Error updating task status:', error);
@@ -170,42 +169,29 @@ const TaskManagement = () => {
     setShowEditModal(true);
   };
 
-  // NEW FUNCTION: Called when delete button is clicked to show inline confirmation for tasks
-  const handleDeleteTaskClick = (taskId, taskTitle) => {
-    setTaskToDeleteId(taskId);
-    setTaskToDeleteTitle(taskTitle || 'this task');
-
-    setShowTaskInlineConfirmBox(true);
+  const handleDeleteTask = (taskId) => {
+    setTaskToDelete(taskId);
+    setShowDeleteDialog(true);
   };
 
-  // MODIFIED FUNCTION: Now called when "Delete" is confirmed in the inline box
-  // MODIFIED FUNCTION: Now called when "Delete" is confirmed in the inline box
-  const handleConfirmDeleteTask = async () => {
-    setShowTaskInlineConfirmBox(false); // Hide the confirmation box immediately
-    //setError(''); // Clear previous errors
-
-    if (!taskToDeleteId) {
-      setError('Invalid task ID for deletion confirmation.');
-      return;
-    }
-
+  const confirmDeleteTask = async () => {
+    if (!taskToDelete) return;
     try {
-      await deleteTask(taskToDeleteId); // <--- This line
-      // ... success logic ...
-    } catch (error) { // <-- This catch block is never reached if deleteTask doesn't throw
+      await deleteTask(taskToDelete);
+      // Refresh shared dashboards when task is deleted
+      refreshSharedDashboards();
+      setShowDeleteDialog(false);
+      setTaskToDelete(null);
+    } catch (error) {
       console.error('Error deleting task:', error);
-      setError('Failed to delete task: ' + (error.message || ''));
-      setTaskToDeleteId(null);
-      setTaskToDeleteTitle('');
+      setShowDeleteDialog(false);
+      setTaskToDelete(null);
     }
   };
 
-  // NEW FUNCTION: Called when user cancels task deletion from the inline confirmation box
-  const handleCancelDeleteTask = () => {
-    setShowTaskInlineConfirmBox(false);
-    setTaskToDeleteId(null);
-    setTaskToDeleteTitle('');
-    setError(''); // Clear any pending errors related to deletion
+  const cancelDeleteTask = () => {
+    setShowDeleteDialog(false);
+    setTaskToDelete(null);
   };
 
   const handleInlineEdit = (task) => {
@@ -218,7 +204,7 @@ const TaskManagement = () => {
     try {
       const task = tasks.find(t => (t._id || t.id) === taskId);
       const userId = getCurrentUserId();
-      
+
       const updateData = {
         userId: userId,
         title: inlineEditValue.trim(),
@@ -232,10 +218,10 @@ const TaskManagement = () => {
 
       // Update in context first
       await updateTask(taskId, { ...task, title: inlineEditValue.trim() });
-      
+
       // Then sync with backend
       await api.put(`/tasks/${taskId}`, updateData);
-      
+
       setInlineEditingTask(null);
       setInlineEditValue('');
     } catch (error) {
@@ -294,7 +280,7 @@ const TaskManagement = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
         whileHover={{  y: -5, boxShadow: "0 10px 25px rgba(0,0,0,0.10)" }}
-       
+
       >
         <Card
           className={`cursor-move transition-all duration-200 hover:shadow-lg mb-3 ${
@@ -381,7 +367,7 @@ const TaskManagement = () => {
                     </span>
                   )}
                 </div>
-                
+
                 {/* Status Date Information */}
                 {(task.startedAt || task.reviewedAt || task.completedAt) && (
                   <div className="mb-2 text-xs text-slate-400 ">
@@ -429,7 +415,7 @@ const TaskManagement = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDeleteTaskClick(task._id || task.id, task.title || task.name);
+                        handleDeleteTask(task._id || task.id);
                       }}
                       className="px-1 py-1 text-xs  text-red-500 transition-colors rounded hover:text-red-700  bg-blue-50 hover:bg-red-100 "
                       title="Delete task"
@@ -454,7 +440,7 @@ const TaskManagement = () => {
           try {
             const currentDate = new Date().toISOString();
             let statusDates = {};
-            
+
             // Determine which date field to update based on status
             if (status === 'IN_PROGRESS') {
               statusDates.startedAt = currentDate;
@@ -550,11 +536,13 @@ const TaskManagement = () => {
             <CardTitle className="text-red-600">Error Loading Tasks</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="mb-4 text-slate-600 ">{error}</p>
-            <Button onClick={fetchTasks}>
-              Retry
-            </Button>
-          </CardContent>
+              <p className="mb-4 text-slate-600 ">
+                {typeof error === 'string' ? error : error?.message || 'An error occurred while loading tasks'}
+              </p>
+              <Button onClick={fetchTasks}>
+                Retry
+              </Button>
+            </CardContent>
         </Card>
       </div>
     );
@@ -566,9 +554,35 @@ const TaskManagement = () => {
   const reviewTasks = filteredTasks.filter(task => task.status === 'REVIEW');
   const completedTasks = filteredTasks.filter(task => task.status === 'COMPLETED');
 
+  const handleTaskCreated = (newTask) => {
+    addTask(newTask);
+    setShowCreateTask(false);
+    // Refresh shared dashboards when new task is created
+    refreshSharedDashboards();
+  };
+
+  const handleTaskUpdated = async (updatedTask) => {
+    try {
+      await updateTask(updatedTask._id, updatedTask);
+      // Refresh shared dashboards when task is updated
+      refreshSharedDashboards();
+    } catch (error) {
+      console.error("Error updating task", error);
+    }
+  };
+
+  const handleTaskStatusUpdated = async (taskId, status) => {
+    try {
+      await updateTask(taskId, { status });
+      refreshSharedDashboards();
+    } catch (error) {
+      console.error("Error updating task status", error);
+    }
+  };
+
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 p-6">
+      <div className="min-h-screen bg-slate-50">
         <div className="p-8">
           <div className="mx-auto max-w-7xl ">
             {/* Header */}
@@ -584,14 +598,13 @@ const TaskManagement = () => {
                     whileHover={{ scale: 1.04}}
                     whileTap={{ scale:0.97}}                  
                     onClick={() => setShowCreateTask(true)}
-
-                    size="sm"
-                    className="text-white border-blue-600 bg-blue hover:bg-blue-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="px-3 py-1.5 ml-4 text-sm font-medium text-white transition-colors bg-blue-600 rounded-md shadow hover:bg-blue-700"
+                    style={{ whiteSpace: 'nowrap'}}
                   >
-                    <Plus className="w-7 h-6 mr-2" />
-                    Create task
-                 
-              </motion.button>
+
+                    <Plus className="inline w-4 h-4 mr-2" />
+                    Create Task
+                  </motion.button>
 
                 </div>
 
@@ -611,7 +624,7 @@ const TaskManagement = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="mb-6"
-              
+
             >
               <Card>
                 <CardContent className="flex-items-center justify-center px-4 py-0">
@@ -726,7 +739,7 @@ const TaskManagement = () => {
                 />
                 <span>Live sync</span>
               </div>
-              
+
               {/* Share Tasks Button */}
               <motion.button
                 onClick={async () => {
@@ -735,7 +748,7 @@ const TaskManagement = () => {
                     const response = await api.post('/dashboard/share', { userId });
                     const shareId = response.data.shareId;
                     const shareUrl = `${window.location.origin}/public/dashboard/${shareId}`;
-                    
+
                     // Copy to clipboard
                     await navigator.clipboard.writeText(shareUrl);
                     alert(`Task board link copied to clipboard!\n\n${shareUrl}\n\nAnyone with this link can view your tasks and projects.`);
@@ -762,7 +775,7 @@ const TaskManagement = () => {
         <CreateTaskModal
           isOpen={showCreateTask}
           onClose={() => setShowCreateTask(false)}
-          onTaskCreated={addTask}
+          onTaskCreated={handleTaskCreated}
           projects={projects}
         />
 
@@ -774,39 +787,36 @@ const TaskManagement = () => {
             setEditingTask(null);
           }}
           task={editingTask}
-          onTaskUpdated={updateTask}
+          onTaskUpdated={handleTaskUpdated}
           projects={projects}
         />
 
-        {/* --- START: INLINE TASK DELETE CONFIRMATION BOX --- */}
-        {showTaskInlineConfirmBox && (
+        {/* Delete Confirmation Dialog */}
+        {showDeleteDialog && (
           <div className="fixed inset-0 z-[999] flex items-center justify-center">
-            {/* Overlay for blurring background - ONLY BLUR, NO COLOR */}
-            <div
-              className="absolute inset-0 backdrop-blur-md" // Using 'md' for a noticeable blur
-              onClick={handleCancelDeleteTask} // Allows clicking outside to cancel
-            ></div>
-
-            {/* Confirmation Box */}
-            <div className="relative bg-white rounded-lg shadow-xl p-6 max-w-sm mx-auto z-10 animate-fade-in-up">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Confirm Task Deletion</h3>
-              <p className="text-gray-700 mb-6">
-                Are you sure you want to delete **{taskToDeleteTitle}**? This action cannot be undone and will permanently remove this task.
+            <div className="absolute inset-0 backdrop-blur-sm" onClick={cancelDeleteTask}></div>
+            <div className="relative bg-white rounded-lg shadow-xl p-6 max-w-sm w-full mx-auto z-10 animate-fade-in-up flex flex-col items-center">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 text-center">Confirm Task Deletion</h3>
+              <p className="text-gray-700 mb-6 text-center">
+                Are you sure you want to delete this task? This action cannot be undone.
               </p>
-              <div className="flex justify-end space-x-3">
+              <div className="flex w-full justify-center gap-2 mt-2">
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={handleCancelDeleteTask}
+                  onClick={cancelDeleteTask}
+                  className="w-1/2 max-w-[120px] py-2 font-medium rounded-md"
                 >
                   Cancel
                 </Button>
                 <Button
-                  type="button"
+This change ensures that the error message displayed in the UI is a string, either the error message itself or a generic message if the error object is not well-formed.
+```                  type="button"
                   variant="destructive"
-                  onClick={handleConfirmDeleteTask}
+                  onClick={confirmDeleteTask}
+                  className="w-1/2 max-w-[120px] py-2 font-medium rounded-md"
                 >
-                  Delete Task
+                  Delete
                 </Button>
               </div>
             </div>

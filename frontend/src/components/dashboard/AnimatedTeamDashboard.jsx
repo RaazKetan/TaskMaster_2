@@ -33,10 +33,13 @@ import LoadingMascot from '../common/LoadingMascot';
 import TaskLoadingCard from '../common/TaskLoadingCard';
 // Removed collaboration components - not needed for core functionality
 import api from '../../services/api';
+import ShareDashboardModal from '../modals/ShareDashboardModal';
 
 const AnimatedTeamDashboard = ({ publicData = null, isPublicView = false }) => {
   const [loading, setLoading] = useState(true);
-  const [dashboardData, setDashboardData] = useState({
+  const [showShareModal, setShowShareModal] = useState(false);
+  // Use publicData if provided (for public view), otherwise fetch from API
+  const [dashboardData, setDashboardData] = useState(publicData || {
     stats: {
       totalTeams: 0,
       totalProjects: 0,
@@ -48,6 +51,15 @@ const AnimatedTeamDashboard = ({ publicData = null, isPublicView = false }) => {
     activityData: [],
     priorityDistribution: []
   });
+
+  // Update dashboard data when publicData changes
+  useEffect(() => {
+    if (publicData && isPublicView) {
+      setDashboardData(publicData);
+      setLoading(false);
+      return; // Skip the normal data fetching for public view
+    }
+  }, [publicData, isPublicView]);
 
   const fadeInUp = {
     initial: { opacity: 0, y: 60 },
@@ -64,6 +76,11 @@ const AnimatedTeamDashboard = ({ publicData = null, isPublicView = false }) => {
   };
 
   useEffect(() => {
+    // Skip fetching if this is a public view with data already provided
+    if (isPublicView && publicData) {
+      return;
+    }
+
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
@@ -250,7 +267,7 @@ const AnimatedTeamDashboard = ({ publicData = null, isPublicView = false }) => {
     };
 
     fetchDashboardData();
-  }, []);
+  }, [isPublicView, publicData]);
 
   if (loading) {
     return (
@@ -360,30 +377,7 @@ const AnimatedTeamDashboard = ({ publicData = null, isPublicView = false }) => {
               {!isPublicView && (
                 <div className="flex gap-3">
                   <button
-                    onClick={async () => {
-                      try {
-                        const userData = localStorage.getItem('userData');
-                        const currentUser = userData ? JSON.parse(userData) : null;
-
-                        if (!currentUser || !currentUser.userId) {
-                          alert('Please log in to share your dashboard');
-                          return;
-                        }
-
-                        const response = await api.post('/dashboard/share', { userId: currentUser.userId });
-                        const shareId = response.data.shareId;
-
-                        // Create universal URL
-                        const currentOrigin = window.location.origin;
-                        const universalShareUrl = `${currentOrigin}/public/dashboard/${shareId}`;
-
-                        await navigator.clipboard.writeText(universalShareUrl);
-                        alert(`Dashboard link copied to clipboard!\n\n${universalShareUrl}\n\nAnyone with this link can view your dashboard for 30 days.`);
-                      } catch (error) {
-                        console.error('Error sharing dashboard:', error);
-                        alert('Failed to create shareable link. Please try again.');
-                      }
-                    }}
+                    onClick={() => setShowShareModal(true)}
                     className="flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-lg hover:shadow-xl"
                   >
                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -603,6 +597,12 @@ const AnimatedTeamDashboard = ({ publicData = null, isPublicView = false }) => {
           </div>
         </motion.div>
       </div>
+
+      {/* Share Dashboard Modal */}
+      <ShareDashboardModal 
+        isOpen={showShareModal} 
+        onClose={() => setShowShareModal(false)} 
+      />
     </div>
   );
 };
