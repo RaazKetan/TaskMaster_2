@@ -100,7 +100,7 @@ const TeamDetail = () => {
     return (
       <div className="p-6">
         <div className="bg-destructive/10 border border-destructive/20 text-destructive rounded-md p-4">
-          {error}
+          {typeof error === 'string' ? error : error?.message || 'An error occurred while loading team data'}
         </div>
       </div>
     );

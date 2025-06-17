@@ -178,6 +178,8 @@ const TaskManagement = () => {
     if (!taskToDelete) return;
     try {
       await deleteTask(taskToDelete);
+      // Refresh shared dashboards when task is deleted
+      refreshSharedDashboards();
       setShowDeleteDialog(false);
       setTaskToDelete(null);
     } catch (error) {
@@ -186,6 +188,7 @@ const TaskManagement = () => {
       setTaskToDelete(null);
     }
   };
+
   const cancelDeleteTask = () => {
     setShowDeleteDialog(false);
     setTaskToDelete(null);
@@ -533,11 +536,13 @@ const TaskManagement = () => {
             <CardTitle className="text-red-600">Error Loading Tasks</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="mb-4 text-slate-600 ">{error}</p>
-            <Button onClick={fetchTasks}>
-              Retry
-            </Button>
-          </CardContent>
+              <p className="mb-4 text-slate-600 ">
+                {typeof error === 'string' ? error : error?.message || 'An error occurred while loading tasks'}
+              </p>
+              <Button onClick={fetchTasks}>
+                Retry
+              </Button>
+            </CardContent>
         </Card>
       </div>
     );
@@ -552,7 +557,6 @@ const TaskManagement = () => {
   const handleTaskCreated = (newTask) => {
     addTask(newTask);
     setShowCreateTask(false);
-
     // Refresh shared dashboards when new task is created
     refreshSharedDashboards();
   };
@@ -562,19 +566,8 @@ const TaskManagement = () => {
       await updateTask(updatedTask._id, updatedTask);
       // Refresh shared dashboards when task is updated
       refreshSharedDashboards();
-
     } catch (error) {
       console.error("Error updating task", error);
-    }
-  };
-
-  const handleDeleteTask = async (taskId) => {
-    try {
-      await deleteTask(taskId);
-      // Refresh shared dashboards when task is deleted
-      refreshSharedDashboards();
-    } catch (error) {
-      console.error("Error deleting task:", error);
     }
   };
 
@@ -817,7 +810,8 @@ const TaskManagement = () => {
                   Cancel
                 </Button>
                 <Button
-                  type="button"
+This change ensures that the error message displayed in the UI is a string, either the error message itself or a generic message if the error object is not well-formed.
+```                  type="button"
                   variant="destructive"
                   onClick={confirmDeleteTask}
                   className="w-1/2 max-w-[120px] py-2 font-medium rounded-md"
